@@ -1,93 +1,474 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0b1020">
-  <title>Jason Shop</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080c17">
+<title>Jason Shop</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080c17;color:white;
+ font-family:Arial,sans-serif;padding-bottom:90px
+}
+main{max-width:700px;margin:auto;padding:25px 18px}
+small{color:#8e99ad}
+h1{font-size:36px;margin:7px 0}
+.subtitle{color:#9ca6ba;margin-bottom:28px}
+.card{
+ background:#111827;border:1px solid #27324a;
+ border-radius:22px;padding:20px;margin:12px 0
+}
+.money{font-size:38px;font-weight:bold;margin:10px 0}
+.green{color:#67e09a}
+.orange{color:#ffbd66}
+.red{color:#ff6b6b}
+.primary{
+ width:100%;padding:20px;border:0;border-radius:18px;
+ background:#1769ff;color:white;font-size:19px;
+ font-weight:bold;margin:14px 0
+}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.action{
+ padding:18px;border:1px solid #27324a;
+ border-radius:16px;background:#162138;color:white;font-size:16px
+}
+input,textarea{
+ width:100%;padding:14px;margin:8px 0;border-radius:12px;
+ border:1px solid #35405a;background:#090e19;color:white;
+ font-size:16px
+}
+textarea{min-height:100px}
+.row{display:flex;justify-content:space-between;gap:10px}
+.stat{width:50%}
+.item{
+ background:#111827;border:1px solid #27324a;
+ padding:15px;border-radius:16px;margin:9px 0
+}
+.item small{display:block;margin-top:6px}
+.delete{
+ float:right;background:#27324a;color:white;border:0;
+ border-radius:9px;padding:7px 10px
+}
+.hidden{display:none}
+.modal{
+ position:fixed;inset:0;background:#000c;z-index:20;
+ display:flex;align-items:flex-end
+}
+.sheet{
+ width:100%;max-width:700px;margin:auto;background:#111827;
+ border-radius:25px 25px 0 0;padding:22px
+}
+nav{
+ position:fixed;bottom:0;left:0;right:0;
+ background:#101725;border-top:1px solid #27324a;
+ display:flex;justify-content:space-around;padding:8px;z-index:10
+}
+nav button{
+ background:none;border:0;color:#aab4c7;
+ padding:9px;font-size:13px
+}
+</style>
 </head>
 
-<body style="margin:0;background:#080c17;color:white;font-family:Arial,sans-serif;">
+<body>
 
-  <div style="padding:28px 20px;">
-    <small style="color:#8d98ae;">PERSONAL AI SHOPPING MANAGER</small>
+<main>
 
-    <h1 style="font-size:36px;margin:8px 0;">
-      Jason Shop
-    </h1>
+<small>PERSONAL AI SHOPPING MANAGER</small>
+<h1>Jason Shop</h1>
+<div class="subtitle">Your personal shopping command center.</div>
 
-    <p style="color:#9da7ba;">
-      Your personal AI shopping command center.
-    </p>
+<div class="card">
+ <small>SAFE TO SPEND</small>
+ <div class="money" id="safe">₱0</div>
+ <div class="green" id="status">● Ready for setup</div>
+</div>
 
-    <div style="
-      margin-top:30px;
-      padding:25px;
-      border-radius:24px;
-      background:#111827;
-      border:1px solid #27324a;
-    ">
+<button class="primary" onclick="startVoice()">🎙️ ASK JASON</button>
 
-      <small style="color:#8d98ae;">SAFE TO SPEND</small>
+<div class="row">
+ <div class="card stat">
+  <small>SHOPPING FUND</small>
+  <h3 id="fundDisplay">₱0</h3>
+ </div>
 
-      <div style="font-size:42px;font-weight:bold;margin:10px 0;">
-        ₱0
-      </div>
+ <div class="card stat">
+  <small>SPENT</small>
+  <h3 id="spentDisplay">₱0</h3>
+ </div>
+</div>
 
-      <div style="color:#70e3a1;">
-        ● Ready for setup
-      </div>
+<h2>AI Shopping Inbox</h2>
 
-    </div>
+<div id="shoppingList"></div>
 
-    <button style="
-      width:100%;
-      margin-top:20px;
-      padding:22px;
-      border:0;
-      border-radius:20px;
-      background:#1769ff;
-      color:white;
-      font-size:20px;
-      font-weight:bold;
-    ">
-      🎙️ ASK JASON
-    </button>
+<button class="primary" onclick="openAdd()">+ Add Shopping Request</button>
 
-    <h2 style="margin-top:35px;">AI Shopping Inbox</h2>
+<h2>Quick Actions</h2>
 
-    <div style="
-      padding:20px;
-      background:#111827;
-      border-radius:18px;
-      border:1px solid #27324a;
-    ">
-      No shopping requests yet.
-    </div>
+<div class="grid">
 
-    <h2 style="margin-top:30px;">Quick Actions</h2>
+<button class="action" onclick="productCamera()">
+📷 Product
+</button>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+<button class="action" onclick="receiptCamera()">
+🧾 Receipt
+</button>
 
-      <button style="padding:18px;border:0;border-radius:16px;background:#182238;color:white;">
-        📷 Product
-      </button>
+<button class="action" onclick="openAdd()">
+🔎 Research
+</button>
 
-      <button style="padding:18px;border:0;border-radius:16px;background:#182238;color:white;">
-        🧾 Receipt
-      </button>
+<button class="action" onclick="showBudget()">
+💰 Budget
+</button>
 
-      <button style="padding:18px;border:0;border-radius:16px;background:#182238;color:white;">
-        🔎 Research
-      </button>
+</div>
 
-      <button style="padding:18px;border:0;border-radius:16px;background:#182238;color:white;">
-        💰 Budget
-      </button>
+<h2 id="budgetTitle">Budget Control</h2>
 
-    </div>
+<div class="card">
 
-  </div>
+<label>Shopping Fund</label>
+<input id="fundInput" type="number" placeholder="Example: 500000">
+
+<label>Hard Stop Limit</label>
+<input id="stopInput" type="number" placeholder="Example: 450000">
+
+<button class="primary" onclick="saveBudget()">SAVE BUDGET</button>
+
+</div>
+
+<h2>Receipt Manager</h2>
+
+<div class="card">
+
+<p id="receiptStatus">
+No receipts uploaded yet.
+</p>
+
+<button class="primary" onclick="receiptCamera()">
+📷 SCAN / UPLOAD RECEIPT
+</button>
+
+</div>
+
+<input
+ id="productFile"
+ class="hidden"
+ type="file"
+ accept="image/*"
+ capture="environment"
+ onchange="productSelected(this)"
+>
+
+<input
+ id="receiptFile"
+ class="hidden"
+ type="file"
+ accept="image/*,.pdf"
+ capture="environment"
+ onchange="receiptSelected(this)"
+>
+
+</main>
+
+
+<div id="addModal" class="modal hidden">
+
+<div class="sheet">
+
+<h2>What do you want to buy?</h2>
+
+<textarea
+ id="requestText"
+ placeholder="Example: Find me the best 85-inch TV under ₱150,000">
+</textarea>
+
+<button class="primary" onclick="saveRequest()">
+🤖 ADD & RESEARCH
+</button>
+
+<button class="action" style="width:100%" onclick="closeAdd()">
+Cancel
+</button>
+
+</div>
+</div>
+
+
+<nav>
+
+<button onclick="window.scrollTo({top:0,behavior:'smooth'})">
+🏠<br>Home
+</button>
+
+<button onclick="document.getElementById('shoppingList').scrollIntoView({behavior:'smooth'})">
+🛒<br>Shopping
+</button>
+
+<button onclick="document.getElementById('receiptStatus').scrollIntoView({behavior:'smooth'})">
+🧾<br>Receipts
+</button>
+
+<button onclick="showBudget()">
+💰<br>Budget
+</button>
+
+</nav>
+
+
+<script>
+
+let data = JSON.parse(
+ localStorage.getItem("JasonShopData") ||
+ '{"fund":0,"stop":0,"spent":0,"requests":[],"receipts":[]}'
+);
+
+function peso(number){
+ return "₱" + Number(number || 0).toLocaleString("en-PH");
+}
+
+function save(){
+ localStorage.setItem("JasonShopData",JSON.stringify(data));
+ render();
+}
+
+function render(){
+
+ document.getElementById("fundDisplay").innerText=peso(data.fund);
+ document.getElementById("spentDisplay").innerText=peso(data.spent);
+
+ let safe=data.fund-data.spent;
+
+ if(data.stop>0){
+  safe=Math.min(safe,data.stop-data.spent);
+ }
+
+ safe=Math.max(0,safe);
+
+ document.getElementById("safe").innerText=peso(safe);
+
+ let status=document.getElementById("status");
+
+ if(data.stop && data.spent>=data.stop){
+  status.innerText="● HARD STOP ACTIVE";
+  status.className="red";
+ }
+ else if(data.stop && data.spent>=data.stop*.85){
+  status.innerText="● Approaching hard stop";
+  status.className="orange";
+ }
+ else{
+  status.innerText="● Safe to shop";
+  status.className="green";
+ }
+
+ let list=document.getElementById("shoppingList");
+
+ if(!data.requests.length){
+
+  list.innerHTML=
+  '<div class="card">No shopping requests yet.</div>';
+
+ }else{
+
+  list.innerHTML=data.requests.map((r,i)=>`
+   <div class="item">
+
+    <button class="delete" onclick="deleteRequest(${i})">✕</button>
+
+    <b>${escapeHTML(r.text)}</b>
+
+    <small>
+    🤖 AI Research: Pending
+    </small>
+
+    <small>
+    Added ${new Date(r.date).toLocaleString()}
+    </small>
+
+   </div>
+  `).join("");
+
+ }
+
+}
+
+function escapeHTML(text){
+
+ let div=document.createElement("div");
+ div.innerText=text;
+ return div.innerHTML;
+
+}
+
+function openAdd(){
+
+ document.getElementById("addModal").classList.remove("hidden");
+
+}
+
+function closeAdd(){
+
+ document.getElementById("addModal").classList.add("hidden");
+
+}
+
+function saveRequest(){
+
+ let text=document.getElementById("requestText").value.trim();
+
+ if(!text)return;
+
+ data.requests.unshift({
+  text:text,
+  date:new Date().toISOString()
+ });
+
+ document.getElementById("requestText").value="";
+
+ closeAdd();
+
+ save();
+
+}
+
+function deleteRequest(index){
+
+ data.requests.splice(index,1);
+
+ save();
+
+}
+
+function saveBudget(){
+
+ data.fund=
+ Number(document.getElementById("fundInput").value)||0;
+
+ data.stop=
+ Number(document.getElementById("stopInput").value)||0;
+
+ save();
+
+ alert("Budget saved.");
+
+}
+
+function showBudget(){
+
+ document.getElementById("budgetTitle")
+ .scrollIntoView({behavior:"smooth"});
+
+}
+
+function productCamera(){
+
+ document.getElementById("productFile").click();
+
+}
+
+function receiptCamera(){
+
+ document.getElementById("receiptFile").click();
+
+}
+
+function productSelected(input){
+
+ if(!input.files.length)return;
+
+ let file=input.files[0];
+
+ data.requests.unshift({
+  text:"📷 Product photo: "+file.name,
+  date:new Date().toISOString()
+ });
+
+ save();
+
+ alert("Product added to Jason Shop.");
+
+}
+
+function receiptSelected(input){
+
+ if(!input.files.length)return;
+
+ let file=input.files[0];
+
+ data.receipts.unshift({
+  name:file.name,
+  date:new Date().toISOString()
+ });
+
+ document.getElementById("receiptStatus").innerHTML=
+ "🧾 <b>"+escapeHTML(file.name)+"</b><br>"+
+ "<small>Receipt added. AI receipt analysis will be connected in the next backend stage.</small>";
+
+ save();
+
+}
+
+function startVoice(){
+
+ let SpeechRecognition=
+ window.SpeechRecognition ||
+ window.webkitSpeechRecognition;
+
+ if(!SpeechRecognition){
+
+  openAdd();
+
+  alert(
+   "Voice recognition is not available in this browser window. You can type your request."
+  );
+
+  return;
+
+ }
+
+ let recognition=new SpeechRecognition();
+
+ recognition.lang="en-US";
+ recognition.interimResults=false;
+
+ recognition.onstart=function(){
+
+  document.querySelector(".primary").innerText=
+  "🔴 LISTENING...";
+
+ };
+
+ recognition.onresult=function(event){
+
+  let speech=
+  event.results[0][0].transcript;
+
+  document.getElementById("requestText").value=speech;
+
+  openAdd();
+
+ };
+
+ recognition.onend=function(){
+
+  document.querySelector(".primary").innerText=
+  "🎙️ ASK JASON";
+
+ };
+
+ recognition.start();
+
+}
+
+render();
+
+</script>
 
 </body>
 </html>
