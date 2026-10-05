@@ -89,6 +89,7 @@ app.post("/api/research", async (req, res) => {
     },
     body: JSON.stringify({
       model: "gpt-5.6",
+      max_output_tokens: 1500,
       tools: [
         {
           type: "web_search"
