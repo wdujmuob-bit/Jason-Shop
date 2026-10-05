@@ -468,6 +468,23 @@ function startVoice(){
 
 render();
 
+const API_URL = "https://jason-shop-api.onrender.com";
+
+async function sendToJasonAI(query) {
+  const response = await fetch(API_URL + "/api/research", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      query: query,
+      mode: "AI_DECIDE"
+    })
+  });
+
+  return await response.json();
+}
+
 </script>
 
 </body>
