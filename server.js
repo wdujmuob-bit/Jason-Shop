@@ -77,7 +77,60 @@ app.post("/api/research", async (req, res) => {
       communication is working.
     */
 
-    const researchTask = {
+    
+
+      const aiResponse = await fetch(
+  "https://api.openai.com/v1/responses",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + process.env.OPENAI_API_KEY
+    },
+    body: JSON.stringify({
+      model: "gpt-5.6",
+      tools: [
+        {
+          type: "web_search"
+        }
+      ],
+      input:
+        "Act as Jason Shop, my personal shopping research assistant. " +
+        "Research this product request using current online information: " +
+        query +
+        ". Search relevant Philippine and international shopping sources. " +
+        "Do not purchase anything. Compare useful products, current prices when available, " +
+        "quality, specifications, reviews, seller/store reliability, shipping considerations, " +
+        "and value for money. Give Best Overall, Cheapest Good Option, Best Quality, " +
+        "and a clear BUY, WAIT, WATCH, or SKIP recommendation. " +
+        "Use Philippine pesos where practical."
+    })
+  }
+);
+
+const aiData = await aiResponse.json();
+
+if (!aiResponse.ok) {
+  console.error("OpenAI error:", aiData);
+  throw new Error("OpenAI research failed");
+}
+
+const aiText =
+  aiData.output_text ||
+  aiData.output
+    ?.flatMap(item => item.content || [])
+    ?.find(item => item.type === "output_text")
+    ?.text ||
+  "Research completed, but no readable report was returned.";
+
+return res.json({
+  success: true,
+  query: query.trim(),
+  status: "complete",
+  report: aiText
+});
+
+const researchTask = {
 
       id:
         "JS-" +
