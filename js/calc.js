@@ -1345,6 +1345,454 @@
       unpricedRestock: unpricedRestock, projected: round2(projected), basis: basis, weeks: weeks, safeNow: safe, endSafe: endSafe, status: status, why: why };
   }
 
+  /* =====================================================================
+     STAGE 4 — analytics. Every number comes from recorded data; when there
+     isn't enough, functions say so (notEnough / null) instead of guessing.
+     ===================================================================== */
+
+  function medianOf(values) {
+    var v = (values || []).map(num).filter(function (x) { return x !== null; }).sort(function (a, b) { return a - b; });
+    if (!v.length) return null;
+    var mid = Math.floor(v.length / 2);
+    return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+  }
+  function madOf(values, med) {
+    var m = med === undefined ? medianOf(values) : med;
+    if (m === null) return null;
+    return medianOf((values || []).map(function (x) { return Math.abs(num(x) - m); }));
+  }
+  function monthKey(day) {
+    var m = /^(\d{4})-(\d{2})/.exec(String(day || ""));
+    return m ? m[1] + "-" + m[2] : null;
+  }
+  var MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function monthLabel(key, long) {
+    var m = /^(\d{4})-(\d{2})$/.exec(String(key || ""));
+    if (!m) return "—";
+    return MONTH_NAMES[+m[2] - 1] + (long === false ? "" : " " + m[1]);
+  }
+  // Every month key from start..end inclusive.
+  function monthsBetween(start, end) {
+    var a = monthKey(start), b = monthKey(end), out = [];
+    if (!a || !b || a > b) return out;
+    var y = +a.slice(0, 4), m = +a.slice(5, 7);
+    for (var guard = 0; guard < 600; guard++) {
+      var k = y + "-" + String(m).padStart(2, "0");
+      out.push(k);
+      if (k === b) break;
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    return out;
+  }
+
+  var INSIGHT_RANGE_DAYS = { "30d": 30, "90d": 90, "180d": 180, "365d": 365 };
+  // Date range for a preset ("30d"… or "all") or {start,end}. Includes today.
+  function insightRange(preset, today, earliest) {
+    if (preset && typeof preset === "object") {
+      var s = preset.start || earliest || today, e = preset.end || today;
+      if (s > e) { var t = s; s = e; e = t; }
+      return { start: s, end: e, days: daysBetween(s, e) + 1, preset: "custom" };
+    }
+    var days = INSIGHT_RANGE_DAYS[preset];
+    if (!days) {
+      var st = earliest && earliest <= today ? earliest : today;
+      return { start: st, end: today, days: daysBetween(st, today) + 1, preset: "all" };
+    }
+    return { start: addDays(today, -(days - 1)), end: today, days: days, preset: preset };
+  }
+  function previousRange(range) {
+    var end = addDays(range.start, -1);
+    return { start: addDays(end, -(range.days - 1)), end: end, days: range.days };
+  }
+
+  function groupTotals(list, keyOf, total) {
+    var map = {};
+    list.forEach(function (e) {
+      var k = keyOf(e) || "Other";
+      if (!map[k]) map[k] = { name: k, total: 0, count: 0, days: {} };
+      map[k].total += num(e.amount);
+      map[k].count += 1;
+      if (e.date) map[k].days[e.date] = true;
+    });
+    return Object.keys(map).map(function (k) {
+      var g = map[k];
+      return { name: g.name, total: round2(g.total), count: g.count, visits: Object.keys(g.days).length, share: total > 0 ? round2(g.total / total * 100) : 0 };
+    }).sort(function (a, b) { return b.total - a.total || a.name.localeCompare(b.name); });
+  }
+
+  // Spending trends from history entries {date, amount, category, store, counted}.
+  function spendingTrends(entries, range) {
+    var counted = (entries || []).filter(function (e) { return e && e.counted !== false && num(e.amount) !== null && num(e.amount) > 0 && e.date; });
+    var inR = counted.filter(function (e) { return inRange(e.date, range); });
+    var total = sum(inR, function (e) { return e.amount; });
+    var prevR = previousRange(range);
+    var prevList = counted.filter(function (e) { return inRange(e.date, prevR); });
+    var prevTotal = sum(prevList, function (e) { return e.amount; });
+    var months = monthsBetween(range.start, range.end).map(function (mk) {
+      var list = inR.filter(function (e) { return monthKey(e.date) === mk; });
+      return { month: mk, label: monthLabel(mk, false), total: sum(list, function (e) { return e.amount; }), count: list.length };
+    });
+    var earliest = counted.map(function (e) { return e.date; }).sort()[0] || null;
+    var why = [];
+    if (!inR.length) why.push("No counted spending recorded in this date range.");
+    else why.push(inR.length + " counted entr" + (inR.length === 1 ? "y" : "ies") + " from " + range.start + " to " + range.end + ".");
+    var change = null;
+    if (prevList.length && prevTotal > 0 && earliest && earliest <= prevR.start) change = round2((total - prevTotal) / prevTotal * 100);
+    else if (inR.length) why.push("Not enough earlier history to compare with the previous " + range.days + " days.");
+    return {
+      range: range, total: total, count: inR.length,
+      dailyAvg: inR.length ? round2(total / range.days) : null,
+      prevTotal: prevList.length ? prevTotal : null, changePct: change,
+      months: months,
+      byCategory: groupTotals(inR, function (e) { return e.category; }, total),
+      byStore: groupTotals(inR, function (e) { return e.store; }, total),
+      why: why
+    };
+  }
+
+  // Personal basket index. records: [{productId, name, date, value}] where
+  // value is a comparable per-unit price (real prices only — the caller
+  // drops AI estimates). Base = first month with ≥ minProducts repeat items;
+  // each later month compares the same products (matched pairs), weighted by
+  // how often you record each product.
+  function basketIndex(records, opts) {
+    var o = opts || {};
+    var minProducts = o.minProducts || 2;
+    var byProd = {};
+    (records || []).forEach(function (r) {
+      var v = num(r.value), mk = monthKey(r.date);
+      if (!r || !r.productId || v === null || v <= 0 || !mk) return;
+      if (o.range && !inRange(r.date, { start: o.range.start, end: o.range.end })) return;
+      var p = byProd[r.productId] || (byProd[r.productId] = { id: r.productId, name: r.name || r.productId, months: {}, count: 0 });
+      (p.months[mk] = p.months[mk] || []).push(v);
+      p.count++;
+    });
+    var basket = Object.keys(byProd).map(function (k) { return byProd[k]; }).filter(function (p) { return Object.keys(p.months).length >= 2; });
+    var allMonths = {};
+    basket.forEach(function (p) { Object.keys(p.months).forEach(function (m) { allMonths[m] = (allMonths[m] || 0) + 1; }); });
+    var months = Object.keys(allMonths).sort();
+    var base = null;
+    for (var i = 0; i < months.length; i++) if (allMonths[months[i]] >= minProducts) { base = months[i]; break; }
+    var res = { base: base, baseLabel: base ? monthLabel(base) : null, basketSize: basket.length, months: [], latest: null, items: [], notEnough: false, why: [] };
+    if (!base) {
+      res.notEnough = true;
+      res.why.push("Not enough data: needs at least " + minProducts + " products with real prices recorded in two different months.");
+      return res;
+    }
+    var med = function (p, m) { return medianOf(p.months[m]); };
+    months.filter(function (m) { return m >= base; }).forEach(function (m) {
+      var matched = basket.filter(function (p) { return p.months[base] && p.months[m]; });
+      if (matched.length < minProducts) { res.months.push({ month: m, label: monthLabel(m, false), index: null, products: matched.length }); return; }
+      var cur = 0, bas = 0;
+      matched.forEach(function (p) { cur += p.count * med(p, m); bas += p.count * med(p, base); });
+      res.months.push({ month: m, label: monthLabel(m, false), index: round2(cur / bas * 100), products: matched.length });
+    });
+    var withIdx = res.months.filter(function (m) { return m.index !== null; });
+    var last = withIdx[withIdx.length - 1];
+    if (last && last.month !== base) {
+      res.latest = { month: last.month, label: monthLabel(last.month), index: last.index, changePct: round2(last.index - 100), products: last.products };
+      res.items = basket.filter(function (p) { return p.months[base] && p.months[last.month]; }).map(function (p) {
+        var b = med(p, base), l = med(p, last.month);
+        return { productId: p.id, name: p.name, baseValue: round2(b), latestValue: round2(l), changePct: round2((l - b) / b * 100), weight: p.count };
+      }).sort(function (a, b) { return b.changePct - a.changePct; });
+      res.why.push("Compares the same " + last.products + " products in " + monthLabel(last.month) + " vs " + res.baseLabel + " (median real price per unit each month, weighted by how often you record them).");
+    } else {
+      res.notEnough = true;
+      res.why.push("Not enough data yet: only " + res.baseLabel + " has enough repeat prices. A comparison appears once the same products are priced in a later month.");
+    }
+    return res;
+  }
+
+  // Savings achieved, only from real before/after prices of the same product.
+  // purchases: [{id, productId, name, date, at, value, paid, store}] (value
+  // = comparable per-unit price, paid = what you paid for that line).
+  // history: every real record [{id, productId, date, at, value, store}].
+  function savingsFromPrices(purchases, history) {
+    var byProd = {};
+    (history || []).forEach(function (r) {
+      if (!r || !r.productId || num(r.value) === null || num(r.value) <= 0 || !r.date) return;
+      (byProd[r.productId] = byProd[r.productId] || []).push(r);
+    });
+    var lines = [], notComparable = 0;
+    (purchases || []).forEach(function (p) {
+      var v = num(p.value), paid = num(p.paid);
+      if (!p || v === null || v <= 0 || paid === null || paid <= 0) { notComparable++; return; }
+      var earlier = (byProd[p.productId] || []).filter(function (r) {
+        if (r.id && r.id === p.id) return false;
+        return r.date < p.date || (r.date === p.date && String(r.at || "") < String(p.at || "") && r.at);
+      }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : String(b.at || "").localeCompare(String(a.at || "")); });
+      if (!earlier.length) { notComparable++; return; }
+      var before = num(earlier[0].value);
+      var units = paid / v;
+      var diff = round2(units * before - paid); // + saved, − paid more
+      lines.push({ id: p.id, productId: p.productId, name: p.name, date: p.date, store: p.store, before: round2(before), after: round2(v),
+        beforeDate: earlier[0].date, beforeStore: earlier[0].store || null, paid: round2(paid), diff: diff });
+    });
+    var saved = sum(lines.filter(function (l) { return l.diff > 0; }), function (l) { return l.diff; });
+    var paidMore = sum(lines.filter(function (l) { return l.diff < 0; }), function (l) { return -l.diff; });
+    var why = [];
+    if (!lines.length) why.push("Not enough data: savings need the same product bought after an earlier recorded price.");
+    else why.push("Each purchase is compared with the previous real price you recorded for the same product (what you'd have paid at that price − what you paid).");
+    if (notComparable) why.push(notComparable + " purchase" + (notComparable === 1 ? "" : "s") + " had no earlier price to compare, so " + (notComparable === 1 ? "it isn't" : "they aren't") + " counted.");
+    return { saved: saved, paidMore: paidMore, net: round2(saved - paidMore), compared: lines.length, notComparable: notComparable,
+      notEnough: !lines.length, lines: lines.sort(function (a, b) { return b.diff - a.diff; }), why: why };
+  }
+
+  // Store performance. entries: counted history {date, amount, store};
+  // comparisons: [{productId, rows:[{store, value}]}] latest real price per
+  // store for products seen at 2+ stores.
+  function storePerformance(entries, comparisons, range) {
+    var counted = (entries || []).filter(function (e) { return e && e.counted !== false && e.store && num(e.amount) > 0 && (!range || inRange(e.date, range)); });
+    var total = sum(counted, function (e) { return e.amount; });
+    var map = {};
+    var get = function (name) { return map[name] || (map[name] = { name: name, spend: 0, count: 0, days: {}, lastDate: null, wins: 0, compared: 0, premiums: [] }); };
+    counted.forEach(function (e) {
+      var s = get(e.store);
+      s.spend += num(e.amount); s.count++; s.days[e.date] = true;
+      if (!s.lastDate || e.date > s.lastDate) s.lastDate = e.date;
+    });
+    (comparisons || []).forEach(function (c) {
+      var rows = (c.rows || []).filter(function (r) { return r.store && num(r.value) > 0; });
+      if (rows.length < 2) return;
+      var best = Math.min.apply(null, rows.map(function (r) { return num(r.value); }));
+      var seen = {};
+      rows.forEach(function (r) {
+        if (seen[r.store]) return; seen[r.store] = true;
+        var s = get(r.store);
+        s.compared++;
+        if (num(r.value) <= best + 1e-9) s.wins++;
+        s.premiums.push((num(r.value) - best) / best * 100);
+      });
+    });
+    var rows = Object.keys(map).map(function (k) {
+      var s = map[k], visits = Object.keys(s.days).length;
+      return { name: s.name, spend: round2(s.spend), entries: s.count, visits: visits, avgBasket: visits ? round2(s.spend / visits) : null,
+        share: total > 0 ? round2(s.spend / total * 100) : 0, lastDate: s.lastDate, wins: s.wins, compared: s.compared,
+        winRate: s.compared ? round2(s.wins / s.compared * 100) : null,
+        avgPremiumPct: s.premiums.length ? round2(s.premiums.reduce(function (a, b) { return a + b; }, 0) / s.premiums.length) : null };
+    }).sort(function (a, b) { return b.spend - a.spend || (b.compared - a.compared) || a.name.localeCompare(b.name); });
+    var why = [];
+    if (!rows.length) why.push("No store spending or price comparisons recorded yet.");
+    if (!(comparisons || []).some(function (c) { return (c.rows || []).length >= 2; })) why.push("Price comparison needs the same product priced at 2+ stores.");
+    return { total: total, stores: rows, why: why };
+  }
+
+  // Usage, waste, expiry losses and stock-outs from inventory transactions.
+  // txs: [{itemId, type, qty, before, after, day, reason}] ; items: {id: {name, unitValue}}
+  var WASTE_REASONS = { expired: "Expired", spoiled: "Spoiled", other: "Thrown out" };
+  function usageAnalytics(txs, items, range, today) {
+    var info = items || {};
+    var per = {};
+    var get = function (id) {
+      if (!per[id]) per[id] = { itemId: id, name: (info[id] && info[id].name) || "Item", used: 0, wasted: 0, expired: 0, wasteValue: 0, wastePriced: true, unclear: 0, stockouts: 0, daysOut: 0, outSince: null };
+      return per[id];
+    };
+    var sorted = (txs || []).filter(function (t) { return t && t.itemId && t.day; }).slice().sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : String(a.at || "").localeCompare(String(b.at || "")); });
+    var endDay = range.end < today ? range.end : today;
+    sorted.forEach(function (t) {
+      var s = get(t.itemId), q = Math.abs(num(t.qty) || 0);
+      var after = num(t.after), before = num(t.before);
+      // stock-out tracking (across all time, counted when overlapping the range)
+      if (after !== null && after <= 0 && (before === null || before > 0)) {
+        s.outSince = t.day;
+        if (inRange(t.day, range)) s.stockouts++;
+      } else if (after !== null && after > 0 && s.outSince) {
+        var from = s.outSince > range.start ? s.outSince : range.start;
+        var to = t.day < endDay ? t.day : endDay;
+        if (to >= from) s.daysOut += Math.max(0, daysBetween(from, to));
+        s.outSince = null;
+      }
+      if (!inRange(t.day, range)) return;
+      if (t.type === "use") s.used += q;
+      else if (t.type === "discard") {
+        if (t.reason && WASTE_REASONS[t.reason]) {
+          s.wasted += q;
+          if (t.reason === "expired") s.expired += q;
+          var uv = info[t.itemId] ? num(info[t.itemId].unitValue) : null;
+          if (uv !== null && uv > 0) s.wasteValue += q * uv; else s.wastePriced = false;
+        } else s.unclear += q;
+      }
+    });
+    Object.keys(per).forEach(function (id) {
+      var s = per[id];
+      if (s.outSince) {
+        var from = s.outSince > range.start ? s.outSince : range.start;
+        if (endDay >= from) s.daysOut += daysBetween(from, endDay);
+      }
+      s.wasteValue = round2(s.wasteValue);
+      s.stillOut = !!s.outSince;
+    });
+    var rows = Object.keys(per).map(function (k) { return per[k]; });
+    var wasteRows = rows.filter(function (s) { return s.wasted > 0; });
+    var res = {
+      items: rows,
+      usedItems: rows.filter(function (s) { return s.used > 0; }).sort(function (a, b) { return b.used - a.used; }),
+      waste: wasteRows.sort(function (a, b) { return b.wasteValue - a.wasteValue || b.wasted - a.wasted; }),
+      wasteValue: sum(wasteRows, function (s) { return s.wasteValue; }),
+      expiredValue: 0,
+      wasteUnpriced: wasteRows.filter(function (s) { return !s.wastePriced; }).length,
+      unclearDiscards: rows.filter(function (s) { return s.unclear > 0; }).length,
+      stockouts: rows.reduce(function (a, s) { return a + s.stockouts; }, 0),
+      daysOut: rows.reduce(function (a, s) { return a + s.daysOut; }, 0),
+      outNow: rows.filter(function (s) { return s.stillOut; }).length,
+      stockoutItems: rows.filter(function (s) { return s.stockouts > 0 || s.daysOut > 0; }).sort(function (a, b) { return b.daysOut - a.daysOut || b.stockouts - a.stockouts; }),
+      why: []
+    };
+    res.expiredValue = round2(wasteRows.reduce(function (a, s) { return a + (s.wasted ? s.wasteValue * s.expired / s.wasted : 0); }, 0));
+    if (!sorted.length) res.why.push("No stock changes recorded yet.");
+    if (res.wasteUnpriced) res.why.push(res.wasteUnpriced + " thrown-out item" + (res.wasteUnpriced === 1 ? " has" : "s have") + " no Price Book price, so the peso loss is partial.");
+    if (res.unclearDiscards) res.why.push("Older \"used up / thrown out\" entries don't say which, so they aren't counted as waste.");
+    return res;
+  }
+
+  // Accuracy of a plan or forecast: 100% = exact; never below 0.
+  function accuracy(planned, actual) {
+    var p = num(planned), a = num(actual);
+    if (p === null || a === null || p <= 0) return null;
+    var err = (a - p) / p * 100;
+    return { planned: round2(p), actual: round2(a), errorPct: round2(err), accuracyPct: round2(Math.max(0, 100 - Math.abs(err))),
+      direction: Math.abs(err) <= 2 ? "on" : err > 0 ? "over" : "under" };
+  }
+  function avgAccuracy(rows) {
+    var ok = rows.filter(function (r) { return r.acc; });
+    return ok.length ? round2(ok.reduce(function (s, r) { return s + r.acc.accuracyPct; }, 0) / ok.length) : null;
+  }
+  // cycles: [{id, start, end, planned, actual}] (closed cycles only)
+  function cycleAccuracy(cycles) {
+    var rows = (cycles || []).filter(function (c) { return c && c.start && c.end; }).map(function (c) {
+      return { id: c.id, start: c.start, end: c.end, planned: num(c.planned), actual: num(c.actual), acc: accuracy(c.planned, c.actual) };
+    }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+    var avg = avgAccuracy(rows);
+    return { rows: rows, average: avg, notEnough: avg === null,
+      why: avg === null ? ["Not enough data: needs a finished shopping cycle that had a planned amount."] : ["Average over " + rows.filter(function (r) { return r.acc; }).length + " finished cycle(s): 100% means you spent exactly what was planned."] };
+  }
+  // Plan accuracy by category. periods: [{start,end}] complete periods;
+  // plans: planHistory [{at, mode, items:[{categoryId, value}], fund}];
+  // categories: [{id, name}]; entries: counted history {date, amount, category}.
+  function planForPeriod(plans, period) {
+    var endIso = period.end + "T23:59:59.999Z";
+    var cands = (plans || []).filter(function (p) { return p && p.at && String(p.at) <= endIso; }).sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
+    return cands.length ? cands[cands.length - 1] : null;
+  }
+  function planAccuracy(periods, plans, categories, entries) {
+    var cats = categories || [];
+    var counted = (entries || []).filter(function (e) { return e && e.counted !== false && num(e.amount) > 0; });
+    var out = [];
+    (periods || []).forEach(function (period) {
+      var plan = planForPeriod(plans, period);
+      if (!plan || !(plan.items || []).length) return;
+      var fund = money(plan.fund);
+      var rows = [];
+      plan.items.forEach(function (it) {
+        var cat = cats.filter(function (c) { return c.id === it.categoryId; })[0];
+        if (!cat) return;
+        var v = num(it.value);
+        var planned = plan.mode === "percent" ? (fund > 0 && v !== null ? round2(fund * v / 100) : null) : v;
+        if (planned === null || planned <= 0) return;
+        var actual = sum(counted.filter(function (e) { return inRange(e.date, period) && e.category === cat.name; }), function (e) { return e.amount; });
+        rows.push({ categoryId: cat.id, category: cat.name, planned: planned, actual: actual, acc: accuracy(planned, actual) });
+      });
+      if (rows.length) out.push({ start: period.start, end: period.end, planAt: plan.at, rows: rows, average: avgAccuracy(rows) });
+    });
+    var byCat = {};
+    out.forEach(function (p) { p.rows.forEach(function (r) { (byCat[r.category] = byCat[r.category] || []).push(r); }); });
+    var categoriesOut = Object.keys(byCat).map(function (k) {
+      var list = byCat[k];
+      return { category: k, periods: list.length, average: avgAccuracy(list), planned: sum(list, function (r) { return r.planned; }), actual: sum(list, function (r) { return r.actual; }) };
+    }).sort(function (a, b) { return (a.average === null) - (b.average === null) || a.average - b.average; });
+    return { periods: out, categories: categoriesOut, average: avgAccuracy([].concat.apply([], out.map(function (p) { return p.rows; }))), notEnough: !out.length,
+      why: out.length ? ["Each finished budget period is compared with the plan you had saved by its end date."] : ["Not enough data: needs a finished budget period with a saved budget plan."] };
+  }
+  // Forecast accuracy. snapshots: [{at, start, end, projected}]; checked once end < today.
+  function forecastAccuracy(snapshots, entries, today) {
+    var counted = (entries || []).filter(function (e) { return e && e.counted !== false && num(e.amount) > 0; });
+    var done = [], pending = [];
+    (snapshots || []).forEach(function (s) {
+      if (!s || !s.start || !s.end || num(s.projected) === null) return;
+      if (s.end >= today) { pending.push(s); return; }
+      var actual = sum(counted.filter(function (e) { return inRange(e.date, s); }), function (e) { return e.amount; });
+      done.push({ at: s.at, start: s.start, end: s.end, projected: num(s.projected), actual: actual, acc: accuracy(s.projected, actual) });
+    });
+    done.sort(function (a, b) { return a.end < b.end ? -1 : 1; });
+    var next = pending.map(function (s) { return addDays(s.end, 1); }).sort()[0] || null;
+    var avg = avgAccuracy(done);
+    return { rows: done, average: avg, pending: pending.length, nextCheck: next, notEnough: avg === null,
+      why: avg === null ? ["Not enough data yet" + (next ? " — first check on " + next : "") + ". Forecasts are saved as you use the app and checked when their 30 days end."]
+        : ["Average over " + done.length + " finished forecast(s)."] };
+  }
+
+  // Unusual spending. entries: counted history {key, date, amount, category, store, title}.
+  function unusualSpending(entries, range, opts) {
+    var o = opts || {};
+    var minHistory = o.minHistory || 5;
+    var counted = (entries || []).filter(function (e) { return e && e.counted !== false && num(e.amount) > 0 && e.date; })
+      .slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    var flags = [], skippedThin = 0;
+    counted.forEach(function (e) {
+      if (!inRange(e.date, range)) return;
+      var cat = e.category || "Other";
+      var prior = counted.filter(function (x) { return x !== e && (x.category || "Other") === cat && x.date < e.date && daysBetween(x.date, e.date) <= 365; }).map(function (x) { return num(x.amount); });
+      if (prior.length < minHistory) { skippedThin++; return; }
+      var med = medianOf(prior), mad = madOf(prior, med);
+      var limit = Math.max(med * 3, med + 4 * (mad || 0));
+      if (num(e.amount) > limit && num(e.amount) - med >= 200) {
+        flags.push({ kind: "big_purchase", severity: num(e.amount) > limit * 2 ? "high" : "medium", key: e.key, date: e.date, title: e.title || e.store || cat, amount: round2(num(e.amount)),
+          why: formatPeso(e.amount) + " is about " + round2(num(e.amount) / med).toFixed(1).replace(/\.0$/, "") + "× your usual " + cat + " purchase (median " + formatPeso(med) + " from " + prior.length + " earlier).", category: cat });
+      }
+    });
+    // category month spikes
+    var monthsAll = {};
+    counted.forEach(function (e) {
+      var mk = monthKey(e.date), cat = e.category || "Other";
+      monthsAll[cat] = monthsAll[cat] || {};
+      monthsAll[cat][mk] = (monthsAll[cat][mk] || 0) + num(e.amount);
+    });
+    var firstMonth = counted.length ? monthKey(counted[0].date) : null;
+    monthsBetween(range.start, range.end).forEach(function (mk) {
+      var prev = monthsBetween(addDays(mk + "-01", -92), addDays(mk + "-01", -1));
+      if (!firstMonth || prev[0] < firstMonth) return; // need 3 full earlier months of history
+      Object.keys(monthsAll).forEach(function (cat) {
+        var cur = monthsAll[cat][mk] || 0;
+        var pv = prev.map(function (p) { return monthsAll[cat][p] || 0; });
+        if (pv.filter(function (v) { return v > 0; }).length < 2) return;
+        var avg = pv.reduce(function (a, b) { return a + b; }, 0) / pv.length;
+        if (avg > 0 && cur > avg * 1.5 && cur - avg >= 500) {
+          flags.push({ kind: "category_spike", severity: cur > avg * 2.5 ? "high" : "medium", date: mk + "-01", month: mk, title: cat + " in " + monthLabel(mk), amount: round2(cur), category: cat,
+            why: cat + " spending in " + monthLabel(mk) + " (" + formatPeso(cur) + ") is " + Math.round((cur / avg - 1) * 100) + "% above your 3-month average (" + formatPeso(avg) + ")." });
+        }
+      });
+    });
+    // possible duplicates: same store, same amount, same day
+    var seen = {};
+    counted.forEach(function (e) {
+      if (!inRange(e.date, range) || !e.store) return;
+      var k = String(e.store).trim().toLowerCase() + "|" + e.date + "|" + round2(num(e.amount));
+      if (seen[k]) {
+        flags.push({ kind: "possible_duplicate", severity: "medium", key: e.key, otherKey: seen[k].key, date: e.date, title: e.title || e.store, amount: round2(num(e.amount)), category: e.category,
+          why: "Two entries of " + formatPeso(e.amount) + " at " + e.store + " on " + e.date + " — counted twice?" });
+      } else seen[k] = e;
+    });
+    flags.sort(function (a, b) { return (a.severity === "high" ? 0 : 1) - (b.severity === "high" ? 0 : 1) || (a.date < b.date ? 1 : a.date > b.date ? -1 : 0); });
+    var why = [];
+    if (skippedThin) why.push(skippedThin + " entr" + (skippedThin === 1 ? "y" : "ies") + " skipped for the size check: fewer than " + minHistory + " earlier purchases in that category.");
+    return { flags: flags, checked: counted.filter(function (e) { return inRange(e.date, range); }).length, skippedThin: skippedThin, why: why };
+  }
+
+  // CSV text. columns: [{key, label}] ; rows: objects. Text that a
+  // spreadsheet could run as a formula is prefixed with '.
+  function csvCell(v) {
+    if (v === null || v === undefined) return "";
+    if (typeof v === "number") return isFinite(v) ? String(v) : "";
+    var s = String(v);
+    if (/^[=+@\t\r]/.test(s) || /^-[^\d.]/.test(s)) s = "'" + s;
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function toCSV(columns, rows) {
+    var lines = [columns.map(function (c) { return csvCell(c.label); }).join(",")];
+    (rows || []).forEach(function (r) { lines.push(columns.map(function (c) { return csvCell(r[c.key]); }).join(",")); });
+    return lines.join("\r\n") + "\r\n";
+  }
+
   return {
     round2: round2, num: num, money: money, sum: sum, pct: pct,
     formatPeso: formatPeso, limitText: limitText,
@@ -1370,6 +1818,12 @@
     PRICE_STATUS: PRICE_STATUS, DEFAULT_PRICE_AGE: DEFAULT_PRICE_AGE, priceAge: priceAge, freshness: freshness, priceStatus: priceStatus,
     storeRanking: storeRanking, splitList: splitList, ROUTE_MODES: ROUTE_MODES, DEFAULT_ROUTE: DEFAULT_ROUTE, planRoute: planRoute,
     bulkBreakEven: bulkBreakEven, packSizeValue: packSizeValue, BUY_ADVICE: BUY_ADVICE, buyAdvice: buyAdvice,
-    FUND_VERDICTS: FUND_VERDICTS, fundCheck: fundCheck, advanceDate: advanceDate, occurrencesBetween: occurrencesBetween, forecast30: forecast30
+    FUND_VERDICTS: FUND_VERDICTS, fundCheck: fundCheck, advanceDate: advanceDate, occurrencesBetween: occurrencesBetween, forecast30: forecast30,
+    // Stage 4
+    medianOf: medianOf, madOf: madOf, monthKey: monthKey, monthLabel: monthLabel, monthsBetween: monthsBetween,
+    INSIGHT_RANGE_DAYS: INSIGHT_RANGE_DAYS, insightRange: insightRange, previousRange: previousRange,
+    spendingTrends: spendingTrends, basketIndex: basketIndex, savingsFromPrices: savingsFromPrices, storePerformance: storePerformance,
+    WASTE_REASONS: WASTE_REASONS, usageAnalytics: usageAnalytics, accuracy: accuracy, cycleAccuracy: cycleAccuracy, planForPeriod: planForPeriod,
+    planAccuracy: planAccuracy, forecastAccuracy: forecastAccuracy, unusualSpending: unusualSpending, csvCell: csvCell, toCSV: toCSV
   };
 }));

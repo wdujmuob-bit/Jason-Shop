@@ -25,8 +25,12 @@ function latestDownload(prefix, after){ const f=fs.readdirSync(DL).filter(n=>n.s
 (async()=>{
  fs.rmSync(DL,{recursive:true,force:true}); fs.mkdirSync(DL);
  const b = await puppeteer.launch({executablePath:revealShim.CHROME,headless:"new",args:["--no-sandbox"]}); revealShim(b);
+ // Page clock pinned to 2026-10-06 13:00 Manila (the expected dates below are fixed), like the e2e suites.
+ const NOW=Date.parse("2026-10-06T05:00:00Z");
  const mk = async (seed)=>{
   const p=await b.newPage();
+  await p.emulateTimezone("Asia/Manila");
+  await p.evaluateOnNewDocument(now=>{ const RD=Date, off=now-RD.now(); class FD extends RD{ constructor(...a){ if(a.length===0) super(RD.now()+off); else super(...a); } static now(){ return RD.now()+off; } } window.Date=FD; },NOW);
   await p.setUserAgent("Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36");
   await p.setViewport({width:384,height:854,isMobile:true,hasTouch:true,deviceScaleFactor:2});
   const cdp=await p.target().createCDPSession(); await cdp.send("Browser.setDownloadBehavior",{behavior:"allow",downloadPath:DL});
@@ -164,14 +168,14 @@ function latestDownload(prefix, after){ const f=fs.readdirSync(DL).filter(n=>n.s
  check("B no JS errors", p.errors.length===0, p.errors.join(" | "));
  await p.close();
  // banner timing
- p = await mk(Object.assign(SEED(),{lastBackup:new Date(Date.now()-10*86400000).toISOString()}));
+ p = await mk(Object.assign(SEED(),{lastBackup:new Date(NOW-10*86400000).toISOString()}));
  check("B2 last backup 10 days ago → banner says so", await visible(p,"#backupBanner") && (await text(p,"#backupBannerText")).includes("10 days ago"));
  await tap(p,"button[onclick='snoozeBackup()']");
  check("B2 'Later' hides it for a day", !(await visible(p,"#backupBanner")) && await p.evaluate(()=>!!data.backupSnoozeUntil));
  await p.reload();
  check("B2 still snoozed after reload", !(await visible(p,"#backupBanner")));
  await p.close();
- p = await mk(Object.assign(SEED(),{lastBackup:new Date(Date.now()-3*86400000).toISOString()}));
+ p = await mk(Object.assign(SEED(),{lastBackup:new Date(NOW-3*86400000).toISOString()}));
  check("B2 backup 3 days ago → no banner", !(await visible(p,"#backupBanner")));
  await p.close();
  p = await mk();

@@ -258,9 +258,14 @@ function renderReceipts(){
 
  if(!data.receipts.length){
   list.innerHTML="";
+  let link=document.getElementById("receiptArchiveLink"); if(link) link.innerHTML="";
   status.innerText="No receipts yet. Snap one and the AI reads the store, items and total for you.";
   return;
  }
+
+ // Archived receipts (Stage 4) stay in the data and in history, but leave this list.
+ let archivedCount=data.receipts.filter(r=>r.archived).length;
+ let archiveBtn=`<button class="action wide" id="openReceiptArchive" onclick="goTo('receiptArchive')">🗂️ Receipt archive${archivedCount ? " ("+archivedCount+" archived)" : ""} · search all</button>`;
 
  let month=new Date().toISOString().slice(0,7);
  let monthTotal=data.receipts
@@ -269,7 +274,12 @@ function renderReceipts(){
 
  status.innerText=data.receipts.length+" receipt"+(data.receipts.length===1?"":"s")+" saved · "+peso(monthTotal)+" this month";
 
+ let link=document.getElementById("receiptArchiveLink");
+ if(link) link.innerHTML=archiveBtn;
+
  list.innerHTML=data.receipts.map((r,i)=>{
+
+  if(r.archived) return "";
 
   let total=r.total ?? r.amount;
   let items=Array.isArray(r.items) ? r.items : [];
@@ -2075,7 +2085,12 @@ function restoreFromText(text,opts){
  render();
  resumeResearch();
 
- say("✅ Restored backup from "+when+".",true);
+ // Stage 4: rebuild what is worked out from the data (cycles, alerts, recurring, checks). Money is never changed.
+ let derived=null;
+ try{ derived=typeof recalcDerived==="function" ? recalcDerived() : null; }catch(error){ console.warn("recalc",error); }
+ if(derived) render();
+
+ say("✅ Restored backup from "+when+"."+(derived ? " "+derived.summary : ""),true);
  return true;
 
 }

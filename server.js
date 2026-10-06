@@ -914,8 +914,18 @@ function buildSummaryPrompt(stats) {
     "last month " + pesoText(st.lastMonthTotal) + "; daily average " + pesoText(st.dailyAverage) + "; " +
     "by category: " + list(st.byCategory, c => cleanString(c.name, 40) + " " + pesoText(c.amount)) + "; " +
     "top stores: " + list(st.topStores, c => cleanString(c.name, 60) + " " + pesoText(c.amount)) + "; " +
-    "biggest purchases: " + list(st.biggest, c => cleanString(c.name, 80) + " " + pesoText(c.amount)) + ".";
+    "biggest purchases: " + list(st.biggest, c => cleanString(c.name, 80) + " " + pesoText(c.amount)) + "." +
+    insightsText(st.insights);
 
+}
+
+// Stage 4 (optional, backward compatible): short analytics facts the app already
+// computed from Jason's own records (basket index, savings, waste…). At most 8 lines.
+function insightsText(insights) {
+  const lines = (Array.isArray(insights) ? insights : [])
+    .map(x => cleanString(x, 160)).filter(Boolean).slice(0, 8);
+  if (!lines.length) return "";
+  return " Analytics facts (already calculated, use only if helpful, do not change the numbers): " + lines.join("; ") + ".";
 }
 
 app.post("/api/report/summary", (req, res) => {

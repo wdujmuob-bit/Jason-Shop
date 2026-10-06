@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080c17">
 <title>Jason Shop</title>
-<link rel="stylesheet" href="css/app.css?v=4.0.0-s3">
+<link rel="stylesheet" href="css/app.css?v=5.0.0-s4">
 </head>
 
 <body>
@@ -15,6 +15,7 @@
 <header class="app-head">
  <small>PERSONAL AI SHOPPING &amp; HOUSEHOLD MANAGER</small>
  <h1>Jason Shop</h1>
+ <button id="searchBtn" class="bell search-btn" onclick="openSearch()" aria-label="Search everything">🔎</button>
  <button id="bellBtn" class="bell" onclick="openAlerts()" aria-label="Alert center">🔔<span id="bellCount" class="badge hidden">0</span></button>
 </header>
 
@@ -119,11 +120,23 @@
   </div>
   <div id="receiptReview"></div>
   <div id="receiptList"></div>
+  <div id="receiptArchiveLink"></div>
  </div>
 
  <div data-sub="list" class="sub"><div id="listsBody"></div></div>
 
  <div data-sub="trip" class="sub"><div id="tripBody"></div></div>
+
+ <div data-sub="receiptArchive" class="sub">
+  <button class="back-link" onclick="showSub('shop','receipts')">‹ Receipts</button>
+  <h2 class="view-title" id="receiptArchiveTitle">🗂️ Receipt archive</h2>
+  <div id="receiptArchiveBody"></div>
+ </div>
+
+ <div data-sub="product" class="sub">
+  <button class="back-link" onclick="showSub('shop','prices')">‹ Price Book</button>
+  <div id="productPageBody"></div>
+ </div>
 </section>
 
 <!-- =================== INVENTORY =================== -->
@@ -142,6 +155,7 @@
   <button data-subtab="history" onclick="showSub('budget','history')">History</button>
   <button data-subtab="report" onclick="showSub('budget','report')">Report</button>
   <button data-subtab="forecast" onclick="showSub('budget','forecast')">Forecast</button>
+  <button data-subtab="insights" onclick="showSub('budget','insights')">📊 Insights</button>
  </div>
 
  <div data-sub="overview" class="sub">
@@ -205,6 +219,11 @@
   <h2 class="view-title">📈 Next 30 days</h2>
   <div id="forecastBody"></div>
  </div>
+
+ <div data-sub="insights" class="sub">
+  <h2 class="view-title" id="insightsTitle">📊 Insights</h2>
+  <div id="insightsBody"></div>
+ </div>
 </section>
 
 <!-- =================== AI =================== -->
@@ -263,6 +282,12 @@
   <button class="back-link" onclick="showSub('more','menu')">‹ More</button>
   <h2 class="view-title">📅 Recurring purchases</h2>
   <div id="recurringBody"></div>
+ </div>
+
+ <div data-sub="requests" class="sub">
+  <button class="back-link" onclick="showSub('more','menu')">‹ More</button>
+  <h2 class="view-title" id="requestsTitle">📨 Household requests</h2>
+  <div id="requestsBody"></div>
  </div>
 </section>
 
@@ -489,14 +514,16 @@ Skip
 <button id="navMore" onclick="goTo('more')" aria-label="More">☰<br>More</button>
 </nav>
 
-<script src="js/calc.js?v=4.0.0-s3"></script>
-<script src="js/model.js?v=4.0.0-s3"></script>
-<script src="js/nlu.js?v=4.0.0-s3"></script>
-<script src="js/storage.js?v=4.0.0-s3"></script>
-<script src="js/features.js?v=4.0.0-s3"></script>
-<script src="js/features2.js?v=4.0.0-s3"></script>
-<script src="js/features3.js?v=4.0.0-s3"></script>
-<script src="js/app.js?v=4.0.0-s3"></script>
+<script src="js/calc.js?v=5.0.0-s4"></script>
+<script src="js/model.js?v=5.0.0-s4"></script>
+<script src="js/nlu.js?v=5.0.0-s4"></script>
+<script src="js/storage.js?v=5.0.0-s4"></script>
+<script src="js/features.js?v=5.0.0-s4"></script>
+<script src="js/features2.js?v=5.0.0-s4"></script>
+<script src="js/features3.js?v=5.0.0-s4"></script>
+<script src="js/pdf.js?v=5.0.0-s4"></script>
+<script src="js/features4.js?v=5.0.0-s4"></script>
+<script src="js/app.js?v=5.0.0-s4"></script>
 
 </body>
 </html>

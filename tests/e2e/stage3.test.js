@@ -92,20 +92,20 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   const money0 = v => "₱" + Number(v).toLocaleString("en-PH", { maximumFractionDigits: 2 });
   const listQty = async (p, n) => ((await li(p, n)) || {}).qty;
 
-  /* ================= U. UPGRADE v3 → v4 from a real Stage 2 snapshot ================= */
+  /* ================= U. UPGRADE v3 → v5 from a real Stage 2 snapshot ================= */
   const v3 = SNAP.data;
   const v3items = v3.shoppingLists.find(l => l.status === "active").items;
   let p = await mk(JSON.stringify(v3));
   await waitFor(async () => (await text(p, "#bootBanner")).includes("upgraded"));
   const banner = await text(p, "#bootBanner");
   check("U1 upgrade banner: data kept + Stage 3 features named", banner.includes("2 receipts") && banner.includes("₱12,197") && banner.includes("trip planner") && banner.includes("Taglish"), banner);
-  await waitFor(async () => ((await stored(p)) || {}).schemaVersion === 4);
+  await waitFor(async () => ((await stored(p)) || {}).schemaVersion === 5);
   let s = await stored(p);
   const items0 = s.shoppingLists.find(l => l.status === "active").items;
-  check("U2 saved data is v4 and every Stage 2 record is kept", s.schemaVersion === 4 && s.products.length === v3.products.length && s.priceRecords.length === v3.priceRecords.length && s.inventoryItems.length === 4 && items0.length === v3items.length && s.inventoryTransactions.length === v3.inventoryTransactions.length && s.receipts.length === 2 && s.manual.length === 3 && s.spent === 12197 && s.commitments.length === 1 && s.trips.length === v3.trips.length);
+  check("U2 saved data is v5 and every Stage 2 record is kept", s.schemaVersion === 5 && s.products.length === v3.products.length && s.priceRecords.length === v3.priceRecords.length && s.inventoryItems.length === 4 && items0.length === v3items.length && s.inventoryTransactions.length === v3.inventoryTransactions.length && s.receipts.length === 2 && s.manual.length === 3 && s.spent === 12197 && s.commitments.length === 1 && s.trips.length === v3.trips.length);
   check("U3 new fields added without touching old ones: store travel = unknown, recurring/alerts lists, learning, settings", s.stores.every(x => x.travel && x.travel.minutes === null && x.travel.km === null) && Array.isArray(s.recurring) && Array.isArray(s.alerts) && s.learning && s.learning.alertScanAt && s.settings.route.mode === "balance" && s.settings.fund.expensiveAt === 5000 && s.products.every(x => Array.isArray(x.substitutes)));
   const snaps = await p.evaluate(() => JasonStore.listSnapshots());
-  check("U4 safety copy of the v3 data saved first (IndexedDB)", snaps.length === 1 && snaps[0].reason === "before upgrade v3 → v4" && snaps[0].counts.priceRecords === v3.priceRecords.length && snaps[0].counts.inventoryItems === 4);
+  check("U4 safety copy of the v3 data saved first (IndexedDB)", snaps.length === 1 && snaps[0].reason === "before upgrade v3 → v5" && snaps[0].counts.priceRecords === v3.priceRecords.length && snaps[0].counts.inventoryItems === 4);
   check("U5 integrity check clean after upgrade", await p.evaluate(() => JasonModel.integrityCheck(data).errors === 0));
   check("U6 old prices recorded before the upgrade don't fire price-drop alerts", (await D(p)).alerts.filter(a => a.kind === "price_drop").length === 0);
   await tap(p, "#bootBanner button");
@@ -391,7 +391,7 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   const bkText = await p.evaluate(() => backupPayload());
   const bk = JSON.parse(bkText);
   fs.writeFileSync(path.join(OUT, "stage3-backup.json"), bkText);
-  check("B1 backup includes recurring, alerts, learning, store travel", bk.schemaVersion === 4 && bk.counts.recurring === 2 && bk.counts.alerts === before.alerts.length && bkText.includes("\"routeModeCounts\"") && bkText.includes("\"travel\""), JSON.stringify(bk.counts));
+  check("B1 backup includes recurring, alerts, learning, store travel", bk.schemaVersion === 5 && bk.counts.recurring === 2 && bk.counts.alerts === before.alerts.length && bkText.includes("\"routeModeCounts\"") && bkText.includes("\"travel\""), JSON.stringify(bk.counts));
   await p.evaluate(() => { data.recurring = []; data.alerts = []; save(); });
   await p.evaluate(() => goTo("data")); await sleep(300);
   const [bf] = await Promise.all([p.waitForFileChooser(), tap(p, "button[onclick=\"document.getElementById('restoreFile').click()\"]")]);
