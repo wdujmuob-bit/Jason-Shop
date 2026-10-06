@@ -5,17 +5,17 @@ const M = require("../../js/model.js");
 const stage1 = require("../fixtures/stage1-snapshot.json").data;
 const legacy = require("../fixtures/pre-upgrade-snapshot.json").data;
 
-test("schema is v3", () => {
-  assert.equal(M.SCHEMA_VERSION, 3);
+test("schema is v3 or later", () => {
+  assert.ok(M.SCHEMA_VERSION >= 3);
 });
 
-test("v2 → v3 upgrade keeps every Stage 1 record and adds Stage 2 structures", () => {
+test("v2 → current upgrade keeps every Stage 1 record and adds Stage 2 structures", () => {
   const before = JSON.stringify(stage1);
   const r = M.migrate(stage1, { at: "2026-10-06T13:00:00.000Z" });
   assert.equal(JSON.stringify(stage1), before, "input not mutated");
   assert.ok(r.valid, JSON.stringify(r.problems));
   assert.equal(r.fromVersion, 2);
-  assert.equal(r.toVersion, 3);
+  assert.equal(r.toVersion, M.SCHEMA_VERSION);
   const a = M.countsOf(stage1), b = M.countsOf(r.data);
   for (const k of M.LEGACY_COUNT_KEYS.concat(M.STAGE1_COUNT_KEYS)) assert.equal(b[k], a[k], k);
   assert.equal(r.data.shoppingLists.filter(l => l.status === "active").length, 1);
@@ -30,10 +30,10 @@ test("v2 → v3 upgrade keeps every Stage 1 record and adds Stage 2 structures",
   assert.equal(again.data.shoppingLists.length, 1);
 });
 
-test("v1 → v3 upgrade still learns legacy receipts as High confidence", () => {
+test("v1 → current upgrade still learns legacy receipts as High confidence", () => {
   const r = M.migrate(legacy);
   assert.ok(r.valid);
-  assert.equal(r.steps.length, 2);
+  assert.equal(r.steps.length, M.SCHEMA_VERSION - 1);
   assert.ok(r.data.priceRecords.length > 0);
   assert.ok(r.data.priceRecords.every(p => p.matchConfidence === "high"));
 });

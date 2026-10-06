@@ -463,6 +463,7 @@ function renderLists(){
    <button class="action" id="listLowBtn" onclick="addLowToList()" ${lowNotListed ? "" : "disabled"}>${lowNotListed ? "📦 Add "+lowNotListed+" low-stock" : "📦 No new low stock"}</button>
    <button class="action" id="listFitBtn" onclick="fitListToBudget()" ${safe!==null && t.wantCount ? "" : "disabled"}>⚖️ Fit to budget</button>
    <button class="action" id="tripStartBtn" onclick="${trip ? "showSub('shop','trip')" : "startTrip()"}" ${open.length || trip ? "" : "disabled"}>🛒 ${trip ? "Resume" : "Start"} trip</button></div>
+   <button class="action wide" id="listPlanBtn" onclick="openPlanner()" ${open.length ? "" : "disabled"}>🧭 Plan trip — where to buy each item</button>
   </div>
   ${open.length ? "" : emptyState("📝","Your list is empty","Add what you need for this cycle. Prices come from your Price Book, so the total is real — nothing is guessed.","")}
   ${needs.length ? `<div class="card" id="listNeedsCard"><h3 class="card-title">✅ Needs</h3>${needs.map(listRow).join("")}</div>` : ""}

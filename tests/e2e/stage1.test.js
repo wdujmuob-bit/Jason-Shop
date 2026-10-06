@@ -60,14 +60,14 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   const banner = await text(p, "#bootBanner");
   check("M1 upgrade banner explains what was kept", banner.includes("2 receipts") && banner.includes("3 manual entries") && banner.includes("2 shopping requests") && banner.includes("₱12,197") && banner.includes("safety copy"), banner);
   let s = await stored(p);
-  check("M2 saved data is the current schema (v3 since Stage 2)", s.schemaVersion === 3);
+  check("M2 saved data is the current schema (v4 since Stage 3)", s.schemaVersion === 4);
   check("M3 every legacy record kept unchanged", JSON.stringify(s.requests) === JSON.stringify(v1.requests) && JSON.stringify(s.receipts) === JSON.stringify(v1.receipts) && JSON.stringify(s.manual) === JSON.stringify(v1.manual));
   check("M4 fund / stop / spent / lastBackup kept", s.fund === v1.fund && s.stop === v1.stop && s.spent === v1.spent && s.lastBackup === v1.lastBackup);
   check("M5 7 stores, categories, household seeded", s.stores.length === 7 && s.budgetCategories.length >= 10 && s.houses.length === 1 && s.memberGroups.length === 8);
   check("M6 price book learned from receipts (3 products, 6 prices, all 'receipt')", s.products.length === 3 && s.priceRecords.length === 6 && s.priceRecords.every(r => r.source === "receipt" && r.status === "confirmed"));
   check("M7 Landers receipt linked to the Landers store", s.priceRecords.filter(r => r.storeId === "store_landers").length === 3 && s.priceRecords.filter(r => r.storeName === "SM Supermarket" && !r.storeId).length === 3);
   const snaps = await p.evaluate(() => JasonStore.listSnapshots());
-  check("M8 pre-migration safety copy in IndexedDB with v1 counts", snaps.length === 1 && snaps[0].reason === "before upgrade v1 → v3" && snaps[0].counts.receipts === 2);
+  check("M8 pre-migration safety copy in IndexedDB with v1 counts", snaps.length === 1 && snaps[0].reason === "before upgrade v1 → v4" && snaps[0].counts.receipts === 2);
   const snapJson = await p.evaluate(id => JasonStore.getSnapshot(id).then(x => x.json), snaps[0].id);
   check("M9 safety copy is the untouched original text", snapJson === JSON.stringify(v1));
   check("M10 backup log + audit record the upgrade", s.backupLog.some(l => l.action === "Migration backup created" && l.status === "success") && s.auditLog.some(a => a.action === "data.upgraded"));
@@ -231,7 +231,7 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   /* ================= D. DATA & BACKUP ================= */
   await tap(p, "#navMore"); await tap(p, "#more_data");
   await waitFor(async () => (await text(p, "#snapList")).includes("before upgrade"));
-  check("D1 safety copies listed (pre-upgrade)", (await text(p, "#snapList")).includes("before upgrade v1 → v3"));
+  check("D1 safety copies listed (pre-upgrade)", (await text(p, "#snapList")).includes("before upgrade v1 → v4"));
   check("D2 cloud backup honestly marked NEEDS SETUP", (await text(p, "#dataBody")).includes("NEEDS SETUP"));
   await tap(p, "button[onclick='runIntegrity()']");
   check("D3 integrity check: no problems", (await text(p, "#integrityOut")).includes("No problems found"), await text(p, "#integrityOut"));
@@ -241,7 +241,7 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   const bfile = path.join(DL, fs.readdirSync(DL).find(f => f.endsWith(".json")));
   const btext = fs.readFileSync(bfile, "utf8");
   const bk = JSON.parse(btext);
-  check("D4 backup: v1-compatible envelope + format 2 + counts + checksum", bk.app === "Jason Shop" && bk.version === 1 && bk.format === 2 && bk.schemaVersion === 3 && bk.counts.priceRecords === 7 && bk.counts.products === 4 && bk.checksum.value.length === 8 && Object.keys(bk).pop() === "data");
+  check("D4 backup: v1-compatible envelope + format 2 + counts + checksum", bk.app === "Jason Shop" && bk.version === 1 && bk.format === 2 && bk.schemaVersion === 4 && bk.counts.priceRecords === 7 && bk.counts.products === 4 && bk.checksum.value.length === 8 && Object.keys(bk).pop() === "data");
   const restoreFile = async file => { const [fc] = await Promise.all([p.waitForFileChooser(), tap(p, "button[onclick=\"document.getElementById('restoreFile').click()\"]")]); await fc.accept([file]); await sleep(900); };
   const before = await D(p);
   // change something, then restore the backup → change undone
@@ -267,7 +267,7 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   fs.writeFileSync(path.join(OUT, "old-v1.json"), JSON.stringify({ app: "Jason Shop", type: "backup", version: 1, exportedAt: "2026-10-06T04:00:00.000Z", data: v1 }));
   await restoreFile(path.join(OUT, "old-v1.json"));
   d = await D(p);
-  check("D11 old-version backup restores and is upgraded (prices learned)", d.schemaVersion === 3 && d.receipts.length === 2 && d.manual.length === 3 && d.priceRecords.length === 6 && d.backupLog.some(l => (l.detail || "").includes("upgraded from data version 1")));
+  check("D11 old-version backup restores and is upgraded (prices learned)", d.schemaVersion === 4 && d.receipts.length === 2 && d.manual.length === 3 && d.priceRecords.length === 6 && d.backupLog.some(l => (l.detail || "").includes("upgraded from data version 1")));
   // storage failure mid-restore → automatic rollback
   const keep = await p.evaluate(() => localStorage.getItem("JasonShopData"));
   await p.evaluate(() => { const orig = Storage.prototype.setItem; window.__origSet = orig; Storage.prototype.setItem = function (k, v) { if (k === "JasonShopData" && window.__failSave) throw new DOMException("full", "QuotaExceededError"); return orig.call(this, k, v); }; window.__failSave = true; });
@@ -325,9 +325,9 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   check("E2 every screen renders cleanly with no data (no NaN/negatives)", emptyOk);
   await p.evaluate(() => showView("shop", "prices"));
   check("E3 Price Book empty state explains where prices come from", (await text(p, "#pricesBody")).includes("never makes up prices"));
-  check("E4 fresh data is v3 with seeds (saved on first change, like before)", (await D(p)).schemaVersion === 3 && (await D(p)).stores.length === 7 && (await stored(p)) === null);
+  check("E4 fresh data is v4 with seeds (saved on first change, like before)", (await D(p)).schemaVersion === 4 && (await D(p)).stores.length === 7 && (await stored(p)) === null);
   await p.evaluate(() => { data.fund = 1000; save(); });
-  check("E4b first save writes v3", (await stored(p)).schemaVersion === 3 && (await stored(p)).fund === 1000);
+  check("E4b first save writes v4", (await stored(p)).schemaVersion === 4 && (await stored(p)).fund === 1000);
   check("E5 no JS errors on fresh install", p.errors.length === 0, p.errors.join(" | "));
   await p.close();
 

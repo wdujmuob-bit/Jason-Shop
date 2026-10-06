@@ -396,3 +396,105 @@ html.trip-on main{padding-bottom:260px}
 .review-actions .mini{margin:0;padding:10px 6px}
 .match-sum{color:#aab4c7}
 .inv-forecast{background:#0b1220}
+
+/* =====================================================================
+   Stage 3 — intelligence
+   ===================================================================== */
+.app-head{position:relative}
+.bell{position:absolute;right:0;top:4px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;width:46px;height:46px;font-size:20px;color:white;padding:0}
+.bell .badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--hard);color:white;font-size:12px;font-weight:bold;line-height:20px}
+.badge.hidden{display:none}
+
+/* WHY explanations (every recommendation) */
+.why{margin:8px 0 2px;border-left:3px solid #1769ff;padding:4px 0 4px 10px;font-size:13.5px;color:#c9d3e6}
+.why b{color:#7fb0ff;font-size:12px;letter-spacing:.5px}
+.why ul{margin:4px 0 0;padding-left:16px}
+.why li{margin:2px 0}
+
+/* price status labels */
+.ps{display:inline-block;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:bold;letter-spacing:.3px;border:1px solid;white-space:nowrap;vertical-align:middle}
+.ps-live{color:#67e09a;border-color:#1f6b45;background:#12352455}
+.ps-online_verified{color:#7fdcff;border-color:#21607a;background:#0e2a3855}
+.ps-receipt_verified{color:#67e09a;border-color:#1f6b45;background:#12352433}
+.ps-user_entered{color:#c9b8ff;border-color:#4b3d7a;background:#231c3a55}
+.ps-historical{color:#aab4c7;border-color:#3a4458;background:#1b2232}
+.ps-estimated{color:#ffbd66;border-color:#7a5524;background:#3a2a1455}
+.ps-unknown{color:#8b94a7;border-color:#3a4458;background:transparent}
+.fresh-fresh{color:var(--safe)}
+.fresh-recent{color:#c9d3e6}
+.fresh-stale,.fresh-unknown{color:var(--warning)}
+
+/* source quality */
+.sq{display:inline-block;border-radius:6px;padding:1px 6px;font-size:11px;border:1px solid var(--line);color:#c9d3e6;white-space:nowrap}
+.sq-official{color:#67e09a;border-color:#1f6b45}
+.sq-marketplace{color:#7fdcff;border-color:#21607a}
+.sq-review{color:#c9b8ff;border-color:#4b3d7a}
+.sq-community,.sq-other{color:#ffbd66;border-color:#7a5524}
+.sq-none{color:#8b94a7}
+
+/* fund protection + forecast verdicts */
+.fv{display:inline-block;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:bold;border:1px solid}
+.fv-affordable,.fc-ok{color:var(--safe);border-color:#1f6b45;background:#12352433}
+.fv-caution,.fc-tight{color:var(--warning);border-color:#7a5524;background:#3a2a1433}
+.fv-wait{color:#ff9a66;border-color:#7a3d24;background:#3a1f1433}
+.fv-exceeds,.fc-short{color:var(--hard);border-color:#7a2424;background:#3a141433}
+.fv-setup,.fc-setup{color:#aab4c7;border-color:#3a4458}
+.fund-check{margin:8px 0;padding:8px 10px;border-radius:12px;background:#0d1526;border:1px solid var(--line)}
+.fund-offer{margin-top:8px}
+
+/* buy now / wait */
+.advice{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12.5px;font-weight:bold;border:1px solid}
+.adv-buy_now{color:var(--safe);border-color:#1f6b45}
+.adv-wait{color:var(--warning);border-color:#7a5524}
+.adv-fair{color:#7fb0ff;border-color:#2a4a7a}
+.adv-not_enough_data{color:#aab4c7;border-color:#3a4458}
+
+/* product intelligence */
+.intel{margin:10px 0;padding:10px 12px;border-radius:14px;background:#0f1a2e;border:1px solid var(--line)}
+.intel h3{margin:0 0 6px;font-size:16px}
+.intel table{width:100%}
+.intel tr.best td{color:var(--safe);font-weight:bold}
+.risk-low{background:#12352455;color:#67e09a}
+.risk-medium{background:#3a2a1455;color:#ffbd66}
+.risk-high{background:#3a141455;color:#ff6b6b}
+.risk-none,.risk-unknown{background:#2b2f3a;color:#aab4c7}
+
+/* route planner */
+.seg4 button{font-size:12.5px;padding:10px 2px}
+.stop{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:6px 0;background:#0d1526}
+.stop b{color:white}
+.plan-best{border-color:#1769ff}
+#rtLive{font-size:12px}
+.tbl tr.best td{color:var(--safe)}
+
+/* AI action preview */
+.ai-preview{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:6px 0;background:#0d1526}
+.ai-preview[data-state="pending"]{border-color:var(--warning);background:#1f180d}
+.ai-preview[data-state="done"]{border-color:#1f6b45}
+.ap-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ap-tag{font-size:11px;font-weight:bold;letter-spacing:.4px;color:#aab4c7;white-space:nowrap}
+.ai-preview[data-state="pending"] .ap-tag{color:var(--warning)}
+.ap-body{margin-top:4px}
+.ap-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ap-actions button{flex:1 1 auto;min-width:80px;margin:0}
+.ap-actions button:disabled{opacity:.45}
+
+/* research results */
+.research-intel{margin:8px 0;padding:8px 10px;border-radius:12px;background:#0d1526;border:1px solid var(--line)}
+.offer-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.offer-row:last-child{border-bottom:0}
+.sources{margin-top:6px;font-size:12.5px}
+.src-row{display:flex;gap:6px;align-items:center;margin:3px 0;overflow:hidden}
+.src-row a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* alerts + recurring */
+.alert-row{align-items:flex-start}
+.al-price_drop b,.al-target_hit b{color:var(--safe)}
+.al-low_stock b,.al-expiry b{color:var(--warning)}
+.al-fund b{color:var(--hard)}
+.rec-card.paused{opacity:.6}
+.app-head{padding-right:56px}
+.offer-row a,.src-row a{color:#7fb0ff;font-size:12.5px;margin-left:4px}
+.offer-row .num{text-align:right;flex:0 0 auto;max-width:40%}
+.offer-row .num b{white-space:nowrap}
+.offer-row > div:first-child{min-width:0}
