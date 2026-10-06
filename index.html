@@ -123,6 +123,22 @@ nav button{
  background:#162138;color:white;border:1px solid #27324a;
  border-radius:10px;padding:8px 12px;font-size:14px;margin:8px 6px 0 0
 }
+.mini.buy{background:#123524;border-color:#1f6b45}
+
+/* ---------- Budget / navigation ---------- */
+.tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tap:active{border-color:#1769ff}
+.edit-hint{float:right;color:#7fb0ff;font-size:13px}
+.field-note{color:#8e99ad;font-size:13px;margin:-2px 0 8px}
+.form-msg{min-height:20px;font-size:14px;margin:4px 0}
+.form-msg.ok{color:#67e09a}
+.form-msg.err{color:#ffbd66}
+h2,.card{scroll-margin-top:16px}
+.flash{animation:flash 1.4s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 3px #1769ff}100%{box-shadow:0 0 0 3px #1769ff00}}
+nav button.active{color:white}
+.purchased{color:#67e09a}
+.end-space{height:40vh}
 </style>
 </head>
 
@@ -134,7 +150,8 @@ nav button{
 <h1>Jason Shop</h1>
 <div class="subtitle">Your personal shopping command center.</div>
 
-<div class="card">
+<div class="card tap" onclick="showBudget(true)">
+ <span class="edit-hint">✏️ Set budget</span>
  <small>SAFE TO SPEND</small>
  <div class="money" id="safe">₱0</div>
  <div class="green" id="status">● Ready for setup</div>
@@ -169,18 +186,18 @@ nav button{
 </div>
 
 <div class="row">
- <div class="card stat">
+ <div class="card stat tap" onclick="showBudget(true)">
   <small>SHOPPING FUND</small>
   <h3 id="fundDisplay">₱0</h3>
  </div>
 
- <div class="card stat">
+ <div class="card stat tap" onclick="showBudget(true)">
   <small>SPENT</small>
   <h3 id="spentDisplay">₱0</h3>
  </div>
 </div>
 
-<h2>AI Shopping Inbox</h2>
+<h2 id="shoppingTitle">AI Shopping Inbox</h2>
 
 <div id="shoppingList"></div>
 
@@ -210,13 +227,20 @@ nav button{
 
 <h2 id="budgetTitle">Budget Control</h2>
 
-<div class="card">
+<div class="card" id="budgetCard">
 
-<label>Shopping Fund</label>
-<input id="fundInput" type="number" placeholder="Example: 500000">
+<label for="fundInput">Shopping Fund (₱)</label>
+<input id="fundInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Example: 500,000 or 500k">
 
-<label>Hard Stop Limit</label>
-<input id="stopInput" type="number" placeholder="Example: 450000">
+<label for="stopInput">Hard Stop Limit (₱)</label>
+<input id="stopInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Example: 450,000 (optional)">
+<div class="field-note">Jason Shop warns you at 85% of this and stops at 100%.</div>
+
+<label for="spentInput">Already Spent (₱)</label>
+<input id="spentInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+<div class="field-note">Goes up automatically when you tap “Mark purchased” or add a receipt amount.</div>
+
+<div id="budgetMsg" class="form-msg" aria-live="polite"></div>
 
 <button class="primary" onclick="saveBudget()">SAVE BUDGET</button>
 
@@ -224,7 +248,7 @@ nav button{
 
 <h2>Receipt Manager</h2>
 
-<div class="card">
+<div class="card" id="receiptCard">
 
 <p id="receiptStatus">
 No receipts uploaded yet.
@@ -254,6 +278,8 @@ No receipts uploaded yet.
  onchange="receiptSelected(this)"
 >
 
+<div class="end-space"></div>
+
 </main>
 
 
@@ -280,21 +306,41 @@ Cancel
 </div>
 
 
+<div id="amountModal" class="modal hidden">
+<div class="sheet">
+
+<h2 id="amountTitle">How much did you pay?</h2>
+<div id="amountSub" class="field-note"></div>
+
+<input id="amountInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Example: 4,599">
+
+<div id="amountMsg" class="form-msg" aria-live="polite"></div>
+
+<button class="primary" onclick="confirmAmount()">✅ ADD TO SPENT</button>
+
+<button class="action" style="width:100%" onclick="closeAmount()">
+Skip
+</button>
+
+</div>
+</div>
+
+
 <nav>
 
-<button onclick="window.scrollTo({top:0,behavior:'smooth'})">
+<button id="navHome" onclick="goTo('home')">
 🏠<br>Home
 </button>
 
-<button onclick="document.getElementById('shoppingList').scrollIntoView({behavior:'smooth'})">
+<button id="navShopping" onclick="goTo('shopping')">
 🛒<br>Shopping
 </button>
 
-<button onclick="document.getElementById('receiptStatus').scrollIntoView({behavior:'smooth'})">
+<button id="navReceipts" onclick="goTo('receipts')">
 🧾<br>Receipts
 </button>
 
-<button onclick="showBudget()">
+<button id="navBudget" onclick="goTo('budget')">
 💰<br>Budget
 </button>
 
@@ -322,14 +368,45 @@ let voiceSettings = Object.assign(
  JSON.parse(localStorage.getItem("JasonShopVoice") || "{}")
 );
 
-// A research request that was still running when the app was closed
-// can never finish, so mark it so Jason can tap Retry.
-data.requests.forEach(r => {
- if (r.status === "researching") {
+data.fund=Number(data.fund)||0;
+data.stop=Number(data.stop)||0;
+data.spent=Number(data.spent)||0;
+data.requests=Array.isArray(data.requests) ? data.requests : [];
+data.receipts=Array.isArray(data.receipts) ? data.receipts : [];
+
+data.requests.forEach((r,i) => {
+ if (!r.id) r.id = "R" + Date.now() + "-" + i;
+ // Research that was running when the app closed: if the server gave us a
+ // job id we can pick it up again (see resumeResearch); otherwise ask for Retry.
+ if (r.status === "researching" && !r.jobId) {
   r.status = "error";
   r.error = "Research was interrupted. Tap Retry.";
  }
 });
+
+/* Amounts: accept 500000, 500,000, ₱500,000, 500k, 1.5m */
+function parseAmount(text){
+
+ let raw=String(text==null ? "" : text).trim().toLowerCase();
+
+ if(!raw) return null;
+
+ let multiplier=1;
+
+ if(/k$/.test(raw)){ multiplier=1000; raw=raw.slice(0,-1); }
+ else if(/m$/.test(raw)){ multiplier=1000000; raw=raw.slice(0,-1); }
+
+ raw=raw.replace(/php|₱|p|,|\s/g,"");
+
+ if(!/^\d*\.?\d+$/.test(raw)) return NaN;
+
+ return Math.round(parseFloat(raw)*multiplier*100)/100;
+
+}
+
+function amountForInput(value){
+ return value ? Number(value).toLocaleString("en-PH") : "";
+}
 
 function peso(number){
  return "₱" + Number(number || 0).toLocaleString("en-PH");
@@ -344,6 +421,13 @@ function render(){
 
  document.getElementById("fundDisplay").innerText=peso(data.fund);
  document.getElementById("spentDisplay").innerText=peso(data.spent);
+
+ // Keep the form's "Already Spent" in step with purchases/receipts
+ // (unless Jason is typing in it right now).
+ let spentInput=document.getElementById("spentInput");
+ if(spentInput && document.activeElement!==spentInput){
+  spentInput.value=amountForInput(data.spent);
+ }
 
  let safe=data.fund-data.spent;
 
@@ -399,10 +483,33 @@ function render(){
 
 }
 
+function purchaseHTML(r){
+
+ if(r.purchased){
+  return `<small class="purchased">🛒 Purchased for ${peso(r.purchased.amount)}</small>
+   <button class="mini" onclick="undoPurchase('${r.id}')">↩ Undo purchase</button>`;
+ }
+
+ if(r.photo) return "";
+
+ return `<button class="mini buy" onclick="markPurchased('${r.id}')">🛒 Mark purchased</button>`;
+
+}
+
 function researchStatusHTML(r){
 
+ return researchPartHTML(r) + purchaseHTML(r);
+
+}
+
+function researchPartHTML(r){
+
+ if(r.photo){
+  return `<small>📷 Photo saved. Photo research isn't connected yet — tap 🎙️ and say the product name to research it.</small>`;
+ }
+
  if(r.status==="researching"){
-  return `<small>🤖 AI Research: Researching… (can take a minute)</small>`;
+  return `<small>🤖 AI Research: Researching… usually 1–2 minutes. You can leave the app; it will continue.</small>`;
  }
 
  if(r.status==="done"){
@@ -420,7 +527,8 @@ function researchStatusHTML(r){
    <button class="mini" onclick="retryRequest('${r.id}')">↻ Retry</button>`;
  }
 
- return `<small>🤖 AI Research: Pending</small>`;
+ return `<small>🤖 AI Research: not started</small>
+  <button class="mini" onclick="retryRequest('${r.id}')">🔎 Research now</button>`;
 
 }
 
@@ -511,20 +619,23 @@ function submitRequest(text,source){
 
 async function runResearch(id,source){
 
+ let request=findRequest(id);
+
+ if(!request)return;
+
  let result;
 
  try{
-  result=await sendToJasonAI(findRequest(id)?.text || "");
+  result=await researchWithJob(request);
  }catch(error){
-  result={
-   success:false,
-   error:"Could not reach the Jason Shop server. Check your internet and tap Retry."
-  };
+  result={ success:false, error:friendlyError(error) };
  }
 
- let request=findRequest(id);
+ request=findRequest(id);
 
  if(!request)return; // deleted while researching
+
+ delete request.jobId;
 
  if(result && result.success && result.report){
   request.status="done";
@@ -553,6 +664,236 @@ function findRequest(id){
  return data.requests.find(r=>r.id===id);
 }
 
+/* ---------- Talking to the server ---------- */
+
+class ServerError extends Error {}
+
+async function fetchJSON(path,options,timeoutMs){
+
+ let controller=new AbortController();
+ let timer=setTimeout(()=>controller.abort(),timeoutMs||70000);
+
+ try{
+
+  let response=await fetch(API_URL+path,Object.assign({signal:controller.signal},options||{}));
+
+  let body=null;
+  try{ body=await response.json(); }catch(e){ body=null; }
+
+  if(!body){
+   throw new ServerError(response.status>=500
+    ? "The server is busy or restarting. Please tap Retry in a minute."
+    : "Unexpected reply from the server ("+response.status+").");
+  }
+
+  body.httpStatus=response.status;
+  return body;
+
+ }finally{
+  clearTimeout(timer);
+ }
+
+}
+
+function friendlyError(error){
+
+ if(error instanceof ServerError) return error.message;
+ if(error && error.name==="AbortError") return "The server took too long to answer. Please tap Retry.";
+ return "Could not reach the Jason Shop server. Check your internet and tap Retry.";
+
+}
+
+function budgetForAI(){
+ return { fund:data.fund, spent:data.spent, stop:data.stop };
+}
+
+// Start a research job, then check on it every few seconds.
+async function researchWithJob(request){
+
+ if(!request.jobId){
+
+  let started=await fetchJSON("/api/research/start",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({ query:request.text, budget:budgetForAI(), mode:"AI_DECIDE" })
+  },75000); // allows for the free server waking up (~1 min)
+
+  if(started.httpStatus===404){
+   // Backend not updated yet: use the old one-shot endpoint.
+   return await sendToJasonAI(request.text);
+  }
+
+  if(!started.success || !started.jobId){
+   return started;
+  }
+
+  let live=findRequest(request.id);
+  if(!live) return {success:false};
+  live.jobId=started.jobId;
+  localStorage.setItem("JasonShopData",JSON.stringify(data));
+  request=live;
+
+ }
+
+ return await pollJob(request.jobId);
+
+}
+
+const POLL_MS=4000;
+const POLL_LIMIT_MS=6*60*1000;
+let pollWaiters=[];
+
+async function pollJob(jobId){
+
+ let started=Date.now();
+ let networkFailures=0;
+
+ while(Date.now()-started<POLL_LIMIT_MS){
+
+  await waitForNextPoll();
+
+  let status;
+
+  try{
+   status=await fetchJSON("/api/research/status/"+encodeURIComponent(jobId),{},30000);
+   networkFailures=0;
+  }catch(error){
+   // Phones lose connection briefly (screen off, switching apps). Keep trying.
+   networkFailures++;
+   if(networkFailures>=8) throw error;
+   continue;
+  }
+
+  if(status.status==="complete") return status;
+  if(status.status==="error" || status.status==="missing") return status;
+
+ }
+
+ return { success:false, error:"Research is taking unusually long. Please tap Retry." };
+
+}
+
+// Wait POLL_MS, or less if the app comes back to the screen.
+function waitForNextPoll(){
+ return new Promise(resolve=>{
+  let timer=setTimeout(done,POLL_MS);
+  function done(){ clearTimeout(timer); pollWaiters=pollWaiters.filter(w=>w!==done); resolve(); }
+  pollWaiters.push(done);
+ });
+}
+
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible") pollWaiters.slice().forEach(w=>w());
+});
+
+function resumeResearch(){
+ data.requests
+  .filter(r=>r.status==="researching" && r.jobId)
+  .forEach(r=>runResearch(r.id,r.source));
+}
+
+// Wake the free Render server early so the first request is faster.
+function wakeServer(){
+ fetch(API_URL+"/api/health").catch(()=>{});
+}
+
+/* ---------- Purchases and budget ---------- */
+
+let amountTarget=null;
+
+function openAmount(target,title,sub,prefill){
+
+ amountTarget=target;
+
+ document.getElementById("amountTitle").innerText=title;
+ document.getElementById("amountSub").innerText=sub||"";
+ document.getElementById("amountInput").value=prefill||"";
+ document.getElementById("amountMsg").innerText="";
+ document.getElementById("amountMsg").className="form-msg";
+ document.getElementById("amountModal").classList.remove("hidden");
+
+ setTimeout(()=>document.getElementById("amountInput").focus(),50);
+
+}
+
+function closeAmount(){
+ amountTarget=null;
+ document.getElementById("amountModal").classList.add("hidden");
+}
+
+function markPurchased(id){
+
+ let request=findRequest(id);
+
+ if(!request)return;
+
+ openAmount(
+  {type:"purchase",id:id},
+  "How much did you pay?",
+  request.text,
+  ""
+ );
+
+}
+
+function undoPurchase(id){
+
+ let request=findRequest(id);
+
+ if(!request || !request.purchased)return;
+
+ data.spent=Math.max(0,data.spent-Number(request.purchased.amount||0));
+
+ delete request.purchased;
+
+ save();
+
+}
+
+function confirmAmount(){
+
+ let amount=parseAmount(document.getElementById("amountInput").value);
+ let msg=document.getElementById("amountMsg");
+
+ if(amount===null || isNaN(amount) || amount<=0){
+  msg.innerText="Please enter an amount, for example 4,599 or 4.6k.";
+  msg.className="form-msg err";
+  return;
+ }
+
+ let target=amountTarget;
+
+ if(!target){ closeAmount(); return; }
+
+ if(data.stop>0 && data.spent+amount>=data.stop && !target.confirmedOverStop){
+  msg.innerText="⚠️ This takes you to "+peso(data.spent+amount)+", past your hard stop of "+peso(data.stop)+". Tap ADD again to record it anyway.";
+  msg.className="form-msg err";
+  target.confirmedOverStop=true;
+  return;
+ }
+
+ if(target.type==="purchase"){
+  let request=findRequest(target.id);
+  if(request && !request.purchased){
+   request.purchased={amount:amount,date:new Date().toISOString()};
+   data.spent+=amount;
+  }
+ }
+
+ if(target.type==="receipt"){
+  let receipt=data.receipts[target.index];
+  if(receipt && !receipt.amount){
+   receipt.amount=amount;
+   data.spent+=amount;
+  }
+ }
+
+ closeAmount();
+
+ save();
+
+}
+
 function retryRequest(id){
 
  let request=findRequest(id);
@@ -577,22 +918,78 @@ function deleteRequest(index){
 
 function saveBudget(){
 
- data.fund=
- Number(document.getElementById("fundInput").value)||0;
+ let msg=document.getElementById("budgetMsg");
 
- data.stop=
- Number(document.getElementById("stopInput").value)||0;
+ let fund=parseAmount(document.getElementById("fundInput").value);
+ let stop=parseAmount(document.getElementById("stopInput").value);
+ let spent=parseAmount(document.getElementById("spentInput").value);
+
+ let bad=[
+  [fund,"Shopping Fund"],[stop,"Hard Stop Limit"],[spent,"Already Spent"]
+ ].filter(([v])=>v!==null && (isNaN(v) || v<0)).map(([,name])=>name);
+
+ if(bad.length){
+  msg.innerText="Please check "+bad.join(", ")+". Use numbers like 500000, 500,000 or 500k.";
+  msg.className="form-msg err";
+  return;
+ }
+
+ data.fund=fund||0;
+ data.stop=stop||0;
+ data.spent=spent||0;
 
  save();
+ fillBudgetForm();
 
- alert("Budget saved.");
+ msg.innerText="✅ Budget saved. Safe to spend: "+document.getElementById("safe").innerText;
+ msg.className="form-msg ok";
 
 }
 
-function showBudget(){
+function fillBudgetForm(){
+ document.getElementById("fundInput").value=amountForInput(data.fund);
+ document.getElementById("stopInput").value=amountForInput(data.stop);
+ document.getElementById("spentInput").value=amountForInput(data.spent);
+}
 
- document.getElementById("budgetTitle")
- .scrollIntoView({behavior:"smooth"});
+function showBudget(focus){
+
+ goTo("budget");
+
+ if(focus===true){
+  setTimeout(()=>document.getElementById("fundInput").focus({preventScroll:true}),450);
+ }
+
+}
+
+/* Bottom navigation: scroll to the section, highlight it and the tab. */
+function goTo(section){
+
+ let targets={
+  home:null,
+  shopping:"shoppingTitle",
+  receipts:"receiptCard",
+  budget:"budgetCard"
+ };
+
+ let tabs={home:"navHome",shopping:"navShopping",receipts:"navReceipts",budget:"navBudget"};
+
+ Object.values(tabs).forEach(id=>document.getElementById(id).classList.remove("active"));
+ document.getElementById(tabs[section]).classList.add("active");
+
+ if(section==="home"){
+  window.scrollTo({top:0,behavior:"smooth"});
+  return;
+ }
+
+ let el=document.getElementById(targets[section]);
+
+ el.scrollIntoView({behavior:"smooth",block:"start"});
+
+ let flashEl=section==="shopping" ? document.getElementById("shoppingList") : el;
+ flashEl.classList.remove("flash");
+ void flashEl.offsetWidth;
+ flashEl.classList.add("flash");
 
 }
 
@@ -615,13 +1012,17 @@ function productSelected(input){
  let file=input.files[0];
 
  data.requests.unshift({
+  id:"R"+Date.now(),
   text:"📷 Product photo: "+file.name,
-  date:new Date().toISOString()
+  date:new Date().toISOString(),
+  photo:true
  });
+
+ input.value="";
 
  save();
 
- alert("Product added to Jason Shop.");
+ goTo("shopping");
 
 }
 
@@ -636,11 +1037,20 @@ function receiptSelected(input){
   date:new Date().toISOString()
  });
 
+ input.value="";
+
  document.getElementById("receiptStatus").innerHTML=
  "🧾 <b>"+escapeHTML(file.name)+"</b><br>"+
- "<small>Receipt added. AI receipt analysis will be connected in the next backend stage.</small>";
+ "<small>Receipt saved. Automatic reading of receipts isn't connected yet, so enter the total to add it to Spent.</small>";
 
  save();
+
+ openAmount(
+  {type:"receipt",index:0},
+  "Receipt total?",
+  "Adds this receipt to your Spent amount. Tap Skip if it's already counted.",
+  ""
+ );
 
 }
 
@@ -1341,6 +1751,9 @@ if("speechSynthesis" in window){
 
 renderVoiceSettings();
 render();
+fillBudgetForm();
+wakeServer();
+resumeResearch();
 
 async function sendToJasonAI(query) {
   const response = await fetch(API_URL + "/api/research", {
@@ -1350,6 +1763,7 @@ async function sendToJasonAI(query) {
     },
     body: JSON.stringify({
       query: query,
+      budget: budgetForAI(),
       mode: "AI_DECIDE"
     })
   });
