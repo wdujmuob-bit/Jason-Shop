@@ -139,6 +139,26 @@ h2,.card{scroll-margin-top:16px}
 nav button.active{color:white}
 .purchased{color:#67e09a}
 .end-space{height:40vh}
+
+/* ---------- Photos & receipts ---------- */
+.sheet.scroll{max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:auto auto 0;padding-bottom:28px}
+.photo-row{display:flex;gap:14px;align-items:center;margin:6px 0 10px}
+.thumb-lg{width:92px;height:92px;object-fit:cover;border-radius:14px;border:1px solid #27324a;background:#090e19;flex:none}
+.thumb{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid #27324a;float:left;margin:0 12px 6px 0}
+.spinner{display:inline-block;width:16px;height:16px;border:3px solid #35405a;border-top-color:#1769ff;border-radius:50%;animation:spin 1s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item-row{display:grid;grid-template-columns:1fr 54px 92px 34px;gap:6px;align-items:center}
+.item-row input{margin:4px 0;padding:10px;font-size:15px}
+.item-row button{background:#27324a;color:white;border:0;border-radius:9px;height:38px}
+.item-head{display:grid;grid-template-columns:1fr 54px 92px 34px;gap:6px;color:#8e99ad;font-size:12px}
+input.big{font-size:22px;font-weight:bold}
+.listing{color:#ffbd66;display:block;margin-top:6px}
+.tag{display:inline-block;background:#123524;color:#67e09a;border-radius:8px;padding:2px 8px;font-size:12px;margin-top:6px}
+.receipt-items{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+.receipt-items td{padding:4px 2px;border-bottom:1px solid #1d2638}
+.receipt-items td.num{text-align:right;white-space:nowrap}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 </style>
 </head>
 
@@ -251,7 +271,7 @@ nav button.active{color:white}
 <div class="card" id="receiptCard">
 
 <p id="receiptStatus">
-No receipts uploaded yet.
+No receipts yet. Snap one and the AI reads the store, items and total for you.
 </p>
 
 <button class="primary" onclick="receiptCamera()">
@@ -260,12 +280,13 @@ No receipts uploaded yet.
 
 </div>
 
+<div id="receiptList"></div>
+
 <input
  id="productFile"
  class="hidden"
  type="file"
  accept="image/*"
- capture="environment"
  onchange="productSelected(this)"
 >
 
@@ -273,8 +294,7 @@ No receipts uploaded yet.
  id="receiptFile"
  class="hidden"
  type="file"
- accept="image/*,.pdf"
- capture="environment"
+ accept="image/*"
  onchange="receiptSelected(this)"
 >
 
@@ -301,6 +321,103 @@ No receipts uploaded yet.
 <button class="action" style="width:100%" onclick="closeAdd()">
 Cancel
 </button>
+
+</div>
+</div>
+
+
+<div id="productModal" class="modal hidden">
+<div class="sheet scroll">
+
+<h2>📷 Product from photo</h2>
+
+<div class="photo-row">
+ <img id="productThumb" class="thumb-lg" alt="">
+ <div id="productState" class="voice-hint" aria-live="polite"></div>
+</div>
+
+<div id="productFields" class="hidden">
+
+ <label for="pName">Product</label>
+ <input id="pName" type="text" autocomplete="off" placeholder="Brand, model and type">
+
+ <label for="pSpecs">Key specs (optional)</label>
+ <textarea id="pSpecs" style="min-height:70px" placeholder="e.g. 16-inch, 3 speeds, 45W"></textarea>
+
+ <div id="pListingBox" class="hidden">
+  <label>Listing in the screenshot <span id="pPlatform" class="orange"></span></label>
+  <div class="two">
+   <input id="pPrice" type="text" inputmode="decimal" autocomplete="off" placeholder="Price ₱">
+   <input id="pSeller" type="text" autocomplete="off" placeholder="Seller">
+  </div>
+ </div>
+
+ <div id="pNote" class="field-note"></div>
+
+ <button class="primary" onclick="researchFromPhoto()">🔎 RESEARCH THIS</button>
+
+</div>
+
+<div id="productRetry" class="btn-row hidden">
+ <button class="action" onclick="retryPhoto('product')">↻ Try again</button>
+ <button class="action" onclick="productCamera()">📷 New photo</button>
+</div>
+
+<button class="action" style="width:100%" onclick="closeProduct()">Cancel</button>
+
+</div>
+</div>
+
+
+<div id="receiptModal" class="modal hidden">
+<div class="sheet scroll">
+
+<h2>🧾 Check your receipt</h2>
+
+<div class="photo-row">
+ <img id="receiptThumb" class="thumb-lg" alt="">
+ <div id="receiptState" class="voice-hint" aria-live="polite"></div>
+</div>
+
+<div id="receiptRetry" class="btn-row hidden">
+ <button class="action" onclick="receiptCamera()">📷 Retake</button>
+ <button class="action" onclick="showReceiptFields(true)">✏️ Enter manually</button>
+</div>
+
+<div id="receiptFields" class="hidden">
+
+ <div id="rWarn" class="form-msg err"></div>
+
+ <label for="rStore">Store</label>
+ <input id="rStore" type="text" autocomplete="off" placeholder="Store name">
+
+ <div class="two">
+  <div><label for="rDate">Date</label><input id="rDate" type="date"></div>
+  <div><label for="rPay">Payment</label><input id="rPay" type="text" autocomplete="off" placeholder="Cash, GCash…"></div>
+ </div>
+
+ <label>Items</label>
+ <div class="item-head"><span>Item</span><span>Qty</span><span>Price ₱</span><span></span></div>
+ <div id="rItems"></div>
+ <button class="mini" onclick="addReceiptItem()">+ Add item</button>
+
+ <div class="two" style="margin-top:10px">
+  <div><label for="rSubtotal">Subtotal ₱</label><input id="rSubtotal" type="text" inputmode="decimal" autocomplete="off"></div>
+  <div><label for="rVat">VAT ₱</label><input id="rVat" type="text" inputmode="decimal" autocomplete="off"></div>
+ </div>
+
+ <label for="rTotal">Total paid ₱</label>
+ <input id="rTotal" class="big" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+
+ <label class="speak-toggle" style="margin:8px 0"><input id="rAddSpent" type="checkbox" checked> Add total to Spent</label>
+
+ <div id="rMsg" class="form-msg" aria-live="polite"></div>
+
+ <button class="primary" onclick="confirmReceipt()">✅ SAVE RECEIPT</button>
+
+</div>
+
+<button class="action" style="width:100%" onclick="closeReceipt()">Cancel</button>
 
 </div>
 </div>
@@ -413,8 +530,34 @@ function peso(number){
 }
 
 function save(){
- localStorage.setItem("JasonShopData",JSON.stringify(data));
+ storeData();
  render();
+}
+
+// Photos make the saved data bigger. If the phone's storage for this
+// site is full, drop the oldest thumbnails (the data itself is kept).
+function storeData(){
+
+ try{
+  localStorage.setItem("JasonShopData",JSON.stringify(data));
+  return;
+ }catch(error){ /* storage full — trim below */ }
+
+ let withThumbs=[...data.receipts,...data.requests].filter(x=>x.thumb);
+
+ withThumbs.slice(Math.floor(withThumbs.length/2)).forEach(x=>{ delete x.thumb; });
+
+ try{
+  localStorage.setItem("JasonShopData",JSON.stringify(data));
+ }catch(error){
+  withThumbs.forEach(x=>{ delete x.thumb; });
+  try{ localStorage.setItem("JasonShopData",JSON.stringify(data)); }catch(e){ console.warn("Storage full"); }
+ }
+
+}
+
+function safeThumb(src){
+ return typeof src==="string" && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(src) ? src : "";
 }
 
 function render(){
@@ -468,7 +611,11 @@ function render(){
 
     <button class="delete" onclick="deleteRequest(${i})">✕</button>
 
-    <b>${r.source==="voice" ? "🎙️ " : ""}${escapeHTML(r.text)}</b>
+    ${safeThumb(r.thumb) ? `<img class="thumb" src="${safeThumb(r.thumb)}" alt="">` : ""}
+
+    <b>${r.source==="voice" ? "🎙️ " : (r.source==="photo" ? "📷 " : "")}${escapeHTML(r.text)}</b>
+
+    ${r.listing && (r.listing.price || r.listing.seller) ? `<small class="listing">🏷️ Seen on ${escapeHTML(r.listing.platform || "a shop")}${r.listing.price ? " for "+peso(r.listing.price) : ""}${r.listing.seller ? " · "+escapeHTML(r.listing.seller) : ""}</small>` : ""}
 
     ${researchStatusHTML(r)}
 
@@ -480,6 +627,71 @@ function render(){
   `).join("");
 
  }
+
+ renderReceipts();
+
+}
+
+function renderReceipts(){
+
+ let list=document.getElementById("receiptList");
+ let status=document.getElementById("receiptStatus");
+
+ if(!data.receipts.length){
+  list.innerHTML="";
+  status.innerText="No receipts yet. Snap one and the AI reads the store, items and total for you.";
+  return;
+ }
+
+ let month=new Date().toISOString().slice(0,7);
+ let monthTotal=data.receipts
+  .filter(r=>(r.receiptDate || r.date || "").slice(0,7)===month)
+  .reduce((sum,r)=>sum+(Number(r.total ?? r.amount)||0),0);
+
+ status.innerText=data.receipts.length+" receipt"+(data.receipts.length===1?"":"s")+" saved · "+peso(monthTotal)+" this month";
+
+ list.innerHTML=data.receipts.map((r,i)=>{
+
+  let total=r.total ?? r.amount;
+  let items=Array.isArray(r.items) ? r.items : [];
+
+  return `
+   <div class="item">
+    <button class="delete" onclick="deleteReceipt(${i})">✕</button>
+    ${safeThumb(r.thumb) ? `<img class="thumb" src="${safeThumb(r.thumb)}" alt="">` : ""}
+    <b>🧾 ${escapeHTML(r.store || r.name || "Receipt")}</b>
+    <small>${escapeHTML(r.receiptDate || new Date(r.date).toLocaleDateString())}${r.payment ? " · "+escapeHTML(r.payment) : ""}</small>
+    <small><b>${total ? peso(total) : "No total"}</b>${r.addedToSpent || r.amount ? ' <span class="tag">added to Spent</span>' : ""}</small>
+    ${items.length ? `
+     <details>
+      <summary>${items.length} item${items.length===1?"":"s"}</summary>
+      <table class="receipt-items">
+       ${items.map(it=>`<tr><td>${escapeHTML(it.name||"")}</td><td class="num">${it.qty ? "×"+it.qty : ""}</td><td class="num">${it.price!=null ? peso(it.price) : ""}</td></tr>`).join("")}
+       ${r.vat!=null ? `<tr><td>VAT</td><td></td><td class="num">${peso(r.vat)}</td></tr>` : ""}
+      </table>
+     </details>` : ""}
+   </div>`;
+
+ }).join("");
+
+}
+
+function deleteReceipt(index){
+
+ let r=data.receipts[index];
+
+ if(!r)return;
+
+ let amount=Number(r.total ?? r.amount)||0;
+ let counted=(r.addedToSpent || r.amount) && amount>0;
+
+ if(!confirm("Delete this receipt?"+(counted ? " "+peso(amount)+" will be taken off Spent." : "")))return;
+
+ if(counted) data.spent=Math.max(0,data.spent-amount);
+
+ data.receipts.splice(index,1);
+
+ save();
 
 }
 
@@ -505,7 +717,7 @@ function researchStatusHTML(r){
 function researchPartHTML(r){
 
  if(r.photo){
-  return `<small>📷 Photo saved. Photo research isn't connected yet — tap 🎙️ and say the product name to research it.</small>`;
+  return `<small>📷 Saved before photo reading existed. Tap 📷 Product to scan it again.</small>`;
  }
 
  if(r.status==="researching"){
@@ -599,15 +811,15 @@ function saveRequest(){
 
 let lastFinishedId=null;
 
-function submitRequest(text,source){
+function submitRequest(text,source,extra){
 
- let request={
+ let request=Object.assign({
   id:"R"+Date.now()+Math.floor(Math.random()*1000),
   text:text,
   date:new Date().toISOString(),
   source:source,
   status:"researching"
- };
+ },extra||{});
 
  data.requests.unshift(request);
 
@@ -715,12 +927,12 @@ async function researchWithJob(request){
   let started=await fetchJSON("/api/research/start",{
    method:"POST",
    headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({ query:request.text, budget:budgetForAI(), mode:"AI_DECIDE" })
+   body:JSON.stringify({ query:request.query || request.text, budget:budgetForAI(), mode:"AI_DECIDE" })
   },75000); // allows for the free server waking up (~1 min)
 
   if(started.httpStatus===404){
    // Backend not updated yet: use the old one-shot endpoint.
-   return await sendToJasonAI(request.text);
+   return await sendToJasonAI(request.query || request.text);
   }
 
   if(!started.success || !started.jobId){
@@ -743,19 +955,21 @@ const POLL_MS=4000;
 const POLL_LIMIT_MS=6*60*1000;
 let pollWaiters=[];
 
-async function pollJob(jobId){
+async function pollJob(jobId,path,limitMs){
 
  let started=Date.now();
+ path=path || "/api/research/status/";
+ limitMs=limitMs || POLL_LIMIT_MS;
  let networkFailures=0;
 
- while(Date.now()-started<POLL_LIMIT_MS){
+ while(Date.now()-started<limitMs){
 
   await waitForNextPoll();
 
   let status;
 
   try{
-   status=await fetchJSON("/api/research/status/"+encodeURIComponent(jobId),{},30000);
+   status=await fetchJSON(path+encodeURIComponent(jobId),{},30000);
    networkFailures=0;
   }catch(error){
    // Phones lose connection briefly (screen off, switching apps). Keep trying.
@@ -1005,53 +1219,449 @@ function receiptCamera(){
 
 }
 
-function productSelected(input){
+/* =========================================
+   PHOTOS: shrink on the phone, then let the AI read them
+========================================= */
+
+const PHOTO_MAX_SIDE=1600;
+const PHOTO_QUALITY=0.82;
+const PHOTO_MAX_UPLOAD=8*1024*1024;
+
+let photo={ token:0, product:null, receipt:null };
+
+function loadImageElement(file){
+ return new Promise((resolve,reject)=>{
+  let url=URL.createObjectURL(file);
+  let img=new Image();
+  img.onload=()=>{ URL.revokeObjectURL(url); resolve(img); };
+  img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error("decode")); };
+  img.src=url;
+ });
+}
+
+function drawScaled(source,width,height,maxSide){
+ let scale=Math.min(1,maxSide/Math.max(width,height));
+ let canvas=document.createElement("canvas");
+ canvas.width=Math.max(1,Math.round(width*scale));
+ canvas.height=Math.max(1,Math.round(height*scale));
+ let ctx=canvas.getContext("2d");
+ ctx.fillStyle="#ffffff";               // transparent screenshots → white
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.drawImage(source,0,0,canvas.width,canvas.height);
+ return canvas;
+}
+
+// → { blob (JPEG, max 1600px), thumb (small JPEG data URL), width, height }
+async function prepareImage(file){
+
+ let source, width, height;
+
+ try{
+  source=await createImageBitmap(file,{imageOrientation:"from-image"});
+  width=source.width; height=source.height;
+ }catch(error){
+  try{
+   source=await loadImageElement(file);
+   width=source.naturalWidth; height=source.naturalHeight;
+  }catch(error2){
+   source=null;
+  }
+ }
+
+ if(!source || !width || !height){
+  // Can't decode here (e.g. some HEIC photos): send as-is if the server can take it.
+  if(/^image\/(jpeg|png|webp)$/.test(file.type) && file.size<=PHOTO_MAX_UPLOAD){
+   return { blob:file, thumb:"", width:0, height:0 };
+  }
+  throw new Error("This photo format can't be read. Please take a normal photo or a screenshot (JPG/PNG).");
+ }
+
+ let canvas=drawScaled(source,width,height,PHOTO_MAX_SIDE);
+ let blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",PHOTO_QUALITY));
+ let thumb=drawScaled(source,width,height,200).toDataURL("image/jpeg",0.6);
+
+ if(source.close) source.close();
+
+ if(!blob) throw new Error("Couldn't prepare the photo. Please try again.");
+
+ return { blob, thumb, width:canvas.width, height:canvas.height };
+
+}
+
+async function readPhotoWithAI(kind,blob){
+
+ let form=new FormData();
+ form.append("kind",kind);
+ form.append("image",blob,kind+".jpg");
+
+ let started=await fetchJSON("/api/photo/start",{ method:"POST", body:form },75000);
+
+ if(started.httpStatus===404){
+  throw new ServerError("Photo reading needs the latest server update. Please redeploy jason-shop-api.");
+ }
+
+ if(!started.success || !started.jobId){
+  throw new ServerError(started.error || "Couldn't send the photo. Please try again.");
+ }
+
+ let result=await pollJob(started.jobId,"/api/jobs/",3*60*1000);
+
+ if(!result || result.status!=="complete"){
+  throw new ServerError((result && result.error) || "The AI couldn't read this photo. Please try again.");
+ }
+
+ return result;
+
+}
+
+function setPhotoState(kind,html,isError){
+ let el=document.getElementById(kind==="product" ? "productState" : "receiptState");
+ el.innerHTML=html;
+ el.classList.toggle("error",!!isError);
+}
+
+/* ---------- Product photo ---------- */
+
+async function productSelected(input){
 
  if(!input.files.length)return;
 
  let file=input.files[0];
-
- data.requests.unshift({
-  id:"R"+Date.now(),
-  text:"📷 Product photo: "+file.name,
-  date:new Date().toISOString(),
-  photo:true
- });
-
  input.value="";
 
- save();
+ closeProduct();
+ let token=++photo.token;
+ photo.product={ file:file };
+
+ document.getElementById("productModal").classList.remove("hidden");
+ document.getElementById("productThumb").removeAttribute("src");
+ setPhotoState("product",'<span class="spinner"></span>Preparing photo…');
+
+ try{
+  let prepared=await prepareImage(file);
+  if(token!==photo.token)return;
+  photo.product.prepared=prepared;
+  if(prepared.thumb) document.getElementById("productThumb").src=prepared.thumb;
+  await identifyProduct(token);
+ }catch(error){
+  if(token!==photo.token)return;
+  setPhotoState("product","⚠️ "+escapeHTML(error.message),true);
+  document.getElementById("productRetry").classList.remove("hidden");
+ }
+
+}
+
+async function identifyProduct(token){
+
+ document.getElementById("productRetry").classList.add("hidden");
+ document.getElementById("productFields").classList.add("hidden");
+ setPhotoState("product",'<span class="spinner"></span>Looking at your photo… (about 10–30 seconds)');
+
+ try{
+
+  let result=await readPhotoWithAI("product",photo.product.prepared.blob);
+  if(token!==photo.token)return;
+
+  fillProduct(result.product || {});
+
+ }catch(error){
+
+  if(token!==photo.token)return;
+  setPhotoState("product","⚠️ "+escapeHTML(friendlyError(error))+"<br>You can also type the product name below.",true);
+  document.getElementById("productRetry").classList.remove("hidden");
+  fillProduct({ is_product:false, product_name:"", key_specs:[], listing:{found:false} });
+
+ }
+
+}
+
+function fillProduct(p){
+
+ photo.product.ai=p;
+
+ document.getElementById("pName").value=p.product_name || "";
+ document.getElementById("pSpecs").value=(p.key_specs || []).join(", ");
+
+ let listing=p.listing || {};
+ document.getElementById("pListingBox").classList.toggle("hidden",!listing.found);
+ document.getElementById("pPlatform").innerText=listing.platform ? "("+listing.platform+")" : "";
+ document.getElementById("pPrice").value=listing.price_php ? amountForInput(listing.price_php) : "";
+ document.getElementById("pSeller").value=listing.seller || "";
+
+ let note="";
+ if(p.is_product===false){
+  note="I couldn't recognise a product in this photo. Type what it is and I'll research it.";
+ }else if(p.confidence==="low"){
+  note="I'm not fully sure about this one — please check the name before researching.";
+ }else if(listing.found){
+  note="I'll compare this listing's price and seller with other stores.";
+ }
+ if(p.notes && p.is_product===false) note+=" ("+p.notes+")";
+ document.getElementById("pNote").innerText=note;
+
+ if(p.is_product!==false){
+  setPhotoState("product","✅ Here's what I see. Fix anything that's wrong, then tap Research.");
+ }else if(!document.getElementById("productState").classList.contains("error")){
+  setPhotoState("product","🤔 No product found in this photo.",true);
+ }
+
+ document.getElementById("productFields").classList.remove("hidden");
+
+}
+
+function retryPhoto(kind){
+ if(kind==="product" && photo.product && photo.product.prepared){
+  identifyProduct(++photo.token);
+ }
+}
+
+function researchFromPhoto(){
+
+ let name=document.getElementById("pName").value.trim();
+
+ if(!name){
+  document.getElementById("pNote").innerText="Please type what the product is first.";
+  document.getElementById("pName").focus();
+  return;
+ }
+
+ let specs=document.getElementById("pSpecs").value.trim();
+ let ai=(photo.product && photo.product.ai) || {};
+ let showListing=!document.getElementById("pListingBox").classList.contains("hidden");
+ let price=showListing ? parseAmount(document.getElementById("pPrice").value) : null;
+ let seller=showListing ? document.getElementById("pSeller").value.trim() : "";
+ let platform=showListing ? ((ai.listing && ai.listing.platform) || "an online shop") : "";
+
+ // The server adds ". " after the request, so no trailing full stop here.
+ let parts=[name.replace(/[.\s]+$/,"")];
+
+ if(specs) parts.push("Key specs: "+specs.replace(/[.\s]+$/,""));
+
+ if(showListing && (price>0 || seller)){
+  parts.push("Jason saw this listed on "+platform+
+   (price>0 ? " for "+peso(price) : "")+
+   (seller ? " from seller \""+seller+"\"" : ""));
+  parts.push("Compare that listing's price and seller reliability with the same product at other Philippine and international stores, and say whether it is a good deal");
+ }
+
+ let query=parts.join(". ");
+
+ let thumb=photo.product && photo.product.prepared ? photo.product.prepared.thumb : "";
+
+ submitRequest(name,"photo",{
+  query:query,
+  thumb:thumb,
+  listing:showListing && (price>0 || seller) ? { platform:platform, price:price>0 ? price : null, seller:seller } : null
+ });
+
+ closeProduct();
 
  goTo("shopping");
 
 }
 
-function receiptSelected(input){
+function closeProduct(){
+ photo.token++;
+ photo.product=null;
+ document.getElementById("productModal").classList.add("hidden");
+ document.getElementById("productFields").classList.add("hidden");
+ document.getElementById("productRetry").classList.add("hidden");
+ setPhotoState("product","");
+}
+
+/* ---------- Receipt photo ---------- */
+
+async function receiptSelected(input){
 
  if(!input.files.length)return;
 
  let file=input.files[0];
-
- data.receipts.unshift({
-  name:file.name,
-  date:new Date().toISOString()
- });
-
  input.value="";
 
- document.getElementById("receiptStatus").innerHTML=
- "🧾 <b>"+escapeHTML(file.name)+"</b><br>"+
- "<small>Receipt saved. Automatic reading of receipts isn't connected yet, so enter the total to add it to Spent.</small>";
+ closeReceipt();
+ let token=++photo.token;
+ photo.receipt={};
+
+ document.getElementById("receiptModal").classList.remove("hidden");
+ document.getElementById("receiptThumb").removeAttribute("src");
+ setPhotoState("receipt",'<span class="spinner"></span>Preparing photo…');
+
+ try{
+
+  let prepared=await prepareImage(file);
+  if(token!==photo.token)return;
+  photo.receipt.prepared=prepared;
+  if(prepared.thumb) document.getElementById("receiptThumb").src=prepared.thumb;
+
+  setPhotoState("receipt",'<span class="spinner"></span>Reading your receipt… (about 10–30 seconds)');
+
+  let result=await readPhotoWithAI("receipt",prepared.blob);
+  if(token!==photo.token)return;
+
+  handleReceiptResult(result.receipt || {});
+
+ }catch(error){
+
+  if(token!==photo.token)return;
+  setPhotoState("receipt","⚠️ "+escapeHTML(friendlyError(error)),true);
+  document.getElementById("receiptRetry").classList.remove("hidden");
+
+ }
+
+}
+
+function handleReceiptResult(r){
+
+ photo.receipt.ai=r;
+
+ if(r.is_receipt===false){
+  setPhotoState("receipt","🤔 This doesn't look like a receipt. Retake the photo, or enter it manually.",true);
+  document.getElementById("receiptRetry").classList.remove("hidden");
+  return;
+ }
+
+ if(r.readability==="unreadable"){
+  setPhotoState("receipt","📷 Too blurry or cut off to read"+(r.problems ? " ("+escapeHTML(r.problems)+")" : "")+
+   ". Retake it flat, in good light, with the whole receipt in the frame — or enter it manually.",true);
+  document.getElementById("receiptRetry").classList.remove("hidden");
+  return;
+ }
+
+ fillReceipt(r);
+
+ let warnings=(r.warnings || []).slice();
+ if(r.readability==="partly_readable") warnings.unshift("Parts of the receipt were hard to read"+(r.problems ? ": "+r.problems : "")+".");
+ document.getElementById("rWarn").innerText=warnings.join(" ");
+
+ setPhotoState("receipt","✅ Please check the details, then tap Save.");
+
+}
+
+function showReceiptFields(manual){
+ if(manual){
+  fillReceipt({ items:[] });
+  document.getElementById("rWarn").innerText="";
+  setPhotoState("receipt","✏️ Enter the receipt details.");
+ }
+ document.getElementById("receiptRetry").classList.add("hidden");
+ document.getElementById("receiptFields").classList.remove("hidden");
+}
+
+function fillReceipt(r){
+
+ document.getElementById("rStore").value=r.store || "";
+ document.getElementById("rDate").value=r.date || new Date().toISOString().slice(0,10);
+ document.getElementById("rPay").value=r.payment_method || "";
+ document.getElementById("rSubtotal").value=r.subtotal!=null ? amountForInput(r.subtotal) : "";
+ document.getElementById("rVat").value=r.vat!=null ? amountForInput(r.vat) : "";
+ document.getElementById("rTotal").value=r.total!=null ? amountForInput(r.total) : "";
+ document.getElementById("rAddSpent").checked=true;
+ document.getElementById("rMsg").innerText="";
+ document.getElementById("rMsg").className="form-msg";
+
+ let rows=document.getElementById("rItems");
+ rows.innerHTML="";
+ (r.items || []).forEach(it=>addReceiptItem({
+  name:it.name,
+  qty:it.qty,
+  price:it.line_total!=null ? it.line_total : (it.unit_price!=null ? it.unit_price*(it.qty||1) : null)
+ }));
+
+ showReceiptFields(false);
+
+}
+
+function addReceiptItem(it){
+
+ it=it || {};
+
+ let row=document.createElement("div");
+ row.className="item-row";
+ row.innerHTML=
+  '<input class="ri-name" type="text" autocomplete="off" placeholder="Item">'+
+  '<input class="ri-qty" type="text" inputmode="decimal" autocomplete="off" placeholder="1">'+
+  '<input class="ri-price" type="text" inputmode="decimal" autocomplete="off" placeholder="0">'+
+  '<button type="button" aria-label="Remove item">✕</button>';
+
+ row.querySelector(".ri-name").value=it.name || "";
+ row.querySelector(".ri-qty").value=it.qty!=null ? it.qty : "";
+ row.querySelector(".ri-price").value=it.price!=null ? amountForInput(it.price) : "";
+ row.querySelector("button").onclick=()=>row.remove();
+
+ document.getElementById("rItems").appendChild(row);
+
+}
+
+function confirmReceipt(){
+
+ let msg=document.getElementById("rMsg");
+ let total=parseAmount(document.getElementById("rTotal").value);
+ let subtotal=parseAmount(document.getElementById("rSubtotal").value);
+ let vat=parseAmount(document.getElementById("rVat").value);
+ let addToSpent=document.getElementById("rAddSpent").checked;
+
+ if(total===null || isNaN(total) || total<=0){
+  msg.innerText="Please enter the total paid, for example 1,250.";
+  msg.className="form-msg err";
+  document.getElementById("rTotal").focus();
+  return;
+ }
+
+ if([subtotal,vat].some(v=>v!==null && isNaN(v))){
+  msg.innerText="Please check the subtotal and VAT amounts.";
+  msg.className="form-msg err";
+  return;
+ }
+
+ if(addToSpent && data.stop>0 && data.spent+total>=data.stop && !photo.receipt.confirmedOverStop){
+  msg.innerText="⚠️ This takes Spent to "+peso(data.spent+total)+", past your hard stop of "+peso(data.stop)+". Tap Save again to record it anyway.";
+  msg.className="form-msg err";
+  photo.receipt.confirmedOverStop=true;
+  return;
+ }
+
+ let items=[...document.querySelectorAll("#rItems .item-row")].map(row=>{
+  let qty=parseAmount(row.querySelector(".ri-qty").value);
+  let price=parseAmount(row.querySelector(".ri-price").value);
+  return {
+   name:row.querySelector(".ri-name").value.trim(),
+   qty:qty>0 ? qty : null,
+   price:price!==null && !isNaN(price) ? price : null
+  };
+ }).filter(it=>it.name || it.price!=null);
+
+ data.receipts.unshift({
+  id:"RC"+Date.now(),
+  date:new Date().toISOString(),
+  receiptDate:document.getElementById("rDate").value || "",
+  store:document.getElementById("rStore").value.trim(),
+  payment:document.getElementById("rPay").value.trim(),
+  items:items,
+  subtotal:subtotal,
+  vat:vat,
+  total:total,
+  addedToSpent:addToSpent,
+  thumb:(photo.receipt.prepared && photo.receipt.prepared.thumb) || "",
+  readByAI:!!photo.receipt.ai
+ });
+
+ if(addToSpent) data.spent+=total;
+
+ closeReceipt();
 
  save();
 
- openAmount(
-  {type:"receipt",index:0},
-  "Receipt total?",
-  "Adds this receipt to your Spent amount. Tap Skip if it's already counted.",
-  ""
- );
+ goTo("receipts");
 
+}
+
+function closeReceipt(){
+ photo.token++;
+ photo.receipt=null;
+ document.getElementById("receiptModal").classList.add("hidden");
+ document.getElementById("receiptFields").classList.add("hidden");
+ document.getElementById("receiptRetry").classList.add("hidden");
+ setPhotoState("receipt","");
 }
 
 /* =========================================
