@@ -81,7 +81,7 @@ function finishBootSafety(){
    let L=(bootInfo.steps[0] && bootInfo.steps[0].learned) || {};
    audit("data.upgraded","Jason Shop data upgraded to version "+bootInfo.toVersion+" (all "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries and "+bootInfo.after.requests+" requests kept; "+(L.priceRecords||0)+" prices learned from receipts)",
     {entity:"data",before:{counts:bootInfo.before},after:{counts:bootInfo.after}});
-   showBootBanner("✅ Jason Shop was upgraded. All your data was checked and kept: "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries, "+bootInfo.after.requests+" shopping requests, Spent "+peso(bootInfo.after.spent)+". "+(L.priceRecords ? L.priceRecords+" prices were added to your new Price Book from your receipts. " : "")+"A safety copy of the old data was saved first.");
+   showBootBanner("✅ Jason Shop was upgraded. All your data was checked and kept: "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries, "+bootInfo.after.requests+" shopping requests, Spent "+peso(bootInfo.after.spent)+". "+(L.priceRecords ? L.priceRecords+" prices were added to your new Price Book from your receipts. " : "")+(bootInfo.fromVersion>=2 ? "New: home inventory, a smart shopping list, shopping trips and 15-day cycles. " : "")+"A safety copy of the old data was saved first.");
   }else{
    logBackup("Migration","failed","",(bootInfo.problems||[]).join("; "));
    showBootBanner("⚠️ The upgrade was paused because a safety check didn't match. Your data is unchanged and safe. ("+(bootInfo.problems||[]).join("; ")+")",true);
@@ -130,7 +130,8 @@ const SECTION_MAP={
  home:["home"], shop:["shop"], inventory:["inventory"], ai:["ai"], more:["more","menu"],
  shopping:["ai",null,"shoppingTitle"],
  receipts:["shop","receipts","receiptsTitle"],
- stores:["shop","stores"], prices:["shop","prices"], lists:["shop","list"],
+ stores:["shop","stores"], prices:["shop","prices"], lists:["shop","list"], list:["shop","list"],
+ trip:["shop","trip"], review:["shop","receipts","receiptReview"], cycle:["budget","cycle"],
  budget:["budget","overview","budgetCard"],
  plan:["budget","plan"],
  history:["budget","history","historyTitle"],
@@ -255,7 +256,7 @@ function localAnswer(text){
   if(b.state==="SETUP") return "⚙️ Set your Shopping Fund first (Budget tab).";
   return `${b.stateInfo.icon} Safe to spend: <b>${money(b.safeToSpend)}</b>${b.overBy>0 ? " · <b>OVER LIMIT BY "+money(b.overBy)+"</b>" : ""}. Fund ${money(b.fund)} − spent ${money(b.spent)} − committed ${money(b.committed)} − reserve ${money(b.reserve)}${b.stop>0 ? "; hard stop "+money(b.stop) : ""}.`;
  }
- return null;
+ return typeof localAnswer2==="function" ? localAnswer2(text) : null;
 }
 
 /* ---------- derived numbers ---------- */
@@ -280,8 +281,9 @@ function resolveStore(storeId,storeName){
  return (storeId && storeById(storeId)) || Mdl.findStoreByName(data.stores,storeName);
 }
 
+// Receipt lines waiting for a "is this the same product?" check stay out of price stats.
 function priceRecordsFor(productId){
- return (data.priceRecords||[]).filter(r=>r.productId===productId && !r.archived);
+ return (data.priceRecords||[]).filter(r=>r.productId===productId && !r.archived && !(r.needsReview && r.matchConfidence==="review"));
 }
 
 function statsInput(rec,product){
@@ -360,6 +362,7 @@ function renderActiveView(){
    if(ui.sub.more==="audit") renderAudit();
    if(ui.sub.more==="settings") renderSettings();
   }
+  if(typeof renderStage2Active==="function") renderStage2Active();
  }catch(error){
   console.warn("render",error);
  }
@@ -376,7 +379,7 @@ function renderHomeCards(){
  $id("monthDisplay").innerText=peso(monthSpent);
  $id("monthLabelSmall").innerText="THIS PERIOD ("+periodLabel(period).toUpperCase()+")";
 
- let out=[];
+ let out=typeof homeCards2==="function" ? homeCards2() : [];
 
  let plan=planRows();
  if(plan.rows.length){
@@ -1277,19 +1280,6 @@ function addGroup(houseId){
  save();
 }
 
-/* ---------- placeholders for Stage 2 (honest empty states) ---------- */
-
-function renderLists(){
- $id("listsBody").innerHTML=emptyState("📝","Smart shopping lists are coming next","In the next update you'll build lists per store and trip, with prices from your Price Book and a running total against Safe to Spend. For now, add items with 🤖 AI → Add or by voice.",
-  `<button class="action" onclick="goTo('shopping')">Open AI shopping inbox</button>`);
-}
-
-function renderInventory(){
- let products=(data.products||[]).filter(p=>!p.archived).length;
- $id("inventoryBody").innerHTML=emptyState("📦","Home inventory is coming next","Track what's in the pantry, fridge and storeroom, get low-stock alerts and use-up reminders. Your "+products+" Price Book product"+(products===1?"":"s")+" will be ready to stock.",
-  `<button class="action" onclick="goTo('prices')">See your products</button>`);
-}
-
 /* ---------- MORE menu ---------- */
 
 function renderMoreMenu(){
@@ -1298,6 +1288,7 @@ function renderMoreMenu(){
   ["stores","🏪","My stores","Stores, tendencies and stats"],
   ["prices","🏷️","Price Book","Every price you've paid or seen"],
   ["plan","📊","Budget plan & categories","Split your fund by category"],
+  ["cycle","🔁","Shopping cycle","Every 15 days (or your choice) · planned vs actual"],
   ["data","💾","Data & Backup","Backups, restore, safety copies, integrity check"],
   ["audit","🧾","Change history","Every money and data change"],
   ["settings","⚙️","Settings","Warning levels, budget period, app info"]

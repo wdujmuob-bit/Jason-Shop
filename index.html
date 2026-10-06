@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080c17">
 <title>Jason Shop</title>
-<link rel="stylesheet" href="css/app.css?v=2.0.0-s1">
+<link rel="stylesheet" href="css/app.css?v=3.0.0-s2">
 </head>
 
 <body>
@@ -102,7 +102,8 @@
   <button data-subtab="stores" onclick="showSub('shop','stores')">🏬 Stores</button>
   <button data-subtab="prices" onclick="showSub('shop','prices')">🏷️ Price Book</button>
   <button data-subtab="receipts" onclick="showSub('shop','receipts')">🧾 Receipts</button>
-  <button data-subtab="list" onclick="showSub('shop','list')">📝 Lists</button>
+  <button data-subtab="list" onclick="showSub('shop','list')">📝 List</button>
+  <button data-subtab="trip" onclick="showSub('shop','trip')">🛒 Trip</button>
  </div>
 
  <div data-sub="stores" class="sub"><div id="storesBody"></div></div>
@@ -115,10 +116,13 @@
    <p id="receiptStatus">No receipts yet. Snap one and the AI reads the store, items and total for you.</p>
    <button class="primary" onclick="receiptCamera()">📷 SCAN / UPLOAD RECEIPT</button>
   </div>
+  <div id="receiptReview"></div>
   <div id="receiptList"></div>
  </div>
 
  <div data-sub="list" class="sub"><div id="listsBody"></div></div>
+
+ <div data-sub="trip" class="sub"><div id="tripBody"></div></div>
 </section>
 
 <!-- =================== INVENTORY =================== -->
@@ -133,6 +137,7 @@
  <div class="subtabs" role="tablist">
   <button data-subtab="overview" onclick="showSub('budget','overview')">Overview</button>
   <button data-subtab="plan" onclick="showSub('budget','plan')">Plan</button>
+  <button data-subtab="cycle" onclick="showSub('budget','cycle')">Cycle</button>
   <button data-subtab="history" onclick="showSub('budget','history')">History</button>
   <button data-subtab="report" onclick="showSub('budget','report')">Report</button>
  </div>
@@ -160,6 +165,8 @@
  </div>
 
  <div data-sub="plan" class="sub"><div id="planBody"></div></div>
+
+ <div data-sub="cycle" class="sub"><div id="cycleBody"></div></div>
 
  <div data-sub="history" class="sub">
   <h2 id="historyTitle">Purchase History</h2>
@@ -458,6 +465,8 @@ Skip
 
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
+<div id="tripBar" class="trip-bar hidden" aria-live="polite"></div>
+
 <nav>
 <button id="navHome" onclick="goTo('home')" aria-label="Home">🏠<br>Home</button>
 <button id="navShop" onclick="goTo('shop')" aria-label="Shop">🛍️<br>Shop</button>
@@ -467,11 +476,12 @@ Skip
 <button id="navMore" onclick="goTo('more')" aria-label="More">☰<br>More</button>
 </nav>
 
-<script src="js/calc.js?v=2.0.0-s1"></script>
-<script src="js/model.js?v=2.0.0-s1"></script>
-<script src="js/storage.js?v=2.0.0-s1"></script>
-<script src="js/features.js?v=2.0.0-s1"></script>
-<script src="js/app.js?v=2.0.0-s1"></script>
+<script src="js/calc.js?v=3.0.0-s2"></script>
+<script src="js/model.js?v=3.0.0-s2"></script>
+<script src="js/storage.js?v=3.0.0-s2"></script>
+<script src="js/features.js?v=3.0.0-s2"></script>
+<script src="js/features2.js?v=3.0.0-s2"></script>
+<script src="js/app.js?v=3.0.0-s2"></script>
 
 </body>
 </html>

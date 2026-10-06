@@ -1,0 +1,1105 @@
+{
+ "generatedFrom": "6e2f8ed (Stage 1 production app)",
+ "generatedAt": "2026-10-06T13:20:20.310Z",
+ "data": {
+  "fund": 60000,
+  "stop": 50000,
+  "spent": 12197,
+  "requests": [
+   {
+    "id": "R1791291026919467",
+    "text": "air fryer under 5000 pesos",
+    "date": "2026-10-06T12:50:26.919Z",
+    "source": "text",
+    "status": "done",
+    "report": "## Best Overall\n**Hanabishi HSF-16** – ₱1,799 at Lazada (cheaper than the ₱1,899 Shopee listing).\nRecommendation: BUY\nCATEGORY: Electronics & Appliances\n\nVOICE SUMMARY: The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "summary": "The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "category": "Electronics & Appliances",
+    "purchased": {
+     "amount": 1799,
+     "date": "2026-10-06T12:50:32.531Z",
+     "category": "Electronics & Appliances",
+     "store": ""
+    }
+   },
+   {
+    "id": "R1791291022113518",
+    "text": "Hanabishi stand fan",
+    "date": "2026-10-06T12:50:22.113Z",
+    "source": "text",
+    "status": "done",
+    "report": "## Best Overall\n**Hanabishi HSF-16** – ₱1,799 at Lazada (cheaper than the ₱1,899 Shopee listing).\nRecommendation: BUY\nCATEGORY: Electronics & Appliances\n\nVOICE SUMMARY: The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "summary": "The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "category": "Electronics & Appliances"
+   }
+  ],
+  "receipts": [
+   {
+    "id": "RC1791291043480",
+    "date": "2026-10-06T12:50:43.480Z",
+    "receiptDate": "2026-09-12",
+    "store": "Landers Superstore",
+    "payment": "Cash",
+    "items": [
+     {
+      "name": "Hanabishi Stand Fan 16in",
+      "qty": 1,
+      "price": 1899
+     },
+     {
+      "name": "Mineral Water 6x1L",
+      "qty": 2,
+      "price": 180
+     },
+     {
+      "name": "Rice Jasmine 5kg",
+      "qty": 1,
+      "price": 345
+     }
+    ],
+    "subtotal": 2424,
+    "vat": 259.71,
+    "total": 2424,
+    "addedToSpent": true,
+    "thumb": "data:image/jpeg;base64,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",
+    "readByAI": true,
+    "category": "Groceries"
+   },
+   {
+    "id": "RC1791291037564",
+    "date": "2026-10-06T12:50:37.564Z",
+    "receiptDate": "2026-10-05",
+    "store": "SM Supermarket",
+    "payment": "Cash",
+    "items": [
+     {
+      "name": "Hanabishi Stand Fan 16in",
+      "qty": 1,
+      "price": 1899
+     },
+     {
+      "name": "Mineral Water 6x1L",
+      "qty": 2,
+      "price": 180
+     },
+     {
+      "name": "Rice Jasmine 5kg",
+      "qty": 1,
+      "price": 345
+     }
+    ],
+    "subtotal": 2424,
+    "vat": 259.71,
+    "total": 2424,
+    "addedToSpent": true,
+    "readByAI": true,
+    "category": "Groceries"
+   }
+  ],
+  "manual": [
+   {
+    "id": "M1791291051297",
+    "date": "2026-09-20",
+    "store": "Mercury Drug",
+    "item": "Vitamins and medicine",
+    "amount": 3500,
+    "category": "Health & Personal Care",
+    "payment": "Card",
+    "counted": true
+   },
+   {
+    "id": "M1791291048714",
+    "date": "2026-10-01",
+    "store": "Pampang Palengke",
+    "item": "Pork and vegetables",
+    "amount": 850,
+    "category": "Groceries",
+    "payment": "Cash",
+    "counted": true
+   },
+   {
+    "id": "M1791291046115",
+    "date": "2026-10-03",
+    "store": "Jollibee",
+    "item": "Chickenjoy bucket",
+    "amount": 1200,
+    "category": "Food & Dining",
+    "payment": "GCash",
+    "counted": true
+   }
+  ],
+  "reportSummaries": {},
+  "lastBackup": "2026-10-06T12:50:52.509Z",
+  "houses": [
+   {
+    "id": "house_main",
+    "name": "Main house",
+    "primary": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   }
+  ],
+  "memberGroups": [
+   {
+    "id": "grp_main_adults",
+    "houseId": "house_main",
+    "type": "adults",
+    "label": "Adults",
+    "count": 2,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:09.309Z"
+   },
+   {
+    "id": "grp_main_children",
+    "houseId": "house_main",
+    "type": "children",
+    "label": "Children",
+    "count": 2,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:10.109Z"
+   },
+   {
+    "id": "grp_main_nannies",
+    "houseId": "house_main",
+    "type": "nannies",
+    "label": "Nannies",
+    "count": 0,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "grp_main_maids",
+    "houseId": "house_main",
+    "type": "maids",
+    "label": "Maids",
+    "count": 1,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:10.509Z"
+   },
+   {
+    "id": "grp_main_security",
+    "houseId": "house_main",
+    "type": "security",
+    "label": "Security / bodyguards",
+    "count": 0,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "grp_main_drivers",
+    "houseId": "house_main",
+    "type": "drivers",
+    "label": "Drivers",
+    "count": 0,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "grp_main_other_staff",
+    "houseId": "house_main",
+    "type": "other_staff",
+    "label": "Other staff",
+    "count": 0,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "grp_main_pets",
+    "houseId": "house_main",
+    "type": "pets",
+    "label": "Pets",
+    "count": 1,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:10.909Z"
+   }
+  ],
+  "stores": [
+   {
+    "id": "store_newstar",
+    "name": "Newstar Shopping Mart",
+    "shortName": "",
+    "type": "supermarket",
+    "location": "",
+    "aliases": [
+     "newstar",
+     "new star",
+     "newstar shopping mart",
+     "newstar supermarket",
+     "newstar mart"
+    ],
+    "tendencies": [
+     "Groceries",
+     "Household supplies"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "store_johnnys",
+    "name": "Johnny's Supermarket",
+    "shortName": "",
+    "type": "supermarket",
+    "location": "",
+    "aliases": [
+     "johnnys",
+     "johnny",
+     "johnnys supermarket",
+     "johnnys grocery"
+    ],
+    "tendencies": [
+     "Groceries",
+     "Household supplies"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "store_pampang",
+    "name": "Pampang Public Market",
+    "shortName": "Pampang Palengke",
+    "type": "public_market",
+    "location": "Angeles City",
+    "aliases": [
+     "pampang",
+     "pampang market",
+     "pampang public market",
+     "pampang palengke",
+     "palengke pampang"
+    ],
+    "tendencies": [
+     "Fresh food",
+     "Meat",
+     "Poultry",
+     "Seafood",
+     "Vegetables",
+     "Fruits"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "store_landers",
+    "name": "Landers Superstore Angeles",
+    "shortName": "Landers",
+    "type": "membership",
+    "location": "Angeles City",
+    "aliases": [
+     "landers",
+     "landers superstore",
+     "landers angeles",
+     "landers superstore angeles"
+    ],
+    "tendencies": [
+     "Bulk buying",
+     "Imported products",
+     "Groceries",
+     "Household supplies"
+    ],
+    "membership": true,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "store_snr",
+    "name": "S&R Membership Shopping",
+    "shortName": "S&R",
+    "type": "membership",
+    "location": "",
+    "aliases": [
+     "s&r",
+     "snr",
+     "s and r",
+     "s&r membership",
+     "s&r membership shopping",
+     "s&r warehouse"
+    ],
+    "tendencies": [
+     "Bulk buying",
+     "Imported products",
+     "Groceries"
+    ],
+    "membership": true,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "store_puregold",
+    "name": "Puregold",
+    "shortName": "",
+    "type": "supermarket",
+    "location": "",
+    "aliases": [
+     "puregold",
+     "puregold price club",
+     "puregold supermarket"
+    ],
+    "tendencies": [
+     "Groceries",
+     "Household supplies",
+     "Personal care"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "store_dutyfree",
+    "name": "Puregold Duty Free Clark",
+    "shortName": "Duty Free",
+    "type": "duty_free",
+    "location": "Clark",
+    "aliases": [
+     "duty free",
+     "puregold duty free",
+     "duty free clark",
+     "puregold duty free clark",
+     "dfp clark"
+    ],
+    "tendencies": [
+     "Imported products"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "store_sm_supermarket_ax0u",
+    "shortName": "",
+    "preferred": true,
+    "custom": true,
+    "seeded": false,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:17.960Z",
+    "name": "SM Supermarket",
+    "type": "supermarket",
+    "location": "",
+    "aliases": [
+     "SM Supermarket"
+    ],
+    "tendencies": [],
+    "membership": null,
+    "notes": "",
+    "updatedAt": "2026-10-06T13:20:17.960Z"
+   }
+  ],
+  "products": [
+   {
+    "id": "prod_muwphjpc012xk4",
+    "name": "Hanabishi Stand Fan 16in",
+    "brand": "",
+    "variant": "",
+    "size": null,
+    "unit": null,
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "receipt",
+    "sizeSource": null,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "prod_muwphjpc03gft1",
+    "name": "Mineral Water 6x1L",
+    "brand": "",
+    "variant": "",
+    "size": 1,
+    "unit": "l",
+    "packCount": 6,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "receipt",
+    "sizeSource": "read_from_name",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "prod_muwphjpc0573zb",
+    "name": "Rice Jasmine 5kg",
+    "brand": "",
+    "variant": "",
+    "size": 5,
+    "unit": "kg",
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "receipt",
+    "sizeSource": "read_from_name",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   }
+  ],
+  "priceRecords": [
+   {
+    "id": "price_muwphjpc02g6wg",
+    "productId": "prod_muwphjpc012xk4",
+    "itemName": "Hanabishi Stand Fan 16in",
+    "storeId": null,
+    "storeName": "SM Supermarket",
+    "price": 1899,
+    "qty": 1,
+    "date": "2026-10-05",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291037564",
+     "line": 0
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "price_muwphjpc04s2yc",
+    "productId": "prod_muwphjpc03gft1",
+    "itemName": "Mineral Water 6x1L",
+    "storeId": null,
+    "storeName": "SM Supermarket",
+    "price": 180,
+    "qty": 2,
+    "date": "2026-10-05",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291037564",
+     "line": 1
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "price_muwphjpc06ct0f",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice Jasmine 5kg",
+    "storeId": null,
+    "storeName": "SM Supermarket",
+    "price": 345,
+    "qty": 1,
+    "date": "2026-10-05",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291037564",
+     "line": 2
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "price_muwphjpc07byx3",
+    "productId": "prod_muwphjpc012xk4",
+    "itemName": "Hanabishi Stand Fan 16in",
+    "storeId": "store_landers",
+    "storeName": "Landers Superstore",
+    "price": 1899,
+    "qty": 1,
+    "date": "2026-09-12",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291043480",
+     "line": 0
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "price_muwphjpc081hcb",
+    "productId": "prod_muwphjpc03gft1",
+    "itemName": "Mineral Water 6x1L",
+    "storeId": "store_landers",
+    "storeName": "Landers Superstore",
+    "price": 180,
+    "qty": 2,
+    "date": "2026-09-12",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291043480",
+     "line": 1
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "price_muwphjpd09s2ls",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice Jasmine 5kg",
+    "storeId": "store_landers",
+    "storeName": "Landers Superstore",
+    "price": 345,
+    "qty": 1,
+    "date": "2026-09-12",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291043480",
+     "line": 2
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "price_muwphtg60oidgr",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice Jasmine 5kg",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 360,
+    "qty": 1,
+    "date": "2026-10-04",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:19.542Z"
+   }
+  ],
+  "budgetCategories": [
+   {
+    "id": "cat_groceries",
+    "name": "Groceries",
+    "icon": "🛒",
+    "color": "#67e09a",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_household",
+    "name": "Household",
+    "icon": "🧴",
+    "color": "#7fb0ff",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_electronics_and_appliances",
+    "name": "Electronics & Appliances",
+    "icon": "🔌",
+    "color": "#1769ff",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_baby_and_kids",
+    "name": "Baby & Kids",
+    "icon": "🍼",
+    "color": "#ff9ad5",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_pet",
+    "name": "Pet",
+    "icon": "🐶",
+    "color": "#c49a6c",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_health_and_personal_care",
+    "name": "Health & Personal Care",
+    "icon": "💊",
+    "color": "#ff6b6b",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_clothing",
+    "name": "Clothing",
+    "icon": "👕",
+    "color": "#b18cff",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_home_and_furniture",
+    "name": "Home & Furniture",
+    "icon": "🛋️",
+    "color": "#ffbd66",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_food_and_dining",
+    "name": "Food & Dining",
+    "icon": "🍔",
+    "color": "#ff8a3d",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_other",
+    "name": "Other",
+    "icon": "📦",
+    "color": "#8e99ad",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   }
+  ],
+  "commitments": [
+   {
+    "id": "cmt_muwphogl0inec5",
+    "status": "committed",
+    "createdAt": "2026-10-06T13:20:13.077Z",
+    "updatedAt": "2026-10-06T13:20:13.077Z",
+    "title": "Landers monthly haul",
+    "amount": 3000,
+    "dueDate": null,
+    "categoryName": "Groceries",
+    "storeId": "store_landers",
+    "storeName": "Landers",
+    "note": ""
+   }
+  ],
+  "reserves": [
+   {
+    "id": "rsv_muwphps90kezkx",
+    "name": "Emergency",
+    "amount": 10000,
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:14.793Z"
+   }
+  ],
+  "auditLog": [
+   {
+    "id": "aud_muwphjqd0bco51",
+    "at": "2026-10-06T13:20:06.949Z",
+    "action": "data.upgraded",
+    "summary": "Jason Shop data upgraded to version 2 (all 2 receipts, 3 manual entries and 2 requests kept; 6 prices learned from receipts)",
+    "entity": "data",
+    "entityId": null,
+    "amountDelta": null,
+    "before": {
+     "counts": {
+      "requests": 2,
+      "purchases": 1,
+      "receipts": 2,
+      "receiptItems": 6,
+      "manual": 3,
+      "fund": 60000,
+      "stop": 50000,
+      "spent": 12197,
+      "receiptTotal": 4848,
+      "manualTotal": 5550,
+      "purchaseTotal": 1799,
+      "houses": 0,
+      "memberGroups": 0,
+      "stores": 0,
+      "products": 0,
+      "priceRecords": 0,
+      "budgetCategories": 0,
+      "commitments": 0,
+      "reserves": 0,
+      "auditLog": 0,
+      "backupLog": 0
+     }
+    },
+    "after": {
+     "counts": {
+      "requests": 2,
+      "purchases": 1,
+      "receipts": 2,
+      "receiptItems": 6,
+      "manual": 3,
+      "fund": 60000,
+      "stop": 50000,
+      "spent": 12197,
+      "receiptTotal": 4848,
+      "manualTotal": 5550,
+      "purchaseTotal": 1799,
+      "houses": 1,
+      "memberGroups": 8,
+      "stores": 7,
+      "products": 3,
+      "priceRecords": 6,
+      "budgetCategories": 10,
+      "commitments": 0,
+      "reserves": 0,
+      "auditLog": 0,
+      "backupLog": 0
+     }
+    }
+   },
+   {
+    "id": "aud_muwphl8u0clnc0",
+    "at": "2026-10-06T13:20:08.910Z",
+    "action": "household.count",
+    "summary": "Adults: 0 → 1",
+    "entity": "memberGroups",
+    "entityId": "grp_main_adults",
+    "amountDelta": null,
+    "before": {
+     "count": 0
+    },
+    "after": {
+     "count": 1
+    }
+   },
+   {
+    "id": "aud_muwphljy0dt9nh",
+    "at": "2026-10-06T13:20:09.310Z",
+    "action": "household.count",
+    "summary": "Adults: 1 → 2",
+    "entity": "memberGroups",
+    "entityId": "grp_main_adults",
+    "amountDelta": null,
+    "before": {
+     "count": 1
+    },
+    "after": {
+     "count": 2
+    }
+   },
+   {
+    "id": "aud_muwphlv10e5oic",
+    "at": "2026-10-06T13:20:09.709Z",
+    "action": "household.count",
+    "summary": "Children: 0 → 1",
+    "entity": "memberGroups",
+    "entityId": "grp_main_children",
+    "amountDelta": null,
+    "before": {
+     "count": 0
+    },
+    "after": {
+     "count": 1
+    }
+   },
+   {
+    "id": "aud_muwphm650f0bdt",
+    "at": "2026-10-06T13:20:10.109Z",
+    "action": "household.count",
+    "summary": "Children: 1 → 2",
+    "entity": "memberGroups",
+    "entityId": "grp_main_children",
+    "amountDelta": null,
+    "before": {
+     "count": 1
+    },
+    "after": {
+     "count": 2
+    }
+   },
+   {
+    "id": "aud_muwphmh90ghwja",
+    "at": "2026-10-06T13:20:10.509Z",
+    "action": "household.count",
+    "summary": "Maids: 0 → 1",
+    "entity": "memberGroups",
+    "entityId": "grp_main_maids",
+    "amountDelta": null,
+    "before": {
+     "count": 0
+    },
+    "after": {
+     "count": 1
+    }
+   },
+   {
+    "id": "aud_muwphmsd0hepio",
+    "at": "2026-10-06T13:20:10.909Z",
+    "action": "household.count",
+    "summary": "Pets: 0 → 1",
+    "entity": "memberGroups",
+    "entityId": "grp_main_pets",
+    "amountDelta": null,
+    "before": {
+     "count": 0
+    },
+    "after": {
+     "count": 1
+    }
+   },
+   {
+    "id": "aud_muwphogl0jhmou",
+    "at": "2026-10-06T13:20:13.077Z",
+    "action": "commitment.add",
+    "summary": "Committed ₱3,000: Landers monthly haul",
+    "entity": "commitments",
+    "entityId": "cmt_muwphogl0inec5",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "title": "Landers monthly haul",
+     "amount": 3000,
+     "dueDate": null,
+     "categoryName": "Groceries",
+     "storeId": "store_landers",
+     "storeName": "Landers",
+     "note": ""
+    }
+   },
+   {
+    "id": "aud_muwphps90lyr7j",
+    "at": "2026-10-06T13:20:14.793Z",
+    "action": "reserve.add",
+    "summary": "Protected reserve added: Emergency ₱10,000",
+    "entity": "reserves",
+    "entityId": "rsv_muwphps90kezkx",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "name": "Emergency",
+     "amount": 10000
+    }
+   },
+   {
+    "id": "aud_muwphrd70mxlxk",
+    "at": "2026-10-06T13:20:16.843Z",
+    "action": "plan.save",
+    "summary": "Budget plan saved: ₱25,000 in 2 categories (pesos)",
+    "entity": "budgetPlan",
+    "entityId": null,
+    "amountDelta": null,
+    "before": {
+     "mode": "peso",
+     "items": [],
+     "updatedAt": null
+    },
+    "after": {
+     "mode": "peso",
+     "items": [
+      {
+       "categoryId": "cat_groceries",
+       "value": 20000
+      },
+      {
+       "categoryId": "cat_food_and_dining",
+       "value": 5000
+      }
+     ],
+     "updatedAt": "2026-10-06T13:20:16.843Z"
+    }
+   },
+   {
+    "id": "aud_muwphs880nfdkb",
+    "at": "2026-10-06T13:20:17.960Z",
+    "action": "store.add",
+    "summary": "Store added: SM Supermarket",
+    "entity": "stores",
+    "entityId": "store_sm_supermarket_ax0u",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muwphtg60p51cj",
+    "at": "2026-10-06T13:20:19.542Z",
+    "action": "price.add",
+    "summary": "Price added: Rice Jasmine 5kg ₱360 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muwphtg60oidgr",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 360,
+     "qty": 1,
+     "source": "shelf"
+    }
+   }
+  ],
+  "backupLog": [
+   {
+    "id": "blog_muwphjqd0ajthj",
+    "at": "2026-10-06T13:20:06.949Z",
+    "action": "Migration backup created",
+    "status": "success",
+    "ref": "snap_muwphjpmjd9t",
+    "detail": "before upgrade v1 → v2 · saved in safety vault (IndexedDB)"
+   }
+  ],
+  "inventoryItems": [],
+  "inventoryTransactions": [],
+  "shoppingLists": [],
+  "shoppingCycles": [],
+  "trips": [],
+  "settings": {
+   "thresholds": {
+    "watch": 70,
+    "warning": 85,
+    "hardStop": 100
+   },
+   "budgetPeriod": {
+    "type": "monthly",
+    "startDay": 1
+   },
+   "currency": "PHP"
+  },
+  "budgetPlan": {
+   "mode": "peso",
+   "items": [
+    {
+     "categoryId": "cat_groceries",
+     "value": 20000
+    },
+    {
+     "categoryId": "cat_food_and_dining",
+     "value": 5000
+    }
+   ],
+   "updatedAt": "2026-10-06T13:20:16.843Z"
+  },
+  "meta": {
+   "migrations": [
+    {
+     "from": 1,
+     "to": 2,
+     "at": "2026-10-06T13:20:06.911Z",
+     "appVersion": "2.0.0-stage1",
+     "counts": {
+      "before": {
+       "requests": 2,
+       "purchases": 1,
+       "receipts": 2,
+       "receiptItems": 6,
+       "manual": 3,
+       "fund": 60000,
+       "stop": 50000,
+       "spent": 12197,
+       "receiptTotal": 4848,
+       "manualTotal": 5550,
+       "purchaseTotal": 1799,
+       "houses": 0,
+       "memberGroups": 0,
+       "stores": 0,
+       "products": 0,
+       "priceRecords": 0,
+       "budgetCategories": 0,
+       "commitments": 0,
+       "reserves": 0,
+       "auditLog": 0,
+       "backupLog": 0
+      },
+      "after": {
+       "requests": 2,
+       "purchases": 1,
+       "receipts": 2,
+       "receiptItems": 6,
+       "manual": 3,
+       "fund": 60000,
+       "stop": 50000,
+       "spent": 12197,
+       "receiptTotal": 4848,
+       "manualTotal": 5550,
+       "purchaseTotal": 1799,
+       "houses": 1,
+       "memberGroups": 8,
+       "stores": 7,
+       "products": 3,
+       "priceRecords": 6,
+       "budgetCategories": 10,
+       "commitments": 0,
+       "reserves": 0,
+       "auditLog": 0,
+       "backupLog": 0
+      }
+     },
+     "ok": true
+    }
+   ],
+   "createdAt": "2026-10-06T13:20:06.911Z"
+  },
+  "schemaVersion": 2
+ }
+}
