@@ -84,15 +84,21 @@ function budgetSentence(budget) {
   const fund = Number(budget.fund) || 0;
   const spent = Number(budget.spent) || 0;
   const stop = Number(budget.stop) || 0;
+  // Stage 1: money already promised (committed purchases) and the protected
+  // reserve are not spendable either.
+  const committed = Math.max(0, Number(budget.committed) || 0);
+  const reserve = Math.max(0, Number(budget.reserve) || 0);
 
   if (fund <= 0 && stop <= 0) return "";
 
-  let safe = fund > 0 ? fund - spent : Infinity;
-  if (stop > 0) safe = Math.min(safe, stop - spent);
+  let safe = fund > 0 ? fund - spent - committed - reserve : Infinity;
+  if (stop > 0) safe = Math.min(safe, stop - spent - committed);
   safe = Math.max(0, safe);
 
   return " Jason's shopping budget: fund " + pesoText(fund) +
     ", already spent " + pesoText(spent) +
+    (committed > 0 ? ", already committed to planned purchases " + pesoText(committed) : "") +
+    (reserve > 0 ? ", protected reserve (not spendable) " + pesoText(reserve) : "") +
     (stop > 0 ? ", hard stop limit " + pesoText(stop) : "") +
     ", so the most he can safely spend right now is " + pesoText(safe) + ". " +
     "Say clearly whether each recommended option fits within that amount, and " +

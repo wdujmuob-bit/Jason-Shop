@@ -1,0 +1,135 @@
+{
+ "generatedFrom": "b58c49a (production app before Stage 1)",
+ "generatedAt": "2026-10-06T12:50:52.818Z",
+ "voice": null,
+ "data": {
+  "fund": 60000,
+  "stop": 50000,
+  "spent": 12197,
+  "requests": [
+   {
+    "id": "R1791291026919467",
+    "text": "air fryer under 5000 pesos",
+    "date": "2026-10-06T12:50:26.919Z",
+    "source": "text",
+    "status": "done",
+    "report": "## Best Overall\n**Hanabishi HSF-16** – ₱1,799 at Lazada (cheaper than the ₱1,899 Shopee listing).\nRecommendation: BUY\nCATEGORY: Electronics & Appliances\n\nVOICE SUMMARY: The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "summary": "The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "category": "Electronics & Appliances",
+    "purchased": {
+     "amount": 1799,
+     "date": "2026-10-06T12:50:32.531Z",
+     "category": "Electronics & Appliances",
+     "store": ""
+    }
+   },
+   {
+    "id": "R1791291022113518",
+    "text": "Hanabishi stand fan",
+    "date": "2026-10-06T12:50:22.113Z",
+    "source": "text",
+    "status": "done",
+    "report": "## Best Overall\n**Hanabishi HSF-16** – ₱1,799 at Lazada (cheaper than the ₱1,899 Shopee listing).\nRecommendation: BUY\nCATEGORY: Electronics & Appliances\n\nVOICE SUMMARY: The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "summary": "The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "category": "Electronics & Appliances"
+   }
+  ],
+  "receipts": [
+   {
+    "id": "RC1791291043480",
+    "date": "2026-10-06T12:50:43.480Z",
+    "receiptDate": "2026-09-12",
+    "store": "Landers Superstore",
+    "payment": "Cash",
+    "items": [
+     {
+      "name": "Hanabishi Stand Fan 16in",
+      "qty": 1,
+      "price": 1899
+     },
+     {
+      "name": "Mineral Water 6x1L",
+      "qty": 2,
+      "price": 180
+     },
+     {
+      "name": "Rice Jasmine 5kg",
+      "qty": 1,
+      "price": 345
+     }
+    ],
+    "subtotal": 2424,
+    "vat": 259.71,
+    "total": 2424,
+    "addedToSpent": true,
+    "thumb": "data:image/jpeg;base64,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",
+    "readByAI": true,
+    "category": "Groceries"
+   },
+   {
+    "id": "RC1791291037564",
+    "date": "2026-10-06T12:50:37.564Z",
+    "receiptDate": "2026-10-05",
+    "store": "SM Supermarket",
+    "payment": "Cash",
+    "items": [
+     {
+      "name": "Hanabishi Stand Fan 16in",
+      "qty": 1,
+      "price": 1899
+     },
+     {
+      "name": "Mineral Water 6x1L",
+      "qty": 2,
+      "price": 180
+     },
+     {
+      "name": "Rice Jasmine 5kg",
+      "qty": 1,
+      "price": 345
+     }
+    ],
+    "subtotal": 2424,
+    "vat": 259.71,
+    "total": 2424,
+    "addedToSpent": true,
+    "readByAI": true,
+    "category": "Groceries"
+   }
+  ],
+  "manual": [
+   {
+    "id": "M1791291051297",
+    "date": "2026-09-20",
+    "store": "Mercury Drug",
+    "item": "Vitamins and medicine",
+    "amount": 3500,
+    "category": "Health & Personal Care",
+    "payment": "Card",
+    "counted": true
+   },
+   {
+    "id": "M1791291048714",
+    "date": "2026-10-01",
+    "store": "Pampang Palengke",
+    "item": "Pork and vegetables",
+    "amount": 850,
+    "category": "Groceries",
+    "payment": "Cash",
+    "counted": true
+   },
+   {
+    "id": "M1791291046115",
+    "date": "2026-10-03",
+    "store": "Jollibee",
+    "item": "Chickenjoy bucket",
+    "amount": 1200,
+    "category": "Food & Dining",
+    "payment": "GCash",
+    "counted": true
+   }
+  ],
+  "reportSummaries": {},
+  "lastBackup": "2026-10-06T12:50:52.509Z"
+ }
+}
