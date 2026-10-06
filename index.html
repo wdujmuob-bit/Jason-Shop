@@ -2,10 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#080c17" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#080c17">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Jason Shop — personal AI shopping and household manager">
+<meta name="application-name" content="Jason Shop">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jason Shop">
+<meta name="format-detection" content="telephone=no">
 <title>Jason Shop</title>
-<link rel="stylesheet" href="css/app.css?v=5.0.0-s4">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css?v=5.0.1-pwa">
 </head>
 
 <body>
@@ -20,6 +33,14 @@
 </header>
 
 <div id="bootBanner" class="banner hidden" role="status"></div>
+
+<div id="installBanner" class="banner install-tip hidden" role="status">
+ <div id="installBannerText">📲 Add Jason Shop to your Home screen for a full-screen app icon (no browser bar).</div>
+ <div class="btn-row">
+  <button class="action" id="installHowBtn" type="button">How</button>
+  <button class="action" id="installDismissBtn" type="button">Got it</button>
+ </div>
+</div>
 
 <div id="backupBanner" class="banner hidden" role="status">
  <div id="backupBannerText">💾 Time for a backup.</div>
@@ -514,16 +535,17 @@ Skip
 <button id="navMore" onclick="goTo('more')" aria-label="More">☰<br>More</button>
 </nav>
 
-<script src="js/calc.js?v=5.0.0-s4"></script>
-<script src="js/model.js?v=5.0.0-s4"></script>
-<script src="js/nlu.js?v=5.0.0-s4"></script>
-<script src="js/storage.js?v=5.0.0-s4"></script>
-<script src="js/features.js?v=5.0.0-s4"></script>
-<script src="js/features2.js?v=5.0.0-s4"></script>
-<script src="js/features3.js?v=5.0.0-s4"></script>
-<script src="js/pdf.js?v=5.0.0-s4"></script>
-<script src="js/features4.js?v=5.0.0-s4"></script>
-<script src="js/app.js?v=5.0.0-s4"></script>
+<script src="js/calc.js?v=5.0.1-pwa"></script>
+<script src="js/model.js?v=5.0.1-pwa"></script>
+<script src="js/nlu.js?v=5.0.1-pwa"></script>
+<script src="js/storage.js?v=5.0.1-pwa"></script>
+<script src="js/features.js?v=5.0.1-pwa"></script>
+<script src="js/features2.js?v=5.0.1-pwa"></script>
+<script src="js/features3.js?v=5.0.1-pwa"></script>
+<script src="js/pdf.js?v=5.0.1-pwa"></script>
+<script src="js/features4.js?v=5.0.1-pwa"></script>
+<script src="js/app.js?v=5.0.1-pwa"></script>
+<script src="js/pwa.js?v=5.0.1-pwa"></script>
 
 </body>
 </html>

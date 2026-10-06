@@ -12,6 +12,10 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 | `js/model.js` | Data model: schema version, migrations, seeds (stores, categories, household), product/price matching (High / Review / Unknown confidence), duplicate-receipt detection, integrity check, backup file format. Pure, unit-tested. |
 | `js/pdf.js` | Stage 4: a tiny PDF writer (no libraries): A4 pages, headings, text, bar rows and tables, built on the phone for the Insights PDF report. Unit-tested. |
 | `js/features4.js` | Stage 4 screens: Insights (charts as inline SVG), one-tap monthly AI summary, CSV / PDF export with a date range, universal search, trip history, product page, preferences, people & roles, household requests, receipt archive, throw-out with a reason, plan / forecast history, recalculation after restore. |
+| `manifest.webmanifest` | Installable app identity: name, standalone display, dark theme/background `#080c17`, portrait, icons 192/512 (any + maskable). |
+| `icons/` | Home-screen icons and apple-touch-icon (PNG, generated in-repo — no AI). |
+| `sw.js` | Tiny service worker: caches the app shell for offline open; never touches API calls to `jason-shop-api`. |
+| `js/pwa.js` | Registers the service worker on https/localhost; one-time “Add to Home screen” tip on phones (skipped when already installed or in automated tests). |
 | `js/storage.js` | On-phone safety vault (IndexedDB) for safety copies, storage estimate. |
 | `js/features.js` | Stage 1 screens: navigation, home dashboard, AI command bar, household, stores, price book, budget plan, commitments, reserve, warning levels, audit trail, Data & Backup. |
 | `js/nlu.js` | Stage 3 command understanding (pure, unit-tested): English + Filipino/Taglish phrases → an intent (out of, add to list, used, bought, remove, where to buy, price, buy now or wait, spent, budget left, afford, plan trip, forecast, alerts, yes/no) with item, quantity and unit; follow-ups ("isa pa", "eh yung gatas", "where?") use the previous turn. Open-ended requests return nothing, so they go to AI research. |
@@ -22,7 +26,7 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 | `package.json` | Backend dependencies (`express`, `cors`, `multer`). |
 | `tests/` | Unit tests (no dependencies) and headless mobile-Chrome tests (own `package.json`, so Render's backend install is unaffected). |
 
-The frontend is still plain static files (no build step), so the Render static site keeps working as before. Scripts load in this order: `calc.js`, `model.js`, `nlu.js`, `storage.js`, `features.js`, `features2.js`, `features3.js`, `pdf.js`, `features4.js`, `app.js`.
+The frontend is still plain static files (no build step), so the Render static site keeps working as before. Scripts load in this order: `calc.js`, `model.js`, `nlu.js`, `storage.js`, `features.js`, `features2.js`, `features3.js`, `pdf.js`, `features4.js`, `app.js`, `pwa.js`.
 
 ## API
 
@@ -164,6 +168,17 @@ Everything is worked out on the phone from Jason's own records (`calc.js`, unit-
 - **Receipt archive** (Shop → Receipts → Receipt archive): all receipts, searchable by store / item / receipt #, filter by month, store and archived. Archiving hides a receipt from the Receipt Manager without deleting it or changing Spent.
 - **Restore recalculates** cycles, recurring purchases, alerts, list prices and the data check after a restore, and says what it did. If Spent doesn't match the recorded history it says so but never changes money.
 - **Empty and loading states** on every new screen; refreshed look (gradients, depth, press states, focus rings), still mobile-first with no libraries or CDNs.
+
+## Install on your phone (Home screen app)
+
+Jason Shop is a **Progressive Web App**. After you deploy the static site, you can put it on the Samsung home screen as a full-screen app (no browser address bar):
+
+1. Open **https://jason-shop.onrender.com** in **Chrome** or **Samsung Internet**.
+2. Tap the **⋮** menu (top right).
+3. Tap **Add to Home screen** or **Install app**, then confirm.
+4. Open **Jason Shop** from the new icon — it runs standalone with the dark status bar and bottom nav, like a normal phone app.
+
+A one-time tip banner may appear in the browser before you install; tap **Got it** to dismiss (remembered). Already-installed (standalone) sessions never show it.
 
 ## History, report and backup
 
