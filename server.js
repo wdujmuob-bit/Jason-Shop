@@ -42,148 +42,380 @@ app.get("/api/health", (req, res) => {
 
 
 /* =========================================
-   SHOPPING RESEARCH REQUEST
+   SHOPPING RESEARCH
+   - OPENAI_MODEL            (default "gpt-5.6")
+   - OPENAI_FALLBACK_MODEL   (default "gpt-5-mini", used only if the
+                              main model name is rejected by OpenAI)
+   - OPENAI_MAX_OUTPUT_TOKENS (default 10000 — reasoning + web search
+                              need room, 1500 was too small)
+   - OPENAI_REASONING_EFFORT (default "low" — faster and cheaper)
 ========================================= */
 
-app.post("/api/research", async (req, res) => {
+const RESEARCH_MODEL = process.env.OPENAI_MODEL || "gpt-5.6";
+const FALLBACK_MODEL = process.env.OPENAI_FALLBACK_MODEL || "gpt-5-mini";
+const MAX_OUTPUT_TOKENS = Number(process.env.OPENAI_MAX_OUTPUT_TOKENS) || 10000;
+const REASONING_EFFORT = process.env.OPENAI_REASONING_EFFORT || "low";
+const OPENAI_TIMEOUT_MS = 240000;
+
+function pesoText(value) {
+  return "₱" + Math.round(Number(value) || 0).toLocaleString("en-PH");
+}
+
+function budgetSentence(budget) {
+
+  if (!budget || typeof budget !== "object") return "";
+
+  const fund = Number(budget.fund) || 0;
+  const spent = Number(budget.spent) || 0;
+  const stop = Number(budget.stop) || 0;
+
+  if (fund <= 0 && stop <= 0) return "";
+
+  let safe = fund > 0 ? fund - spent : Infinity;
+  if (stop > 0) safe = Math.min(safe, stop - spent);
+  safe = Math.max(0, safe);
+
+  return " Jason's shopping budget: fund " + pesoText(fund) +
+    ", already spent " + pesoText(spent) +
+    (stop > 0 ? ", hard stop limit " + pesoText(stop) : "") +
+    ", so the most he can safely spend right now is " + pesoText(safe) + ". " +
+    "Say clearly whether each recommended option fits within that amount, and " +
+    "warn him if the request itself would go over it.";
+
+}
+
+function buildResearchPrompt(query, budget) {
+
+  return "Act as Jason Shop, my personal shopping research assistant. " +
+    "Research this product request using current online information: " +
+    query +
+    ". Search relevant Philippine and international shopping sources. " +
+    "Do not purchase anything. Compare useful products, current prices when available, " +
+    "quality, specifications, reviews, seller/store reliability, shipping considerations, " +
+    "and value for money. Give Best Overall, Cheapest Good Option, Best Quality, " +
+    "and a clear BUY, WAIT, WATCH, or SKIP recommendation. " +
+    "Use Philippine pesos where practical." +
+    budgetSentence(budget) + " " +
+    "Keep the report concise and easy to read on a phone. " +
+    "Finish with one final line that starts exactly with 'VOICE SUMMARY:' " +
+    "followed by one or two short, plain sentences (no markdown, no links) " +
+    "that say which product you recommend, its approximate price, and BUY, WAIT, WATCH, or SKIP. " +
+    "This line will be read aloud to Jason.";
+
+}
+
+// The REST API does not always include the SDK's `output_text` helper,
+// so walk output[] → message items → output_text parts as well.
+function extractOutputText(aiData) {
+
+  if (!aiData || typeof aiData !== "object") return "";
+
+  if (typeof aiData.output_text === "string" && aiData.output_text.trim()) {
+    return aiData.output_text.trim();
+  }
+
+  const parts = [];
+
+  for (const item of Array.isArray(aiData.output) ? aiData.output : []) {
+
+    if (!item || item.type !== "message" || !Array.isArray(item.content)) continue;
+
+    for (const part of item.content) {
+      if (part && (part.type === "output_text" || part.type === "text") && typeof part.text === "string") {
+        parts.push(part.text);
+      }
+    }
+
+  }
+
+  return parts.join("\n\n").trim();
+
+}
+
+function describeShape(aiData) {
+
+  return JSON.stringify({
+    model: aiData && aiData.model,
+    status: aiData && aiData.status,
+    incomplete_details: aiData && aiData.incomplete_details,
+    error: aiData && aiData.error,
+    has_output_text: !!(aiData && aiData.output_text),
+    output_types: Array.isArray(aiData && aiData.output)
+      ? aiData.output.map(o => o && o.type + (Array.isArray(o.content) ? "[" + o.content.map(c => c && c.type).join(",") + "]" : ""))
+      : null,
+    usage: aiData && aiData.usage
+  });
+
+}
+
+function supportsReasoning(model) {
+  return /^(gpt-5|o\d)/i.test(model);
+}
+
+async function callResponsesAPI({ model, input, maxTokens, effort }) {
+
+  const body = {
+    model,
+    max_output_tokens: maxTokens,
+    tools: [{ type: "web_search" }],
+    text: { format: { type: "text" } },
+    input
+  };
+
+  if (effort && supportsReasoning(model)) {
+    body.reasoning = { effort };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
 
   try {
 
-    const { query, budget, mode } = req.body;
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + process.env.OPENAI_API_KEY
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
 
-    if (!query || !query.trim()) {
+    const data = await response.json().catch(() => ({}));
 
-      return res.status(400).json({
-        success: false,
-        error: "Shopping request is required."
-      });
+    return { ok: response.ok, status: response.status, data };
+
+  } finally {
+    clearTimeout(timer);
+  }
+
+}
+
+function isModelProblem(result) {
+  const err = (result.data && result.data.error) || {};
+  return result.status === 404 ||
+    err.code === "model_not_found" ||
+    (err.param === "model");
+}
+
+function isReasoningParamProblem(result) {
+  const err = (result.data && result.data.error) || {};
+  return result.status === 400 && (err.param === "reasoning" || err.param === "reasoning.effort" ||
+    /reasoning/i.test(String(err.message || "")));
+}
+
+class ResearchError extends Error {
+  constructor(message, publicMessage) {
+    super(message);
+    this.publicMessage = publicMessage;
+  }
+}
+
+async function runResearch(query, budget) {
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new ResearchError("OPENAI_API_KEY is not set",
+      "AI research is not set up on the server yet (missing OpenAI key).");
+  }
+
+  const input = buildResearchPrompt(query, budget);
+
+  let model = RESEARCH_MODEL;
+  let effort = REASONING_EFFORT;
+  let maxTokens = MAX_OUTPUT_TOKENS;
+  let retriedForSpace = false;
+
+  // Up to 3 attempts, each fixing a specific, known problem.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+
+    const result = await callResponsesAPI({ model, input, maxTokens, effort });
+
+    if (!result.ok) {
+
+      console.error("OpenAI research error (" + model + "):", result.status, JSON.stringify(result.data && result.data.error));
+
+      if (isReasoningParamProblem(result) && effort) {
+        effort = null;              // model doesn't accept reasoning settings
+        continue;
+      }
+
+      if (isModelProblem(result) && model !== FALLBACK_MODEL) {
+        console.error("Model '" + model + "' rejected; falling back to '" + FALLBACK_MODEL + "'.");
+        model = FALLBACK_MODEL;
+        continue;
+      }
+
+      throw new ResearchError("OpenAI research failed: " + result.status,
+        "The AI research service returned an error. Please tap Retry in a minute.");
 
     }
 
-    /*
-      NEXT PHASE:
-      This endpoint will call the AI/web
-      research engine.
+    const text = extractOutputText(result.data);
 
-      For now it verifies that:
+    if (text) {
+      return {
+        report: text,
+        summary: extractVoiceSummary(text),
+        model,
+        complete: result.data.status !== "incomplete"
+      };
+    }
 
-      Samsung
-          ↓
-      Jason Shop
-          ↓
-      Backend
-          ↓
-      API
+    console.error("OpenAI returned no readable text. Shape:", describeShape(result.data));
 
-      communication is working.
-    */
+    const ranOut = result.data && result.data.status === "incomplete" &&
+      result.data.incomplete_details && result.data.incomplete_details.reason === "max_output_tokens";
 
-    
+    if (ranOut && !retriedForSpace && attempt < 3) {
+      retriedForSpace = true;
+      maxTokens = maxTokens * 2;     // give the model more room, once
+      continue;
+    }
 
-      const aiResponse = await fetch(
-  "https://api.openai.com/v1/responses",
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + process.env.OPENAI_API_KEY
-    },
-    body: JSON.stringify({
-      model: "gpt-5.6",
-      max_output_tokens: 1500,
-      tools: [
-        {
-          type: "web_search"
-        }
-      ],
-      input:
-        "Act as Jason Shop, my personal shopping research assistant. " +
-        "Research this product request using current online information: " +
-        query +
-        ". Search relevant Philippine and international shopping sources. " +
-        "Do not purchase anything. Compare useful products, current prices when available, " +
-        "quality, specifications, reviews, seller/store reliability, shipping considerations, " +
-        "and value for money. Give Best Overall, Cheapest Good Option, Best Quality, " +
-        "and a clear BUY, WAIT, WATCH, or SKIP recommendation. " +
-        "Use Philippine pesos where practical. " +
-        "Finish with one final line that starts exactly with 'VOICE SUMMARY:' " +
-        "followed by one or two short, plain sentences (no markdown, no links) " +
-        "that say which product you recommend, its approximate price, and BUY, WAIT, WATCH, or SKIP. " +
-        "This line will be read aloud to Jason."
-    })
+    break;
+
   }
-);
 
-const aiData = await aiResponse.json();
+  throw new ResearchError("No readable report from OpenAI",
+    "The AI finished without writing a report. Please tap Retry.");
 
-if (!aiResponse.ok) {
-  console.error("OpenAI error:", aiData);
-  throw new Error("OpenAI research failed");
 }
 
-const aiText =
-  aiData.output_text ||
-  aiData.output
-    ?.flatMap(item => item.content || [])
-    ?.find(item => item.type === "output_text")
-    ?.text ||
-  "Research completed, but no readable report was returned.";
+/* ---------- Synchronous research (kept for compatibility) ---------- */
 
-return res.json({
-  success: true,
-  query: query.trim(),
-  status: "complete",
-  report: aiText,
-  summary: extractVoiceSummary(aiText)
-});
+app.post("/api/research", async (req, res) => {
 
-const researchTask = {
+  const { query, budget } = req.body || {};
 
-      id:
-        "JS-" +
-        Date.now(),
-
-      query:
-        query.trim(),
-
-      budget:
-        Number(budget) || null,
-
-      mode:
-        mode || "AI_DECIDE",
-
-      status:
-        "researching",
-
-      createdAt:
-        new Date().toISOString()
-
-    };
-
-    res.json({
-
-      success: true,
-
-      message:
-        "Jason Shop received your research request.",
-
-      task:
-        researchTask
-
+  if (!query || !String(query).trim()) {
+    return res.status(400).json({
+      success: false,
+      error: "Shopping request is required."
     });
-
   }
 
-  catch (error) {
+  try {
+
+    const result = await runResearch(String(query).trim(), budget);
+
+    return res.json({
+      success: true,
+      query: String(query).trim(),
+      status: "complete",
+      report: result.report,
+      summary: result.summary
+    });
+
+  } catch (error) {
 
     console.error(error);
 
-    res.status(500).json({
+    return res.status(error.publicMessage ? 502 : 500).json({
       success: false,
-      error: "Research request failed."
+      error: error.publicMessage || "Research request failed."
     });
 
   }
+
+});
+
+/* ---------- Background research jobs ----------
+   Research with web search can take 1–3 minutes. Phones drop long
+   requests (screen off, app switch, proxy timeouts), so the app starts
+   a job, gets an id straight away, and checks back every few seconds. */
+
+const researchJobs = new Map();
+const JOB_TTL_MS = 60 * 60 * 1000;
+
+function cleanupJobs() {
+  const now = Date.now();
+  for (const [id, job] of researchJobs) {
+    if (now - job.createdAt > JOB_TTL_MS) researchJobs.delete(id);
+  }
+}
+
+app.post("/api/research/start", (req, res) => {
+
+  const { query, budget } = req.body || {};
+
+  if (!query || !String(query).trim()) {
+    return res.status(400).json({
+      success: false,
+      error: "Shopping request is required."
+    });
+  }
+
+  cleanupJobs();
+
+  const id = "JS-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+
+  const job = {
+    id,
+    query: String(query).trim(),
+    status: "researching",
+    createdAt: Date.now()
+  };
+
+  researchJobs.set(id, job);
+
+  runResearch(job.query, budget)
+    .then(result => {
+      job.status = "complete";
+      job.report = result.report;
+      job.summary = result.summary;
+    })
+    .catch(error => {
+      console.error("Research job " + id + " failed:", error.message);
+      job.status = "error";
+      job.error = error.publicMessage || "Research failed. Please tap Retry.";
+    })
+    .finally(() => {
+      job.finishedAt = Date.now();
+    });
+
+  return res.status(202).json({
+    success: true,
+    jobId: id,
+    status: "researching"
+  });
+
+});
+
+app.get("/api/research/status/:id", (req, res) => {
+
+  const job = researchJobs.get(req.params.id);
+
+  if (!job) {
+    return res.status(404).json({
+      success: false,
+      status: "missing",
+      error: "This research was lost because the server restarted. Please tap Retry."
+    });
+  }
+
+  if (job.status === "complete") {
+    return res.json({
+      success: true,
+      status: "complete",
+      query: job.query,
+      report: job.report,
+      summary: job.summary
+    });
+  }
+
+  if (job.status === "error") {
+    return res.json({
+      success: false,
+      status: "error",
+      error: job.error
+    });
+  }
+
+  return res.json({
+    success: true,
+    status: "researching",
+    seconds: Math.round((Date.now() - job.createdAt) / 1000)
+  });
 
 });
 

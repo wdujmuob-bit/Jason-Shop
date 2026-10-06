@@ -15,7 +15,9 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 | Endpoint | Purpose |
 |---|---|
 | `GET /` and `GET /api/health` | Status checks |
-| `POST /api/research` | `{ "query": "..." }` → AI research report (`report`) plus a short `summary` for reading aloud |
+| `POST /api/research/start` | `{ "query": "...", "budget": { "fund", "spent", "stop" } }` → `{ jobId }` straight away (research runs in the background) |
+| `GET /api/research/status/:jobId` | `researching` → `complete` (with `report` and a short `summary` for reading aloud) or `error` |
+| `POST /api/research` | Same research in one long request (kept for compatibility) |
 | `POST /api/transcribe` | multipart form with an `audio` file (webm/mp4/ogg/wav/mp3, max 10 MB) and optional `language` (`en`/`fil`) → `{ "text": "..." }` |
 | `POST /api/budget/check` | Budget status (SAFE / WARNING / HARD_STOP) |
 | `POST /api/receipt` | Placeholder |
@@ -34,6 +36,10 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 | Name | Required | Notes |
 |---|---|---|
 | `OPENAI_API_KEY` | Yes | Used for research and for voice transcription. Never commit it. |
+| `OPENAI_MODEL` | No | Research model. Defaults to `gpt-5.6`. |
+| `OPENAI_FALLBACK_MODEL` | No | Used only if OpenAI rejects `OPENAI_MODEL`. Defaults to `gpt-5-mini`. |
+| `OPENAI_MAX_OUTPUT_TOKENS` | No | Defaults to `10000` (reasoning + web search need room; the report is retried once with double if the AI runs out). |
+| `OPENAI_REASONING_EFFORT` | No | Defaults to `low` (faster, cheaper). |
 | `OPENAI_TRANSCRIBE_MODEL` | No | Defaults to `gpt-4o-mini-transcribe`. `whisper-1` also works. |
 | `PORT` | No | Set automatically by Render. |
 
@@ -44,3 +50,14 @@ npm install
 OPENAI_API_KEY=sk-... npm start          # API on http://localhost:3000
 python3 -m http.server 8080              # app on http://localhost:8080 (talks to localhost:3000 automatically)
 ```
+
+## Budget
+
+- Tap **Safe to Spend**, **Shopping Fund** or **Spent** (or the 💰 Budget tab) to set the budget. Amounts can be typed as `500000`, `500,000`, `₱500,000`, `500k` or `1.5m`.
+- **🛒 Mark purchased** on a shopping item asks what you paid and adds it to Spent (with **Undo**). Adding a receipt also asks for its total.
+- The status turns orange at 85% of the Hard Stop Limit and red at 100%; recording a purchase past the hard stop needs a second tap.
+- The budget is sent with each research request so the AI says whether options fit.
+
+## Deploying
+
+Render auto-deploy is **off**. After merging to `main`, manually deploy **both** services on Render: `jason-shop-api` (backend) and `jason-shop` (frontend).
