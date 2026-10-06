@@ -589,3 +589,60 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
  .chart .svg-lbl,.chart .svg-val{fill:#333}
  .view:not([data-view="budget"]){display:none !important}
 }
+
+
+/* ===== PWA / standalone — native phone feel (Samsung / Chrome) ===== */
+html{
+  background:#080c17;
+  color-scheme:dark;
+  -webkit-text-size-adjust:100%;
+  overscroll-behavior-y:none;          /* reduce rubber-band / pull-to-refresh in the app shell */
+}
+html,body{
+  min-height:100%;
+  min-height:100dvh;
+  min-height:-webkit-fill-available;
+}
+body{
+  background:#080c17;
+  padding-top:env(safe-area-inset-top);
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);
+  /* bottom padding already accounts for the nav; safe-area is on nav itself */
+  -webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;
+  overscroll-behavior-y:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+/* Allow selecting / long-pressing real content fields */
+input,textarea,[contenteditable],.summary-box,.cmd-answer,.tbl,pre,code,
+#historyList,#receiptList,#cmdAnswer,.item,.card .muted{
+  user-select:text;
+  -webkit-user-select:text;
+  -webkit-touch-callout:default;
+}
+button,nav button,.action,.primary,.chip,.seg button,.subtabs button,.search-hit,.list-row,.rc-tile{
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  cursor:pointer;
+}
+/* Installed app: slightly tighter chrome, no webpage “document” feel */
+html.standalone body{
+  /* status bar blends with the dark theme (theme-color + black-translucent) */
+}
+html.standalone .app-head{
+  padding-top:2px;
+}
+.install-tip{
+  background:linear-gradient(135deg,#12203a,#0d1526);
+  border-color:#2b4c80;
+  color:#cfe0ff;
+}
+.install-tip .action{background:#162138;border-color:#3b82ff66;color:#dbe7ff}
+/* Avoid a white flash before CSS loads — html background already dark.
+   Splash for Android/Chrome comes from manifest background_color + theme_color. */
+@media (display-mode: standalone),(display-mode: fullscreen){
+  html{background:#080c17}
+  body{background:#080c17}
+}
