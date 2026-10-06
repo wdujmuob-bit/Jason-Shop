@@ -18,6 +18,8 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 | `POST /api/research/start` | `{ "query": "...", "budget": { "fund", "spent", "stop" } }` → `{ jobId }` straight away (research runs in the background) |
 | `GET /api/research/status/:jobId` | `researching` → `complete` (with `report` and a short `summary` for reading aloud) or `error` |
 | `POST /api/research` | Same research in one long request (kept for compatibility) |
+| `POST /api/photo/start` | multipart: `image` (JPG/PNG/WebP, max 8 MB) + `kind` = `product` or `receipt` → `{ jobId }` |
+| `GET /api/jobs/:jobId` | Result of any background job: `product` (name, brand, model, specs, shop listing price/seller) or `receipt` (store, date, items, subtotal, VAT, total, payment, warnings) |
 | `POST /api/transcribe` | multipart form with an `audio` file (webm/mp4/ogg/wav/mp3, max 10 MB) and optional `language` (`en`/`fil`) → `{ "text": "..." }` |
 | `POST /api/budget/check` | Budget status (SAFE / WARNING / HARD_STOP) |
 | `POST /api/receipt` | Placeholder |
@@ -40,6 +42,7 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 | `OPENAI_FALLBACK_MODEL` | No | Used only if OpenAI rejects `OPENAI_MODEL`. Defaults to `gpt-5-mini`. |
 | `OPENAI_MAX_OUTPUT_TOKENS` | No | Defaults to `10000` (reasoning + web search need room; the report is retried once with double if the AI runs out). |
 | `OPENAI_REASONING_EFFORT` | No | Defaults to `low` (faster, cheaper). |
+| `OPENAI_VISION_MAX_OUTPUT_TOKENS` | No | Photo/receipt reading. Defaults to `6000`. |
 | `OPENAI_TRANSCRIBE_MODEL` | No | Defaults to `gpt-4o-mini-transcribe`. `whisper-1` also works. |
 | `PORT` | No | Set automatically by Render. |
 
@@ -50,6 +53,12 @@ npm install
 OPENAI_API_KEY=sk-... npm start          # API on http://localhost:3000
 python3 -m http.server 8080              # app on http://localhost:8080 (talks to localhost:3000 automatically)
 ```
+
+## Photos
+
+- **📷 Product**: take a photo or pick a screenshot. The AI names the product (brand, model, type, key specs). For Shopee/Lazada screenshots it also reads the listed price and seller. Check or fix the details, then **Research this** runs the normal research (within the budget) and compares the listing price with other stores.
+- **🧾 Receipt**: snap a receipt. The AI reads the store, date, items, subtotal, VAT, total and payment method into an editable card. **Save** adds the total to Spent (untick to skip) and keeps the receipt with a thumbnail in Receipt Manager. Deleting a receipt takes its amount off Spent. Blurry or non-receipt photos get a Retake / Enter manually option.
+- Photos are shrunk on the phone to max 1600 px JPEG before upload. The server keeps them only in memory for the AI call and never logs or stores them. Small thumbnails are saved on the phone only.
 
 ## Budget
 
