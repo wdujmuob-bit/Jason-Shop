@@ -159,6 +159,40 @@ input.big{font-size:22px;font-weight:bold}
 .receipt-items td{padding:4px 2px;border-bottom:1px solid #1d2638}
 .receipt-items td.num{text-align:right;white-space:nowrap}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+
+/* ---------- History / report / backup ---------- */
+nav button{flex:1;padding:7px 1px;font-size:12px}
+.banner{background:#2a2112;border:1px solid #6b5326;color:#ffd58a;border-radius:16px;padding:14px;margin:10px 0}
+.banner .btn-row{margin:10px 0 0}
+.banner .action{padding:12px;font-size:15px}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.filters select,.filters input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #35405a;background:#090e19;color:white;font-size:15px;margin:4px 0}
+.hist-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}
+.amt{font-size:18px}
+.cat-chip{background:#162138;color:#cfd6e4;border:1px solid #27324a;border-radius:999px;padding:6px 10px;font-size:13px}
+.muted{color:#8e99ad}
+.tag.off{background:#2b2f3a;color:#aab4c7}
+.month-bar{display:grid;grid-template-columns:48px 1fr 48px;gap:8px;align-items:center}
+.month-bar button{background:#162138;color:white;border:1px solid #27324a;border-radius:12px;height:46px;font-size:18px}
+.month-bar input{text-align:center;margin:0}
+.big-num{font-size:34px;font-weight:bold;margin:6px 0}
+.progress{height:12px;background:#1d2638;border-radius:999px;overflow:hidden;margin:8px 0}
+.progress span{display:block;height:100%;background:#1769ff;border-radius:999px}
+.progress span.warn{background:#ffbd66}
+.progress span.over{background:#ff6b6b}
+.stats3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stats3 .card{margin:0;padding:14px}
+.donut-wrap{display:flex;gap:16px;align-items:center}
+.donut{width:120px;height:120px;border-radius:50%;flex:none;position:relative}
+.donut::after{content:"";position:absolute;inset:26px;background:#111827;border-radius:50%}
+.legend{flex:1;min-width:0}
+.bar-row{margin:7px 0;font-size:14px}
+.bar-row .lbl{display:flex;justify-content:space-between;gap:6px}
+.bar{height:8px;background:#1d2638;border-radius:999px;overflow:hidden;margin-top:3px}
+.bar span{display:block;height:100%;border-radius:999px}
+.rank{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #1d2638;font-size:15px}
+.rank span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.summary-box{background:#0f1a2e;border:1px solid #27324a;border-radius:14px;padding:14px;line-height:1.5;margin-top:10px}
 </style>
 </head>
 
@@ -169,6 +203,14 @@ input.big{font-size:22px;font-weight:bold}
 <small>PERSONAL AI SHOPPING MANAGER</small>
 <h1>Jason Shop</h1>
 <div class="subtitle">Your personal shopping command center.</div>
+
+<div id="backupBanner" class="banner hidden" role="status">
+ <div id="backupBannerText">💾 Time for a backup.</div>
+ <div class="btn-row">
+  <button class="action" onclick="backupNow()">💾 Back up now</button>
+  <button class="action" onclick="snoozeBackup()">Later</button>
+ </div>
+</div>
 
 <div class="card tap" onclick="showBudget(true)">
  <span class="edit-hint">✏️ Set budget</span>
@@ -281,6 +323,49 @@ No receipts yet. Snap one and the AI reads the store, items and total for you.
 </div>
 
 <div id="receiptList"></div>
+
+<h2 id="historyTitle">Purchase History</h2>
+
+<div class="card" id="historyCard">
+ <div class="filters">
+  <select id="hMonth" onchange="setHistoryFilter('month',this.value)" aria-label="Month"></select>
+  <select id="hCategory" onchange="setHistoryFilter('category',this.value)" aria-label="Category"></select>
+ </div>
+ <input id="hSearch" type="search" placeholder="🔎 Search store, item, payment…" oninput="setHistoryFilter('q',this.value)" autocomplete="off">
+ <div id="hSummary" class="muted" aria-live="polite"></div>
+ <div class="btn-row">
+  <button class="action" onclick="openEntry(null)">➕ Add spending</button>
+  <button class="action" id="csvBtn" onclick="exportCSV()">⬇️ Export CSV</button>
+ </div>
+</div>
+
+<div id="historyList"></div>
+
+<h2 id="reportTitle">Monthly Report</h2>
+
+<div class="card" id="reportCard">
+ <div class="month-bar">
+  <button onclick="shiftReportMonth(-1)" aria-label="Previous month">◀</button>
+  <input id="reportMonth" type="month" onchange="setReportMonth(this.value)" aria-label="Report month">
+  <button onclick="shiftReportMonth(1)" aria-label="Next month">▶</button>
+ </div>
+ <div id="reportBody"></div>
+ <button class="primary" id="summaryBtn" onclick="aiSummary()">✨ AI summary of this month</button>
+ <div id="summaryBox" class="summary-box hidden" aria-live="polite"></div>
+</div>
+
+<h2 id="backupTitle">Backup &amp; Export</h2>
+
+<div class="card" id="backupCard">
+ <p class="muted" style="margin-top:0">Your Jason Shop data is saved only on this phone. Back up regularly and keep the file in Google Drive or Files.</p>
+ <div id="lastBackupText" class="field-note"></div>
+ <button class="primary" onclick="backupNow()">💾 BACKUP NOW</button>
+ <button class="action hidden" id="shareBackupBtn" style="width:100%;margin-bottom:10px" onclick="shareBackup()">📤 Send backup to Google Drive / other app</button>
+ <button class="action" style="width:100%" onclick="document.getElementById('restoreFile').click()">♻️ Restore from backup</button>
+ <div id="backupMsg" class="form-msg" aria-live="polite"></div>
+</div>
+
+<input id="restoreFile" class="hidden" type="file" accept="application/json,.json" onchange="restoreSelected(this)">
 
 <input
  id="productFile"
@@ -406,6 +491,9 @@ Cancel
   <div><label for="rVat">VAT ₱</label><input id="rVat" type="text" inputmode="decimal" autocomplete="off"></div>
  </div>
 
+ <label for="rCategory">Category</label>
+ <select id="rCategory"></select>
+
  <label for="rTotal">Total paid ₱</label>
  <input id="rTotal" class="big" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
 
@@ -418,6 +506,45 @@ Cancel
 </div>
 
 <button class="action" style="width:100%" onclick="closeReceipt()">Cancel</button>
+
+</div>
+</div>
+
+
+<div id="entryModal" class="modal hidden">
+<div class="sheet scroll">
+
+<h2 id="entryTitle">Add spending</h2>
+<div id="entrySub" class="field-note"></div>
+
+<div class="two">
+ <div><label for="eDate">Date</label><input id="eDate" type="date"></div>
+ <div><label for="eAmount">Amount ₱</label><input id="eAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0"></div>
+</div>
+
+<label for="eStore">Store / source</label>
+<input id="eStore" type="text" autocomplete="off" placeholder="e.g. Landers, Shopee, palengke">
+
+<div id="eItemWrap">
+ <label for="eItem">Item(s)</label>
+ <input id="eItem" type="text" autocomplete="off" placeholder="What did you buy?">
+</div>
+<div id="eItemsNote" class="field-note hidden"></div>
+
+<div class="two">
+ <div><label for="eCategory">Category</label><select id="eCategory"></select></div>
+ <div><label for="ePay">Payment</label><input id="ePay" type="text" autocomplete="off" placeholder="Cash, GCash…"></div>
+</div>
+
+<label class="speak-toggle" style="margin:10px 0"><input id="eCounted" type="checkbox" checked> Counts in Spent</label>
+
+<div id="entryMsg" class="form-msg" aria-live="polite"></div>
+
+<button class="primary" onclick="saveEntry()">✅ SAVE</button>
+<div class="btn-row">
+ <button class="action" id="entryDeleteBtn" onclick="deleteEntry(entryKey)">🗑️ Delete</button>
+ <button class="action" onclick="closeEntry()">Cancel</button>
+</div>
 
 </div>
 </div>
@@ -457,6 +584,14 @@ Skip
 🧾<br>Receipts
 </button>
 
+<button id="navHistory" onclick="goTo('history')">
+📜<br>History
+</button>
+
+<button id="navReport" onclick="goTo('report')">
+📊<br>Report
+</button>
+
 <button id="navBudget" onclick="goTo('budget')">
 💰<br>Budget
 </button>
@@ -485,21 +620,42 @@ let voiceSettings = Object.assign(
  JSON.parse(localStorage.getItem("JasonShopVoice") || "{}")
 );
 
-data.fund=Number(data.fund)||0;
-data.stop=Number(data.stop)||0;
-data.spent=Number(data.spent)||0;
-data.requests=Array.isArray(data.requests) ? data.requests : [];
-data.receipts=Array.isArray(data.receipts) ? data.receipts : [];
+function normalizeData(d){
 
-data.requests.forEach((r,i) => {
- if (!r.id) r.id = "R" + Date.now() + "-" + i;
- // Research that was running when the app closed: if the server gave us a
- // job id we can pick it up again (see resumeResearch); otherwise ask for Retry.
- if (r.status === "researching" && !r.jobId) {
-  r.status = "error";
-  r.error = "Research was interrupted. Tap Retry.";
- }
-});
+ d=d && typeof d==="object" ? d : {};
+
+ d.fund=Number(d.fund)||0;
+ d.stop=Number(d.stop)||0;
+ d.spent=Number(d.spent)||0;
+ d.requests=Array.isArray(d.requests) ? d.requests : [];
+ d.receipts=Array.isArray(d.receipts) ? d.receipts : [];
+ d.manual=Array.isArray(d.manual) ? d.manual : [];
+ d.reportSummaries=d.reportSummaries && typeof d.reportSummaries==="object" ? d.reportSummaries : {};
+
+ d.requests.forEach((r,i) => {
+  if (!r.id) r.id = "R" + Date.now() + "-" + i;
+  // Research that was running when the app closed: if the server gave us a
+  // job id we can pick it up again (see resumeResearch); otherwise ask for Retry.
+  if (r.status === "researching" && !r.jobId) {
+   r.status = "error";
+   r.error = "Research was interrupted. Tap Retry.";
+  }
+ });
+
+ d.receipts.forEach((r,i) => {
+  if (!r.id) r.id = "RC" + Date.now() + "-" + i;
+  // Receipts from the earlier version stored a manually typed "amount".
+  if (r.amount && r.total == null) { r.total = Number(r.amount) || 0; r.addedToSpent = true; }
+  delete r.amount;
+ });
+
+ d.manual.forEach((m,i) => { if (!m.id) m.id = "M" + Date.now() + "-" + i; });
+
+ return d;
+
+}
+
+data=normalizeData(data);
 
 /* Amounts: accept 500000, 500,000, ₱500,000, 500k, 1.5m */
 function parseAmount(text){
@@ -629,6 +785,9 @@ function render(){
  }
 
  renderReceipts();
+ renderHistory();
+ renderReport();
+ renderBackupState();
 
 }
 
@@ -756,7 +915,7 @@ function escapeHTML(text){
 // bold text, headings and clickable links.
 function formatReport(text){
 
- let html=escapeHTML(text || "");
+ let html=escapeHTML(String(text || "").replace(/^[ \t]*\**CATEGORY:.*$\n?/gim,""));
 
  html=html
   .replace(/\*\*(.+?)\*\*/g,"<b>$1</b>")
@@ -853,6 +1012,7 @@ async function runResearch(id,source){
   request.status="done";
   request.report=result.report;
   request.summary=result.summary || "";
+  if(result.category) request.category=result.category;
   delete request.error;
   lastFinishedId=id;
  }else{
@@ -1089,7 +1249,12 @@ function confirmAmount(){
  if(target.type==="purchase"){
   let request=findRequest(target.id);
   if(request && !request.purchased){
-   request.purchased={amount:amount,date:new Date().toISOString()};
+   request.purchased={
+    amount:amount,
+    date:new Date().toISOString(),
+    category:request.category || guessCategory(request.text),
+    store:(request.listing && request.listing.platform) || ""
+   };
    data.spent+=amount;
   }
  }
@@ -1183,10 +1348,13 @@ function goTo(section){
   home:null,
   shopping:"shoppingTitle",
   receipts:"receiptCard",
+  history:"historyTitle",
+  report:"reportTitle",
+  backup:"backupCard",
   budget:"budgetCard"
  };
 
- let tabs={home:"navHome",shopping:"navShopping",receipts:"navReceipts",budget:"navBudget"};
+ let tabs={home:"navHome",shopping:"navShopping",receipts:"navReceipts",history:"navHistory",report:"navReport",backup:"navBudget",budget:"navBudget"};
 
  Object.values(tabs).forEach(id=>document.getElementById(id).classList.remove("active"));
  document.getElementById(tabs[section]).classList.add("active");
@@ -1200,7 +1368,9 @@ function goTo(section){
 
  el.scrollIntoView({behavior:"smooth",block:"start"});
 
- let flashEl=section==="shopping" ? document.getElementById("shoppingList") : el;
+ let flashEl=section==="shopping" ? document.getElementById("shoppingList") :
+  (section==="history" ? document.getElementById("historyCard") :
+  (section==="report" ? document.getElementById("reportCard") : el));
  flashEl.classList.remove("flash");
  void flashEl.offsetWidth;
  flashEl.classList.add("flash");
@@ -1451,6 +1621,7 @@ function researchFromPhoto(){
  submitRequest(name,"photo",{
   query:query,
   thumb:thumb,
+  category:ai.category || null,
   listing:showListing && (price>0 || seller) ? { platform:platform, price:price>0 ? price : null, seller:seller } : null
  });
 
@@ -1556,6 +1727,7 @@ function fillReceipt(r){
  document.getElementById("rVat").value=r.vat!=null ? amountForInput(r.vat) : "";
  document.getElementById("rTotal").value=r.total!=null ? amountForInput(r.total) : "";
  document.getElementById("rAddSpent").checked=true;
+ fillCategorySelect("rCategory", r.category || "", true);
  document.getElementById("rMsg").innerText="";
  document.getElementById("rMsg").className="form-msg";
 
@@ -1642,7 +1814,9 @@ function confirmReceipt(){
   total:total,
   addedToSpent:addToSpent,
   thumb:(photo.receipt.prepared && photo.receipt.prepared.thumb) || "",
-  readByAI:!!photo.receipt.ai
+  readByAI:!!photo.receipt.ai,
+  category:document.getElementById("rCategory").value ||
+   guessCategory([document.getElementById("rStore").value].concat(items.map(it=>it.name)).join(" "))
  });
 
  if(addToSpent) data.spent+=total;
@@ -1662,6 +1836,676 @@ function closeReceipt(){
  document.getElementById("receiptFields").classList.add("hidden");
  document.getElementById("receiptRetry").classList.add("hidden");
  setPhotoState("receipt","");
+}
+
+/* =========================================
+   CATEGORIES
+========================================= */
+
+const CATEGORIES=[
+ {name:"Groceries",icon:"🛒",color:"#67e09a"},
+ {name:"Household",icon:"🧴",color:"#7fb0ff"},
+ {name:"Electronics & Appliances",icon:"🔌",color:"#1769ff"},
+ {name:"Baby & Kids",icon:"🍼",color:"#ff9ad5"},
+ {name:"Pet",icon:"🐶",color:"#c49a6c"},
+ {name:"Health & Personal Care",icon:"💊",color:"#ff6b6b"},
+ {name:"Clothing",icon:"👕",color:"#b18cff"},
+ {name:"Home & Furniture",icon:"🛋️",color:"#ffbd66"},
+ {name:"Food & Dining",icon:"🍔",color:"#ff8a3d"},
+ {name:"Other",icon:"📦",color:"#8e99ad"}
+];
+
+// Simple keyword fallback (English + common Filipino words and PH stores).
+const CATEGORY_KEYWORDS={
+ "Baby & Kids":["baby","babies","diaper","diapers","pampers","huggies","eq dry","formula","infant","toddler","stroller","crib","toy","toys","kids","kid","wipes","feeding bottle","nido","similac","enfamil","bonna","lactum","s-26"],
+ "Pet":["dog","dogs","cat","cats","pet","pets","pedigree","whiskas","royal canin","leash","kibble","vet","petco","pet food","dog food","cat litter","litter"],
+ "Electronics & Appliances":["tv","television","fan","electric fan","stand fan","aircon","air conditioner","refrigerator","ref","fridge","washing machine","washer","phone","smartphone","iphone","laptop","tablet","ipad","charger","cable","earbuds","headphones","headset","speaker","router","rice cooker","air fryer","microwave","oven","blender","flat iron","flat-iron","appliance","appliances","electronics","camera","monitor","printer","power bank","powerbank","hanabishi","xiaomi","samsung","abenson","anson","imarflex","kyowa","asahi","electric"],
+ "Health & Personal Care":["medicine","gamot","vitamin","vitamins","pharmacy","mercury drug","watsons","southstar","rose pharmacy","shampoo","conditioner","toothpaste","toothbrush","lotion","deodorant","sunscreen","biogesic","neozep","paracetamol","alcohol","face mask","sanitary","napkin","razor","clinic","hospital","dental"],
+ "Clothing":["shirt","tshirt","t-shirt","pants","jeans","shorts","dress","shoes","sneakers","slippers","tsinelas","socks","jacket","uniform","underwear","bra","uniqlo","h&m","penshoppe","bench","zara","clothes","clothing"],
+ "Home & Furniture":["chair","table","sofa","bed","mattress","cabinet","shelf","drawer","curtain","pillow","bedsheet","blanket","furniture","lamp","wilcon","ace hardware","handyman","ikea","mandaue foam","our home","hardware","paint","tiles","faucet"],
+ "Food & Dining":["restaurant","jollibee","mcdo","mcdonald","mcdonalds","chowking","greenwich","mang inasal","kfc","starbucks","coffee shop","cafe","pizza","burger","grabfood","grab food","foodpanda","samgyup","milk tea","dine in","take out","takeout","meal"],
+ "Household":["detergent","fabric conditioner","dishwashing","tissue","toilet paper","bleach","zonrox","ariel","tide","surf","downy","joy","cleaner","trash bag","garbage bag","sponge","broom","mop","walis","battery","batteries","bulb","light bulb","insecticide","baygon","air freshener","laundry"],
+ "Groceries":["rice","bigas","milk","gatas","egg","eggs","itlog","bread","tinapay","water","mineral water","sugar","asukal","oil","mantika","coffee","kape","noodles","pancit","canned","sardines","corned beef","tuna","grocery","groceries","supermarket","landers","s&r","puregold","savemore","sm supermarket","robinsons supermarket","walter mart","palengke","market","fish","isda","pork","baboy","chicken","manok","beef","vegetables","gulay","fruit","fruits","prutas","banana","saging","snacks","juice","soda","softdrinks","cereal","flour","salt","soy sauce","toyo","vinegar","suka"]
+};
+
+function guessCategory(text){
+
+ let t=" "+String(text||"").toLowerCase().replace(/[^a-z0-9&\-\s]/g," ").replace(/\s+/g," ")+" ";
+ let best="Other", bestScore=0;
+
+ Object.entries(CATEGORY_KEYWORDS).forEach(([cat,words])=>{
+  let score=0;
+  words.forEach(w=>{ if(t.includes(" "+w+" ")) score+=w.includes(" ") ? 2 : 1; });
+  if(score>bestScore){ best=cat; bestScore=score; }
+ });
+
+ return best;
+
+}
+
+function categoryInfo(name){
+ return CATEGORIES.find(c=>c.name===name) || CATEGORIES[CATEGORIES.length-1];
+}
+
+function fillCategorySelect(id,selected,withAuto){
+ let el=document.getElementById(id);
+ el.innerHTML=(withAuto ? '<option value="">✨ Auto-detect</option>' : "")+
+  CATEGORIES.map(c=>`<option value="${escapeHTML(c.name)}">${c.icon} ${escapeHTML(c.name)}</option>`).join("");
+ el.value=selected || (withAuto ? "" : "Other");
+}
+
+/* =========================================
+   PURCHASE HISTORY
+   One list built from: purchased shopping items, saved receipts
+   and manual spending entries. Editing/deleting changes the
+   original record, so nothing can get out of sync.
+========================================= */
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+
+function localDay(value){
+ if(!value) return "";
+ if(/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+ let d=new Date(value);
+ if(isNaN(d)) return "";
+ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+}
+
+function thisMonth(){ return localDay(new Date()).slice(0,7); }
+
+function monthLabel(month){
+ let [y,m]=month.split("-").map(Number);
+ return new Date(y,m-1,1).toLocaleDateString("en-PH",{month:"long",year:"numeric"});
+}
+
+function shiftMonth(month,delta){
+ let [y,m]=month.split("-").map(Number);
+ let d=new Date(y,m-1+delta,1);
+ return d.getFullYear()+"-"+pad2(d.getMonth()+1);
+}
+
+function historyEntries(){
+
+ let out=[];
+
+ data.requests.forEach(r=>{
+  if(!r.purchased) return;
+  let p=r.purchased;
+  out.push({
+   key:"p:"+r.id, source:"purchase",
+   date:localDay(p.date),
+   store:p.store!=null ? p.store : ((r.listing && r.listing.platform) || ""),
+   title:p.itemName || r.text,
+   items:[{name:p.itemName || r.text}],
+   amount:Number(p.amount)||0,
+   category:p.category || r.category || guessCategory(r.text),
+   payment:p.payment || "",
+   counted:true
+  });
+ });
+
+ data.receipts.forEach(rc=>{
+  let total=Number(rc.total)||0;
+  if(total<=0) return;
+  let items=Array.isArray(rc.items) ? rc.items : [];
+  out.push({
+   key:"r:"+rc.id, source:"receipt",
+   date:rc.receiptDate || localDay(rc.date),
+   store:rc.store || rc.name || "",
+   title:rc.store || rc.name || "Receipt",
+   items:items,
+   amount:total,
+   category:rc.category || guessCategory([rc.store].concat(items.map(i=>i.name)).join(" ")),
+   payment:rc.payment || "",
+   counted:!!rc.addedToSpent
+  });
+ });
+
+ data.manual.forEach(m=>{
+  out.push({
+   key:"m:"+m.id, source:"manual",
+   date:m.date || "",
+   store:m.store || "",
+   title:m.item || m.store || "Spending",
+   items:m.item ? [{name:m.item}] : [],
+   amount:Number(m.amount)||0,
+   category:m.category || guessCategory((m.item||"")+" "+(m.store||"")),
+   payment:m.payment || "",
+   counted:m.counted!==false
+  });
+ });
+
+ return out.sort((a,b)=>(b.date||"").localeCompare(a.date||"") || a.key.localeCompare(b.key));
+
+}
+
+function findEntrySource(key){
+ let [type,...rest]=String(key).split(":");
+ let id=rest.join(":");
+ if(type==="p") return {type:"purchase",obj:findRequest(id)};
+ if(type==="r") return {type:"receipt",obj:data.receipts.find(r=>r.id===id)};
+ if(type==="m") return {type:"manual",obj:data.manual.find(m=>m.id===id)};
+ return {type:null,obj:null};
+}
+
+let historyFilter={ month:thisMonth(), category:"all", q:"" };
+
+function setHistoryFilter(field,value){
+ historyFilter[field]=value;
+ renderHistory();
+}
+
+function filteredHistory(){
+ let q=historyFilter.q.trim().toLowerCase();
+ return historyEntries().filter(e=>
+  (historyFilter.month==="all" || (e.date||"").slice(0,7)===historyFilter.month) &&
+  (historyFilter.category==="all" || e.category===historyFilter.category) &&
+  (!q || [e.title,e.store,e.payment,e.category].concat(e.items.map(i=>i.name)).join(" ").toLowerCase().includes(q))
+ );
+}
+
+const SOURCE_ICON={purchase:"🛍️",receipt:"🧾",manual:"✍️"};
+
+function renderHistory(){
+
+ let all=historyEntries();
+
+ // Month filter: every month that has spending, plus this month.
+ let months=[...new Set(all.map(e=>(e.date||"").slice(0,7)).filter(Boolean).concat([thisMonth()]))].sort().reverse();
+ if(historyFilter.month!=="all" && !months.includes(historyFilter.month)) months.unshift(historyFilter.month);
+ let mSel=document.getElementById("hMonth");
+ mSel.innerHTML='<option value="all">All months</option>'+months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join("");
+ mSel.value=historyFilter.month;
+
+ let cSel=document.getElementById("hCategory");
+ cSel.innerHTML='<option value="all">All categories</option>'+CATEGORIES.map(c=>`<option value="${escapeHTML(c.name)}">${c.icon} ${escapeHTML(c.name)}</option>`).join("");
+ cSel.value=historyFilter.category;
+
+ let list=filteredHistory();
+ let counted=list.filter(e=>e.counted);
+ let total=counted.reduce((s,e)=>s+e.amount,0);
+
+ document.getElementById("hSummary").innerText=
+  list.length ? list.length+" entr"+(list.length===1?"y":"ies")+" · "+peso(total)+" spent" : "";
+
+ document.getElementById("csvBtn").innerText="⬇️ Export CSV ("+(historyFilter.month==="all" ? "all time" : monthLabel(historyFilter.month))+")";
+
+ let box=document.getElementById("historyList");
+
+ if(!list.length){
+  box.innerHTML='<div class="card muted">'+(all.length ? "Nothing matches these filters." :
+   "No spending recorded yet. Mark items as purchased, save receipts, or tap ➕ Add spending.")+'</div>';
+  return;
+ }
+
+ box.innerHTML=list.map(e=>{
+  let cat=categoryInfo(e.category);
+  let itemsText=e.source==="receipt" && e.items.length
+   ? e.items.length+" item"+(e.items.length===1?"":"s")+": "+e.items.slice(0,3).map(i=>i.name).join(", ")+(e.items.length>3?"…":"")
+   : "";
+  return `
+   <div class="item">
+    <button class="delete" onclick="deleteEntry('${e.key}')" aria-label="Delete">✕</button>
+    <b>${SOURCE_ICON[e.source]} ${escapeHTML(e.title)}</b>
+    <small>${escapeHTML(e.date || "No date")}${e.store && e.store!==e.title ? " · "+escapeHTML(e.store) : ""}${e.payment ? " · "+escapeHTML(e.payment) : ""}</small>
+    ${itemsText ? `<small>${escapeHTML(itemsText)}</small>` : ""}
+    ${e.counted ? "" : '<span class="tag off">not counted in Spent</span>'}
+    <div class="hist-row">
+     <button class="cat-chip" onclick="openEntry('${e.key}')">${cat.icon} ${escapeHTML(cat.name)}</button>
+     <span><b class="amt">${peso(e.amount)}</b> <button class="mini" style="margin:0 0 0 6px" onclick="openEntry('${e.key}')">✏️</button></span>
+    </div>
+   </div>`;
+ }).join("");
+
+}
+
+/* ---------- Add / edit / delete ---------- */
+
+let entryKey=null;
+
+function openEntry(key){
+
+ entryKey=key;
+ let e=key ? historyEntries().find(x=>x.key===key) : null;
+
+ if(key && !e) return;
+
+ document.getElementById("entryTitle").innerText=e ? "Edit spending" : "Add spending";
+ document.getElementById("entrySub").innerText=e ? {purchase:"From a purchased shopping item",receipt:"From a saved receipt",manual:"Manual entry"}[e.source] : "Record something you paid for.";
+ document.getElementById("eDate").value=e ? (e.date || localDay(new Date())) : localDay(new Date());
+ document.getElementById("eAmount").value=e ? amountForInput(e.amount) : "";
+ document.getElementById("eStore").value=e ? e.store : "";
+ document.getElementById("ePay").value=e ? e.payment : "";
+ document.getElementById("eCounted").checked=e ? e.counted : true;
+ fillCategorySelect("eCategory", e ? e.category : "", !e);
+
+ let isReceipt=e && e.source==="receipt";
+ document.getElementById("eItemWrap").classList.toggle("hidden",!!isReceipt);
+ document.getElementById("eItem").value=e && !isReceipt ? (e.source==="manual" ? (findEntrySource(key).obj.item || "") : e.title) : "";
+ let note=document.getElementById("eItemsNote");
+ note.classList.toggle("hidden",!isReceipt);
+ note.innerText=isReceipt ? e.items.length+" item(s) on this receipt — see Receipt Manager for the details." : "";
+
+ document.getElementById("entryDeleteBtn").classList.toggle("hidden",!e);
+ document.getElementById("entryMsg").innerText="";
+ document.getElementById("entryMsg").className="form-msg";
+ entryOverStopConfirmed=false;
+
+ document.getElementById("entryModal").classList.remove("hidden");
+
+}
+
+function closeEntry(){
+ entryKey=null;
+ document.getElementById("entryModal").classList.add("hidden");
+}
+
+let entryOverStopConfirmed=false;
+
+function saveEntry(){
+
+ let msg=document.getElementById("entryMsg");
+ let amount=parseAmount(document.getElementById("eAmount").value);
+ let date=document.getElementById("eDate").value;
+ let store=document.getElementById("eStore").value.trim();
+ let item=document.getElementById("eItem").value.trim();
+ let payment=document.getElementById("ePay").value.trim();
+ let counted=document.getElementById("eCounted").checked;
+ let category=document.getElementById("eCategory").value || guessCategory(item+" "+store);
+
+ if(amount===null || isNaN(amount) || amount<=0){
+  msg.innerText="Please enter the amount, for example 1,250.";
+  msg.className="form-msg err";
+  return;
+ }
+
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){
+  msg.innerText="Please pick a date.";
+  msg.className="form-msg err";
+  return;
+ }
+
+ let old=entryKey ? historyEntries().find(x=>x.key===entryKey) : null;
+ let delta=(counted ? amount : 0)-(old && old.counted ? old.amount : 0);
+
+ if(delta>0 && data.stop>0 && data.spent+delta>=data.stop && !entryOverStopConfirmed){
+  msg.innerText="⚠️ This takes Spent to "+peso(data.spent+delta)+", past your hard stop of "+peso(data.stop)+". Tap Save again to record it anyway.";
+  msg.className="form-msg err";
+  entryOverStopConfirmed=true;
+  return;
+ }
+
+ if(!old){
+  data.manual.unshift({ id:"M"+Date.now(), date, store, item, amount, category, payment, counted });
+ }else{
+  let src=findEntrySource(entryKey);
+  if(!src.obj){ closeEntry(); return; }
+  if(src.type==="purchase"){
+   Object.assign(src.obj.purchased,{ amount, date, store, payment, category, itemName:item || src.obj.text });
+   // A purchase always counts; unticking turns it into "not purchased".
+   if(!counted){ delete src.obj.purchased; }
+  }
+  if(src.type==="receipt"){
+   Object.assign(src.obj,{ total:amount, receiptDate:date, store, payment, category, addedToSpent:counted });
+  }
+  if(src.type==="manual"){
+   Object.assign(src.obj,{ amount, date, store, item, payment, category, counted });
+  }
+ }
+
+ data.spent=Math.max(0,Math.round((data.spent+delta)*100)/100);
+
+ closeEntry();
+ save();
+
+}
+
+function deleteEntry(key){
+
+ let e=historyEntries().find(x=>x.key===key);
+ if(!e) return;
+
+ if(!confirm("Delete \""+e.title+"\" ("+peso(e.amount)+")?"+(e.counted ? " It will be taken off Spent." : "")))return;
+
+ let src=findEntrySource(key);
+
+ if(src.type==="purchase" && src.obj) delete src.obj.purchased;
+ if(src.type==="receipt") data.receipts=data.receipts.filter(r=>r!==src.obj);
+ if(src.type==="manual") data.manual=data.manual.filter(m=>m!==src.obj);
+
+ if(e.counted) data.spent=Math.max(0,Math.round((data.spent-e.amount)*100)/100);
+
+ closeEntry();
+ save();
+
+}
+
+/* ---------- CSV export ---------- */
+
+function csvCell(value){
+ let t=value==null ? "" : String(value);
+ if(/^[=+\-@]/.test(t)) t="'"+t;           // stop spreadsheets running formulas
+ return '"'+t.replace(/"/g,'""')+'"';
+}
+
+function exportCSV(){
+
+ let month=historyFilter.month;
+ let rows=historyEntries().filter(e=>month==="all" || (e.date||"").slice(0,7)===month);
+
+ if(!rows.length){
+  document.getElementById("hSummary").innerText="Nothing to export for "+(month==="all" ? "any month" : monthLabel(month))+".";
+  return;
+ }
+
+ let lines=[["Date","Store","Items","Category","Payment","Amount (PHP)","Source","Counted in Spent"].map(csvCell).join(",")];
+
+ rows.forEach(e=>{
+  let items=e.items.map(i=>(i.name||"")+(i.qty>1 ? " x"+i.qty : "")+(i.price!=null ? " ("+Number(i.price).toFixed(2)+")" : "")).join("; ") || e.title;
+  lines.push([e.date,e.store,items,e.category,e.payment,e.amount.toFixed(2),{purchase:"Purchased item",receipt:"Receipt",manual:"Manual"}[e.source],e.counted ? "Yes" : "No"].map(csvCell).join(","));
+ });
+
+ downloadFile("jason-shop-purchases-"+(month==="all" ? "all-time" : month)+".csv","\uFEFF"+lines.join("\r\n"),"text/csv;charset=utf-8");
+
+}
+
+function downloadFile(name,content,type){
+ let blob=new Blob([content],{type:type});
+ let url=URL.createObjectURL(blob);
+ let a=document.createElement("a");
+ a.href=url; a.download=name; a.style.display="none";
+ document.body.appendChild(a); a.click();
+ setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },2000);
+}
+
+/* =========================================
+   MONTHLY REPORT
+========================================= */
+
+let reportMonth=thisMonth();
+
+function setReportMonth(month){
+ if(/^\d{4}-\d{2}$/.test(month)){ reportMonth=month; renderReport(); }
+}
+
+function shiftReportMonth(delta){ setReportMonth(shiftMonth(reportMonth,delta)); }
+
+function monthStats(month){
+
+ let entries=historyEntries().filter(e=>e.counted && (e.date||"").slice(0,7)===month);
+ let total=entries.reduce((s,e)=>s+e.amount,0);
+ let lastMonthTotal=historyEntries().filter(e=>e.counted && (e.date||"").slice(0,7)===shiftMonth(month,-1)).reduce((s,e)=>s+e.amount,0);
+
+ let byCat={};
+ entries.forEach(e=>{ byCat[e.category]=(byCat[e.category]||0)+e.amount; });
+ let byCategory=Object.entries(byCat).map(([name,amount])=>({name,amount})).sort((a,b)=>b.amount-a.amount);
+
+ let byStore={};
+ entries.forEach(e=>{
+  let name=(e.store||"").trim(); if(!name) return;
+  let k=name.toLowerCase();
+  byStore[k]=byStore[k] || {name,amount:0,count:0};
+  byStore[k].amount+=e.amount; byStore[k].count++;
+ });
+ let topStores=Object.values(byStore).sort((a,b)=>b.amount-a.amount).slice(0,5);
+
+ let biggest=entries.slice().sort((a,b)=>b.amount-a.amount).slice(0,5)
+  .map(e=>({name:e.title+(e.store && e.store!==e.title ? " ("+e.store+")" : ""),amount:e.amount,date:e.date}));
+
+ let now=thisMonth(), [y,m]=month.split("-").map(Number);
+ let days=month===now ? new Date().getDate() : (month<now ? new Date(y,m,0).getDate() : 0);
+
+ return {
+  month, monthLabel:monthLabel(month), total, count:entries.length,
+  fund:data.fund, stop:data.stop, lastMonthTotal,
+  dailyAverage:days ? Math.round(total/days*100)/100 : 0, days,
+  byCategory, topStores, biggest
+ };
+
+}
+
+function renderReport(){
+
+ document.getElementById("reportMonth").value=reportMonth;
+
+ let st=monthStats(reportMonth);
+ let body=document.getElementById("reportBody");
+
+ if(!st.count){
+  body.innerHTML='<p class="muted">No spending recorded for '+escapeHTML(st.monthLabel)+' yet.</p>';
+  document.getElementById("summaryBtn").classList.add("hidden");
+  document.getElementById("summaryBox").classList.add("hidden");
+  return;
+ }
+
+ // Fund progress
+ let pct=st.fund>0 ? Math.round(st.total/st.fund*100) : null;
+ let barClass=pct===null ? "" : (pct>=100 ? "over" : (pct>=85 ? "warn" : ""));
+
+ // Compared with last month
+ let diff=st.total-st.lastMonthTotal;
+ let compare=st.lastMonthTotal>0
+  ? (diff>=0 ? "▲ "+peso(diff)+" more than" : "▼ "+peso(-diff)+" less than")+" last month ("+peso(st.lastMonthTotal)+", "+(diff>=0?"+":"")+Math.round(diff/st.lastMonthTotal*100)+"%)"
+  : "No spending recorded last month.";
+
+ // Donut
+ let acc=0;
+ let stops=st.byCategory.map(c=>{
+  let from=acc/st.total*360; acc+=c.amount; let to=acc/st.total*360;
+  return categoryInfo(c.name).color+" "+from.toFixed(1)+"deg "+to.toFixed(1)+"deg";
+ }).join(",");
+
+ body.innerHTML=`
+  <small>SPENT IN ${escapeHTML(st.monthLabel.toUpperCase())}</small>
+  <div class="big-num">${peso(st.total)}</div>
+  ${pct!==null ? `
+   <div class="progress"><span class="${barClass}" style="width:${Math.min(100,pct)}%"></span></div>
+   <small>${pct}% of your ${peso(st.fund)} shopping fund${st.stop>0 ? " · hard stop "+peso(st.stop) : ""}</small>` :
+   '<small class="muted">Set a shopping fund in Budget to compare.</small>'}
+  <p style="margin:10px 0">${escapeHTML(compare)}</p>
+
+  <div class="stats3">
+   <div class="card"><small>DAILY AVERAGE</small><h3 style="margin:6px 0 0">${peso(st.dailyAverage)}</h3><small class="muted">over ${st.days} day${st.days===1?"":"s"}</small></div>
+   <div class="card"><small>PURCHASES</small><h3 style="margin:6px 0 0">${st.count}</h3><small class="muted">avg ${peso(Math.round(st.total/st.count))}</small></div>
+  </div>
+
+  <h3>By category</h3>
+  <div class="donut-wrap">
+   <div class="donut" style="background:conic-gradient(${stops})" role="img" aria-label="Spending by category"></div>
+   <div class="legend">
+    ${st.byCategory.map(c=>{ let ci=categoryInfo(c.name); return `
+     <div class="bar-row">
+      <div class="lbl"><span>${ci.icon} ${escapeHTML(c.name)}</span><b>${peso(c.amount)}</b></div>
+      <div class="bar"><span style="width:${(c.amount/st.byCategory[0].amount*100).toFixed(1)}%;background:${ci.color}"></span></div>
+     </div>`; }).join("")}
+   </div>
+  </div>
+
+  ${st.topStores.length ? `<h3>Top stores</h3>`+st.topStores.map(x=>`<div class="rank"><span>🏬 ${escapeHTML(x.name)} <small class="muted">×${x.count}</small></span><b>${peso(x.amount)}</b></div>`).join("") : ""}
+
+  <h3>Biggest purchases</h3>
+  ${st.biggest.map(x=>`<div class="rank"><span>${escapeHTML(x.name)} <small class="muted">${escapeHTML(x.date||"")}</small></span><b>${peso(x.amount)}</b></div>`).join("")}
+ `;
+
+ document.getElementById("summaryBtn").classList.remove("hidden");
+
+ let saved=data.reportSummaries[reportMonth];
+ let box=document.getElementById("summaryBox");
+ if(saved && saved.text){
+  box.classList.remove("hidden");
+  box.innerHTML="✨ "+escapeHTML(saved.text)+(Math.round(saved.total)!==Math.round(st.total) ? '<br><small class="muted">Written before your latest changes — tap the button to refresh.</small>' : "");
+  document.getElementById("summaryBtn").innerText="↻ Rewrite AI summary";
+ }else{
+  box.classList.add("hidden");
+  document.getElementById("summaryBtn").innerText="✨ AI summary of this month";
+ }
+
+}
+
+async function aiSummary(){
+
+ let month=reportMonth;
+ let st=monthStats(month);
+ let btn=document.getElementById("summaryBtn");
+ let box=document.getElementById("summaryBox");
+
+ if(!st.count) return;
+
+ btn.disabled=true;
+ box.classList.remove("hidden");
+ box.innerHTML='<span class="spinner"></span>Writing your summary…';
+
+ try{
+
+  let started=await fetchJSON("/api/report/summary",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({ stats:st })
+  },75000);
+
+  if(started.httpStatus===404) throw new ServerError("The AI summary needs the latest server update. Please redeploy jason-shop-api.");
+  if(!started.success || !started.jobId) throw new ServerError(started.error || "Couldn't start the summary.");
+
+  let result=await pollJob(started.jobId,"/api/jobs/",2*60*1000);
+  if(!result || result.status!=="complete" || !result.text) throw new ServerError((result && result.error) || "The AI didn't return a summary.");
+
+  data.reportSummaries[month]={ text:result.text, at:new Date().toISOString(), total:st.total };
+  save();
+
+ }catch(error){
+
+  box.innerHTML="⚠️ "+escapeHTML(friendlyError(error));
+
+ }finally{
+  btn.disabled=false;
+ }
+
+}
+
+/* =========================================
+   BACKUP / RESTORE
+========================================= */
+
+const BACKUP_REMINDER_DAYS=7;
+
+function backupPayload(){
+ return JSON.stringify({
+  app:"Jason Shop", type:"backup", version:1,
+  exportedAt:new Date().toISOString(),
+  data:data, voiceSettings:voiceSettings
+ });
+}
+
+function backupFileName(){ return "jason-shop-backup-"+localDay(new Date())+".json"; }
+
+function markBackedUp(how){
+ data.lastBackup=new Date().toISOString();
+ delete data.backupSnoozeUntil;
+ save();
+ let msg=document.getElementById("backupMsg");
+ msg.innerText=how;
+ msg.className="form-msg ok";
+}
+
+function backupNow(){
+ downloadFile(backupFileName(),backupPayload(),"application/json");
+ markBackedUp("✅ Saved "+backupFileName()+" to your Downloads. Open Files or Google Drive to keep a copy there.");
+}
+
+async function shareBackup(){
+ try{
+  let file=new File([backupPayload()],backupFileName(),{type:"application/json"});
+  await navigator.share({ files:[file], title:"Jason Shop backup" });
+  markBackedUp("✅ Backup shared. Choose Google Drive in the share menu to keep it safe.");
+ }catch(error){
+  if(error && error.name==="AbortError") return;      // Jason closed the share menu
+  backupNow();
+ }
+}
+
+function snoozeBackup(){
+ data.backupSnoozeUntil=new Date(Date.now()+24*3600*1000).toISOString();
+ save();
+}
+
+function daysSince(iso){ return iso ? Math.floor((Date.now()-new Date(iso).getTime())/86400000) : null; }
+
+function renderBackupState(){
+
+ let ago=daysSince(data.lastBackup);
+ document.getElementById("lastBackupText").innerText=
+  ago===null ? "No backup yet." : "Last backup: "+(ago===0 ? "today" : ago===1 ? "yesterday" : ago+" days ago")+" ("+new Date(data.lastBackup).toLocaleDateString()+")";
+
+ let hasData=data.requests.length || data.receipts.length || data.manual.length;
+ let snoozed=data.backupSnoozeUntil && new Date(data.backupSnoozeUntil)>new Date();
+ let due=hasData && !snoozed && (ago===null || ago>=BACKUP_REMINDER_DAYS);
+
+ document.getElementById("backupBanner").classList.toggle("hidden",!due);
+ if(due){
+  document.getElementById("backupBannerText").innerText=ago===null
+   ? "💾 Your shopping data is only on this phone. Make a backup so you don't lose it."
+   : "💾 Your last backup was "+ago+" days ago. Make a fresh one?";
+ }
+
+}
+
+function setupShareButton(){
+ try{
+  let test=new File(["{}"],"test.json",{type:"application/json"});
+  if(navigator.canShare && navigator.canShare({files:[test]})){
+   document.getElementById("shareBackupBtn").classList.remove("hidden");
+  }
+ }catch(e){ /* sharing files not supported */ }
+}
+
+function restoreSelected(input){
+
+ let file=input.files && input.files[0];
+ input.value="";
+ if(!file) return;
+
+ let msg=document.getElementById("backupMsg");
+ let reader=new FileReader();
+
+ reader.onload=()=>{
+
+  let payload=null;
+  try{ payload=JSON.parse(reader.result); }catch(e){ payload=null; }
+
+  let d=payload && payload.data;
+  if(!payload || payload.app!=="Jason Shop" || !d || !Array.isArray(d.requests) || !Array.isArray(d.receipts)){
+   msg.innerText="⚠️ This file isn't a Jason Shop backup.";
+   msg.className="form-msg err";
+   return;
+  }
+
+  let when=payload.exportedAt ? new Date(payload.exportedAt).toLocaleString() : "an unknown date";
+  let summary=(d.requests.length)+" shopping items, "+d.receipts.length+" receipts, "+((d.manual||[]).length)+" manual entries, Spent "+peso(d.spent);
+
+  if(!confirm("Restore the backup from "+when+"?\n\n"+summary+"\n\nThis replaces everything currently in Jason Shop on this phone.")) return;
+
+  // Keep a safety copy of what was here before.
+  try{ localStorage.setItem("JasonShopData.beforeRestore",JSON.stringify(data)); }catch(e){}
+
+  data=normalizeData(d);
+  if(payload.voiceSettings){
+   voiceSettings=Object.assign({lang:"en",speak:true},payload.voiceSettings);
+   localStorage.setItem("JasonShopVoice",JSON.stringify(voiceSettings));
+  }
+  storeData();
+  renderVoiceSettings();
+  fillBudgetForm();
+  render();
+  resumeResearch();
+
+  msg.innerText="✅ Restored backup from "+when+".";
+  msg.className="form-msg ok";
+
+ };
+
+ reader.onerror=()=>{ msg.innerText="⚠️ Couldn't read that file."; msg.className="form-msg err"; };
+ reader.readAsText(file);
+
 }
 
 /* =========================================
@@ -2362,6 +3206,7 @@ if("speechSynthesis" in window){
 renderVoiceSettings();
 render();
 fillBudgetForm();
+setupShareButton();
 wakeServer();
 resumeResearch();
 
