@@ -17,8 +17,8 @@
 }(typeof self !== "undefined" ? self : this, function (C) {
   "use strict";
 
-  var SCHEMA_VERSION = 2;
-  var APP_VERSION = "2.0.0-stage1";
+  var SCHEMA_VERSION = 3;
+  var APP_VERSION = "3.0.0-stage2";
 
   /* ---------- ids & helpers ---------- */
 
@@ -57,6 +57,7 @@
   function slug(text) { return normalizeName(text).replace(/&/g, " and ").replace(/\s+/g, "_"); }
 
   function arr(x) { return Array.isArray(x) ? x : []; }
+  function firstOfMonth(day) { return String(day).slice(0, 8) + "01"; }
 
   /* ---------- reference data ---------- */
 
@@ -136,7 +137,19 @@
   var DEFAULT_SETTINGS = {
     thresholds: { watch: 70, warning: 85, hardStop: 100 },
     budgetPeriod: { type: "monthly", startDay: 1 },
-    currency: "PHP"
+    currency: "PHP",
+    // Stage 2
+    cycle: { mode: "days", lengthDays: 15, anchorDate: null },     // anchor set at upgrade (1st of that month)
+    inventory: { lowDays: 7, urgentDays: 3, expirySoonDays: 3, bufferDays: 3, duplicateWindowDays: 7 }
+  };
+
+  // Where things are kept at home (Stage 2 inventory).
+  var INVENTORY_LOCATIONS = { pantry: "Pantry", fridge: "Fridge", freezer: "Freezer", storeroom: "Storeroom", bathroom: "Bathroom", laundry: "Laundry", pets: "Pet supplies", other: "Other" };
+  var LIST_PRIORITIES = { 1: "High", 2: "Normal", 3: "Low" };
+  var MATCH_CONFIDENCE = {
+    high: { icon: "✅", label: "High", text: "Exact name or a name you confirmed" },
+    review: { icon: "🔎", label: "Review", text: "Looks similar — please check" },
+    unknown: { icon: "❔", label: "Unknown", text: "New name — added as a new product" }
   };
 
   // §49 entity collections (Stage 2+ ones are reserved now so the layout is stable).
@@ -210,6 +223,11 @@
     if (!d.settings.thresholds || !C.validateThresholds(d.settings.thresholds).ok) d.settings.thresholds = clone(DEFAULT_SETTINGS.thresholds);
     if (!d.settings.budgetPeriod) d.settings.budgetPeriod = clone(DEFAULT_SETTINGS.budgetPeriod);
     if (!d.settings.currency) d.settings.currency = "PHP";
+    var cyc = d.settings.cycle;
+    if (!cyc || !C.validateCycle(Object.assign({}, cyc, { anchorDate: cyc.anchorDate || firstOfMonth(localDay(new Date())) })).ok) cyc = clone(DEFAULT_SETTINGS.cycle);
+    if (!cyc.anchorDate) cyc.anchorDate = firstOfMonth(localDay(new Date()));
+    d.settings.cycle = cyc;
+    d.settings.inventory = Object.assign({}, DEFAULT_SETTINGS.inventory, d.settings.inventory && typeof d.settings.inventory === "object" ? d.settings.inventory : {});
     if (!d.budgetPlan || typeof d.budgetPlan !== "object") d.budgetPlan = { mode: "peso", items: [], updatedAt: null };
     d.budgetPlan.items = arr(d.budgetPlan.items);
     if (d.budgetPlan.mode !== "percent") d.budgetPlan.mode = "peso";
@@ -241,6 +259,124 @@
       list.find(function (p) { return arr(p.aliases).some(function (a) { return normalizeName(a) === n; }); }) || null;
   }
 
+  /* ---------- receipt-line → product matching with confidence (Stage 2) ---------- */
+
+  var SIZE_TOKEN = /^(\d+(\.\d+)?)?(x\d+(\.\d+)?)?(mg|g|gm|gms|grams?|kg|kgs|kilos?|ml|l|lt|ltr|ltrs|liters?|litres?|cc|oz|lb|lbs|pcs?|pieces?|rolls?|packs?|sachets?|bottles?|cans?|doz|dozen|trays?|bundles?|bags?|sacks?|x)?$/;
+  function coreTokens(text) {
+    return normalizeName(text).replace(/&/g, " ").split(" ").filter(function (t) { return t && !SIZE_TOKEN.test(t) && t.length > 1; });
+  }
+  function jaccard(a, b) {
+    if (!a.length || !b.length) return 0;
+    var A = {}, inter = 0, union = {};
+    a.forEach(function (t) { A[t] = true; union[t] = true; });
+    b.forEach(function (t) { if (A[t] && !union["#" + t]) { inter++; union["#" + t] = true; } union[t] = true; });
+    var u = Object.keys(union).filter(function (k) { return k[0] !== "#"; }).length;
+    return inter / u;
+  }
+  function sameSize(a, b) {
+    if (!a || !b) return null;                       // unknown on one side
+    return a.unit === b.unit && Math.abs(a.size - b.size) < 1e-9 && (a.packCount || 1) === (b.packCount || 1);
+  }
+
+  /*
+    matchProduct(products, name) → { confidence: "high"|"review"|"unknown", product, score, reason }
+      high    — exact name or a saved alias (incl. names Jason confirmed before)
+      review  — similar words (≥ 50% overlap) or same words with a different size → suggested, never merged silently
+      unknown — nothing similar
+  */
+  function matchProduct(products, name) {
+    var n = normalizeName(name);
+    var list = arr(products).filter(function (p) { return !p.archived; });
+    if (!n) return { confidence: "unknown", product: null, score: 0, reason: "empty" };
+    var exact = findProductByName(list, name);
+    if (exact) return { confidence: "high", product: exact, score: 1, reason: normalizeName(exact.name) === n ? "exact_name" : "alias" };
+    var tok = coreTokens(name), size = C.parseSize(name);
+    var best = null;
+    list.forEach(function (p) {
+      [p.name].concat(arr(p.aliases)).forEach(function (label) {
+        var t = coreTokens([p.brand, label, p.variant].filter(Boolean).join(" "));
+        var t2 = coreTokens(label);
+        var sc = Math.max(jaccard(tok, t), jaccard(tok, t2));
+        if (!best || sc > best.score) best = { product: p, score: sc, label: label };
+      });
+    });
+    if (best && best.score >= 0.5) {
+      var ps = best.product.size ? { size: best.product.size, unit: best.product.unit, packCount: best.product.packCount || 1 } : C.parseSize(best.label);
+      var same = sameSize(size, ps);
+      return { confidence: "review", product: best.product, score: Math.round(best.score * 100) / 100, reason: same === false ? "different_size" : "similar_name" };
+    }
+    return { confidence: "unknown", product: null, score: best ? Math.round(best.score * 100) / 100 : 0, reason: "no_match" };
+  }
+
+  // Same receipt saved twice? Same receipt number at the same store, or same store + date + total.
+  function findDuplicateReceipt(receipts, cand) {
+    var c = cand || {};
+    var store = normalizeName(c.store), num = String(c.receiptNumber || "").replace(/\s+/g, "").toLowerCase();
+    var total = Number(c.total);
+    var date = c.receiptDate || "";
+    var hit = null;
+    arr(receipts).some(function (r) {
+      if (!r || r.id === c.id) return false;
+      var rs = normalizeName(r.store), rn = String(r.receiptNumber || "").replace(/\s+/g, "").toLowerCase();
+      if (num && rn && num === rn && (!store || !rs || store === rs)) { hit = { receipt: r, reason: "same_number" }; return true; }
+      var rd = r.receiptDate || (r.date ? localDay(r.date) : "");
+      if (store && rs === store && date && rd === date && isFinite(total) && Math.abs((Number(r.total) || 0) - total) < 0.01) { hit = { receipt: r, reason: "same_store_date_total" }; return true; }
+      return false;
+    });
+    return hit;
+  }
+
+  function makeInventoryItem(fields, at) {
+    var f = fields || {};
+    var q = C.num(f.quantity);
+    return {
+      id: f.id || newId("inv"),
+      name: String(f.name || "").trim(),
+      productId: f.productId || null,
+      location: INVENTORY_LOCATIONS[f.location] ? f.location : "pantry",
+      unit: String(f.unit || "pcs").trim() || "pcs",
+      quantity: q !== null && q >= 0 ? q : 0,
+      minQty: C.num(f.minQty) > 0 ? C.num(f.minQty) : null,
+      packSize: C.num(f.packSize) > 0 ? C.num(f.packSize) : 1,
+      usage: { mode: f.usage && f.usage.mode || "auto", perDay: C.num(f.usage && f.usage.perDay), perPersonPerDay: C.num(f.usage && f.usage.perPersonPerDay), perPetPerDay: C.num(f.usage && f.usage.perPetPerDay) },
+      houseId: f.houseId || null,
+      perishable: f.perishable === true,
+      expiryDate: f.expiryDate || null,
+      shelfLifeDays: C.num(f.shelfLifeDays) > 0 ? C.num(f.shelfLifeDays) : null,
+      learnedAtPeople: null,
+      notes: f.notes || "",
+      archived: false,
+      createdAt: at, updatedAt: at
+    };
+  }
+
+  function makeList(name, at) {
+    return { id: newId("list"), name: name || "Shopping list", status: "active", items: [], createdAt: at, updatedAt: at };
+  }
+
+  function makeListItem(fields, at) {
+    var f = fields || {};
+    var q = C.num(f.qty);
+    return {
+      id: f.id || newId("li"),
+      name: String(f.name || "").trim(),
+      productId: f.productId || null,
+      inventoryItemId: f.inventoryItemId || null,
+      qty: q > 0 ? q : 1,
+      unit: f.unit || "",
+      kind: f.kind === "want" ? "want" : "need",
+      priority: [1, 2, 3].indexOf(Number(f.priority)) >= 0 ? Number(f.priority) : 2,
+      pinned: f.pinned === true,
+      storeId: f.storeId || null,
+      categoryName: f.categoryName || "",
+      status: "open",
+      addedFrom: f.addedFrom || "manual",
+      cycleStart: f.cycleStart || null,
+      note: f.note || "",
+      createdAt: at, updatedAt: at
+    };
+  }
+
   var NOT_A_PRODUCT = /^(vat|vatable|vat exempt|discount|less|subtotal|sub total|total|change|cash|amount due|senior|pwd|service charge|tip|delivery fee|shipping|bag fee|points?)\b/i;
 
   function makeProduct(fields, at) {
@@ -268,7 +404,8 @@
   // Idempotent: a line that already has a price record is skipped.
   function priceRecordsFromReceipt(d, receipt, opts) {
     var at = (opts && opts.at) || nowISO();
-    var created = { products: 0, priceRecords: 0 };
+    var legacy = !!(opts && opts.legacy);
+    var created = { products: 0, priceRecords: 0, high: 0, review: 0, unknown: 0, lines: [] };
     if (!receipt || !receipt.id) return created;
     var existing = {};
     d.priceRecords.forEach(function (pr) {
@@ -281,7 +418,9 @@
       var name = String((it && it.name) || "").trim();
       var price = C.num(it && it.price);
       if (!name || price === null || price <= 0 || NOT_A_PRODUCT.test(name)) return;
-      var product = findProductByName(d.products, name);
+      var m = legacy ? (function () { var x = findProductByName(d.products, name); return x ? { confidence: "high", product: x, reason: "exact_name" } : { confidence: "unknown", product: null, reason: "no_match" }; })() : matchProduct(d.products, name);
+      var product = m.product;
+      var confidence = legacy ? "high" : m.confidence;     // v1 upgrade: each new product IS that exact receipt name
       if (!product) {
         var parsed = C.parseSize(name);
         product = makeProduct({
@@ -299,9 +438,12 @@
         price: C.round2(price), qty: qty !== null && qty > 0 ? qty : 1,
         date: date || localDay(at), source: "receipt", status: PRICE_SOURCES.receipt.status,
         sourceRef: { type: "receipt", id: receipt.id, line: line },
+        matchConfidence: confidence, matchReason: m.reason, needsReview: confidence !== "high",
         note: "", archived: false, createdAt: at
       });
       created.priceRecords++;
+      created[confidence]++;
+      created.lines.push({ line: line, productId: product.id, confidence: confidence, recordId: d.priceRecords[d.priceRecords.length - 1].id, qty: qty !== null && qty > 0 ? qty : 1 });
     });
     return created;
   }
@@ -325,13 +467,18 @@
       manualTotal: C.sum(arr(x.manual), function (m) { return Number(m.amount) || 0; }),
       purchaseTotal: C.sum(arr(x.requests), function (r) { return r && r.purchased ? Number(r.purchased.amount) || 0 : 0; })
     };
-    ["houses", "memberGroups", "stores", "products", "priceRecords", "budgetCategories", "commitments", "reserves", "auditLog", "backupLog"].forEach(function (k) {
+    ["houses", "memberGroups", "stores", "products", "priceRecords", "budgetCategories", "commitments", "reserves", "auditLog", "backupLog",
+      "inventoryItems", "inventoryTransactions", "shoppingLists", "shoppingCycles", "trips"].forEach(function (k) {
       c[k] = arr(x[k]).length;
     });
+    c.listItems = 0;
+    arr(x.shoppingLists).forEach(function (l) { c.listItems += arr(l && l.items).length; });
     return c;
   }
 
   var LEGACY_COUNT_KEYS = ["requests", "purchases", "receipts", "receiptItems", "manual", "fund", "stop", "spent", "receiptTotal", "manualTotal", "purchaseTotal"];
+  // Stage 1 lists that later upgrades must never lose
+  var STAGE1_COUNT_KEYS = ["houses", "memberGroups", "stores", "products", "priceRecords", "budgetCategories", "commitments", "reserves"];
 
   function compareCounts(before, after, keys) {
     var problems = [];
@@ -370,10 +517,20 @@
       // Learn prices from existing receipts (where the data allows).
       var learned = { products: 0, priceRecords: 0 };
       d.receipts.slice().reverse().forEach(function (r) {
-        var x = priceRecordsFromReceipt(d, r, { at: at });
+        var x = priceRecordsFromReceipt(d, r, { at: at, legacy: true });
         learned.products += x.products; learned.priceRecords += x.priceRecords;
       });
       return { note: "Added household, stores, products, price book, budget plan, commitments, reserve, audit trail", learned: learned };
+    },
+    // v2 = Stage 1. → v3 = Stage 2 operations (inventory, cycles, lists, trips, receipt matching).
+    2: function (d, at) {
+      ensureShape(d);
+      d.settings.cycle.anchorDate = d.settings.cycle.anchorDate || firstOfMonth(localDay(at));
+      if (!d.shoppingLists.some(function (l) { return l && l.status === "active"; })) d.shoppingLists.push(makeList("Shopping list", at));
+      // Stage 1 price records were exact-name links → High confidence.
+      var marked = 0;
+      d.priceRecords.forEach(function (pr) { if (!pr.matchConfidence) { pr.matchConfidence = "high"; pr.matchReason = pr.source === "receipt" ? "exact_name" : "entered"; pr.needsReview = false; marked++; } });
+      return { note: "Added inventory, shopping cycles, shopping list, trips and receipt matching", learned: { pricesMarkedHigh: marked } };
     }
   };
 
@@ -403,6 +560,7 @@
     if (!d.meta.createdAt) d.meta.createdAt = at;
     var after = countsOf(d);
     var problems = steps.length ? compareCounts(before, after) : [];
+    if (steps.length && from >= 2) problems = problems.concat(compareCounts(before, after, STAGE1_COUNT_KEYS));
     if (steps.length) {
       if (after.stores < SEED_STORES.length) problems.push("stores missing");
       if (after.budgetCategories < DEFAULT_CATEGORIES.length) problems.push("categories missing");
@@ -467,6 +625,29 @@
       if (!money(Number(c.amount))) add("error", "bad_amount", "Commitment " + (c.title || c.id) + " has an invalid amount.", "commitments", c.id);
     });
     arr(d.reserves).forEach(function (r) { if (!money(Number(r.amount))) add("error", "bad_amount", "Reserve " + (r.name || r.id) + " has an invalid amount.", "reserves", r.id); });
+    arr(d.inventoryItems).forEach(function (it) {
+      var q = Number(it.quantity);
+      if (!(q >= 0) || !isFinite(q)) add("error", "bad_quantity", "Inventory item " + (it.name || it.id) + " has an invalid quantity.", "inventoryItems", it.id);
+      if (it.productId && !products[it.productId]) add("warning", "broken_link", "Inventory item " + (it.name || it.id) + " points to a missing product.", "inventoryItems", it.id);
+    });
+    var inv = ids("inventoryItems");
+    arr(d.inventoryTransactions).forEach(function (t) {
+      if (!inv[t.itemId]) add("warning", "broken_link", "Stock change " + t.id + " points to a missing inventory item.", "inventoryTransactions", t.id);
+    });
+    arr(d.shoppingLists).forEach(function (l) {
+      var seenLi = {};
+      arr(l.items).forEach(function (it) {
+        if (!it.id) add("error", "missing_id", "A list item in " + (l.name || l.id) + " has no id.", "shoppingLists", l.id);
+        else if (seenLi[it.id]) add("error", "duplicate_id", "Duplicate list item id " + it.id + ".", "shoppingLists", it.id);
+        seenLi[it.id] = true;
+        if (["open", "in_cart", "bought", "deferred", "removed"].indexOf(it.status) < 0) add("error", "bad_status", "List item " + (it.name || it.id) + " has an unknown status.", "shoppingLists", it.id);
+        if (it.productId && !products[it.productId]) add("warning", "broken_link", "List item " + (it.name || it.id) + " points to a missing product.", "shoppingLists", it.id);
+      });
+    });
+    arr(d.trips).forEach(function (t) {
+      if (["active", "finished", "cancelled"].indexOf(t.status) < 0) add("error", "bad_status", "Trip " + t.id + " has an unknown status.", "trips", t.id);
+    });
+    if (arr(d.trips).filter(function (t) { return t.status === "active"; }).length > 1) add("warning", "multiple_trips", "More than one shopping trip is open.", "trips");
     arr(d.budgetPlan && d.budgetPlan.items).forEach(function (it) {
       if (!cats[it.categoryId]) add("warning", "broken_link", "Budget plan line points to a missing category.", "budgetPlan", it.categoryId);
     });
@@ -538,7 +719,10 @@
     normalizeLegacy: normalizeLegacy, ensureShape: ensureShape,
     findStoreByName: findStoreByName, findProductByName: findProductByName, productKey: productKey, makeProduct: makeProduct,
     priceRecordsFromReceipt: priceRecordsFromReceipt,
-    countsOf: countsOf, compareCounts: compareCounts, LEGACY_COUNT_KEYS: LEGACY_COUNT_KEYS,
+    countsOf: countsOf, compareCounts: compareCounts, LEGACY_COUNT_KEYS: LEGACY_COUNT_KEYS, STAGE1_COUNT_KEYS: STAGE1_COUNT_KEYS,
+    INVENTORY_LOCATIONS: INVENTORY_LOCATIONS, LIST_PRIORITIES: LIST_PRIORITIES, MATCH_CONFIDENCE: MATCH_CONFIDENCE,
+    matchProduct: matchProduct, coreTokens: coreTokens, findDuplicateReceipt: findDuplicateReceipt,
+    makeInventoryItem: makeInventoryItem, makeList: makeList, makeListItem: makeListItem, firstOfMonth: firstOfMonth,
     migrate: migrate, integrityCheck: integrityCheck,
     checksum: checksum, makeBackup: makeBackup, readBackup: readBackup
   };

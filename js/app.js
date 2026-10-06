@@ -280,7 +280,8 @@ function renderReceipts(){
     ${safeThumb(r.thumb) ? `<img class="thumb" src="${safeThumb(r.thumb)}" alt="">` : ""}
     <b>🧾 ${escapeHTML(r.store || r.name || "Receipt")}</b>
     <small>${escapeHTML(r.receiptDate || new Date(r.date).toLocaleDateString())}${r.payment ? " · "+escapeHTML(r.payment) : ""}</small>
-    <small><b>${total ? peso(total) : "No total"}</b>${r.addedToSpent || r.amount ? ' <span class="tag">added to Spent</span>' : ""}</small>
+    <small><b>${total ? peso(total) : "No total"}</b>${r.addedToSpent || r.amount ? ' <span class="tag">added to Spent</span>' : ""}${r.receiptNumber ? ' <span class="muted">#'+escapeHTML(r.receiptNumber)+'</span>' : ""}</small>
+    ${typeof receiptMatchSummary==="function" ? receiptMatchSummary(r) : ""}
     ${items.length ? `
      <details>
       <summary>${items.length} item${items.length===1?"":"s"}</summary>
@@ -1244,6 +1245,18 @@ function confirmReceipt(){
   return;
  }
 
+ let rStore=document.getElementById("rStore").value.trim();
+ let rDate=document.getElementById("rDate").value || "";
+ let rNumber=(photo.receipt.ai && photo.receipt.ai.receipt_number) ? String(photo.receipt.ai.receipt_number).trim() : "";
+ let dup=JasonModel.findDuplicateReceipt(data.receipts,{ store:rStore, receiptDate:rDate, total:total, receiptNumber:rNumber });
+ if(dup && !photo.receipt.confirmedDuplicate){
+  msg.innerText="⚠️ This looks like a receipt you already saved ("+(dup.receipt.store||"receipt")+", "+(dup.receipt.receiptDate||localDay(dup.receipt.date))+", "+peso(dup.receipt.total)+(dup.reason==="same_number" ? ", same receipt number" : "")+"). Saving it again would count it twice. Tap Save again only if it's a different purchase.";
+  msg.className="form-msg err";
+  msg.dataset.dup=dup.reason;
+  photo.receipt.confirmedDuplicate=true;
+  return;
+ }
+
  if(addToSpent && JasonCalc.crossesHardStop(data,total) && !photo.receipt.confirmedOverStop){
   msg.innerText="⚠️ This takes Spent to "+peso(data.spent+total)+", past your hard stop of "+peso(data.stop)+". Tap Save again to record it anyway.";
   msg.className="form-msg err";
@@ -1265,8 +1278,10 @@ function confirmReceipt(){
   id:"RC"+Date.now(),
   date:new Date().toISOString(),
   receiptDate:document.getElementById("rDate").value || "",
-  store:document.getElementById("rStore").value.trim(),
+  store:rStore,
   payment:document.getElementById("rPay").value.trim(),
+  receiptNumber:rNumber,
+  duplicateOf:dup ? dup.receipt.id : null,
   items:items,
   subtotal:subtotal,
   vat:vat,
@@ -1282,14 +1297,17 @@ function confirmReceipt(){
 
  let savedReceipt=data.receipts[0];
  let learned=JasonModel.priceRecordsFromReceipt(data,savedReceipt);
- audit("receipt.add","Saved receipt "+(savedReceipt.store||"")+" ("+peso(total)+")"+(learned.priceRecords ? " · "+learned.priceRecords+" price"+(learned.priceRecords===1?"":"s")+" added to Price Book" : ""),
-  {entity:"receipts",id:savedReceipt.id,delta:addToSpent ? total : 0,after:{spent:data.spent}});
+ let fed=typeof feedReceipt==="function" ? feedReceipt(savedReceipt) : {stocked:0,listBought:0};
+ audit("receipt.add","Saved receipt "+(savedReceipt.store||"")+" ("+peso(total)+")"+(learned.priceRecords ? " · "+learned.priceRecords+" price"+(learned.priceRecords===1?"":"s")+" added to Price Book" : "")+
+  (learned.review ? " · "+learned.review+" to check" : "")+(learned.unknown ? " · "+learned.unknown+" new product"+(learned.unknown===1?"":"s") : "")+(fed.stocked ? " · "+fed.stocked+" restocked" : "")+(fed.listBought ? " · "+fed.listBought+" ticked off the list" : "")+(dup ? " · saved despite duplicate warning" : ""),
+  {entity:"receipts",id:savedReceipt.id,delta:addToSpent ? total : 0,after:{spent:data.spent,matches:{high:learned.high,review:learned.review,unknown:learned.unknown}}});
 
  closeReceipt();
 
  save();
 
- goTo("receipts");
+ goTo(learned.review ? "review" : "receipts");
+ if(typeof toast==="function" && (learned.review || fed.stocked || fed.listBought)) toast("🧾 Saved"+(fed.stocked ? " · "+fed.stocked+" restocked" : "")+(fed.listBought ? " · "+fed.listBought+" ticked off" : "")+(learned.review ? " · "+learned.review+" line"+(learned.review===1?"":"s")+" to check" : ""));
 
 }
 
@@ -1447,7 +1465,7 @@ function historyEntries(){
    date:m.date || "",
    store:m.store || "",
    title:m.item || m.store || "Spending",
-   items:m.item ? [{name:m.item}] : [],
+   items:Array.isArray(m.items) && m.items.length ? m.items : (m.item ? [{name:m.item}] : []),
    amount:Number(m.amount)||0,
    category:m.category || guessCategory((m.item||"")+" "+(m.store||"")),
    payment:m.payment || "",
@@ -1660,7 +1678,11 @@ function deleteEntry(key){
 
  if(src.type==="purchase" && src.obj) delete src.obj.purchased;
  if(src.type==="receipt"){ data.receipts=data.receipts.filter(r=>r!==src.obj); if(src.obj) archivePriceRecordsFor(src.obj.id,"receipt deleted"); }
- if(src.type==="manual") data.manual=data.manual.filter(m=>m!==src.obj);
+ if(src.type==="manual"){
+  data.manual=data.manual.filter(m=>m!==src.obj);
+  // prices recorded by a shopping trip for this entry leave comparisons too (kept, archived)
+  if(src.obj && src.obj.tripId) (data.priceRecords||[]).forEach(pr=>{ if(pr.sourceRef && pr.sourceRef.type==="trip" && pr.sourceRef.entryId===src.obj.id && !pr.archived){ pr.archived=true; pr.archivedReason="entry deleted"; pr.archivedAt=new Date().toISOString(); } });
+ }
 
  if(e.counted) data.spent=Math.max(0,Math.round((data.spent-e.amount)*100)/100);
 

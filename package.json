@@ -1,6 +1,6 @@
 {
   "name": "jason-shop",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Jason Shop AI shopping management backend",
   "main": "server.js",
   "scripts": {

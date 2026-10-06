@@ -56,9 +56,9 @@ test("migrate v1 → v2 keeps every legacy record and peso total", () => {
   const r = M.migrate(raw);
   assert.equal(JSON.stringify(raw), frozen, "input not mutated");
   assert.equal(r.migrated, true); assert.equal(r.valid, true, r.problems.join("; "));
-  assert.equal(r.fromVersion, 1); assert.equal(r.toVersion, 2);
+  assert.equal(r.fromVersion, 1); assert.equal(r.toVersion, M.SCHEMA_VERSION);
   const d = r.data;
-  assert.equal(d.schemaVersion, 2);
+  assert.equal(d.schemaVersion, M.SCHEMA_VERSION);
   assert.equal(d.requests.length, 3); assert.equal(d.receipts.length, 3); assert.equal(d.manual.length, 2);
   assert.equal(d.fund, 50000); assert.equal(d.stop, 40000); assert.equal(d.spent, 12345.5);
   assert.equal(r.before.receiptTotal, r.after.receiptTotal);
@@ -107,7 +107,7 @@ test("priceRecordsFromReceipt is idempotent", () => {
   const d = M.migrate(v1Data()).data;
   const n = d.priceRecords.length;
   const again = M.priceRecordsFromReceipt(d, d.receipts[0]);
-  assert.deepEqual(again, { products: 0, priceRecords: 0 });
+  assert.deepEqual([again.products, again.priceRecords], [0, 0]);
   assert.equal(d.priceRecords.length, n);
 });
 
@@ -124,7 +124,7 @@ test("migrate tolerates empty / garbage input", () => {
   for (const x of [null, undefined, 5, "x", {}, { requests: "nope", receipts: null }]) {
     const r = M.migrate(x);
     assert.equal(r.valid, true);
-    assert.equal(r.data.schemaVersion, 2);
+    assert.equal(r.data.schemaVersion, M.SCHEMA_VERSION);
     assert.equal(r.data.stores.length, 7);
   }
 });
@@ -173,7 +173,7 @@ test("backup envelope: v1-compatible, counts, checksum, data last", () => {
   const text = M.makeBackup(d, { voiceSettings: { lang: "fil", speak: false } });
   const p = JSON.parse(text);
   assert.equal(p.app, "Jason Shop"); assert.equal(p.type, "backup"); assert.equal(p.version, 1);
-  assert.equal(p.format, 2); assert.equal(p.schemaVersion, 2); assert.equal(p.appVersion, M.APP_VERSION);
+  assert.equal(p.format, 2); assert.equal(p.schemaVersion, M.SCHEMA_VERSION); assert.equal(p.appVersion, M.APP_VERSION);
   assert.ok(p.backupId); assert.equal(p.counts.receipts, 3); assert.equal(p.checksum.algo, "fnv1a32");
   assert.equal(Object.keys(p).pop(), "data");
   assert.equal(p.voiceSettings.lang, "fil");
@@ -187,7 +187,7 @@ test("readBackup: old v1 backups, damaged, edited, wrong and newer files", () =>
   const old = JSON.stringify({ app: "Jason Shop", type: "backup", version: 1, exportedAt: "2026-09-30T00:00:00Z", data: v1Data() });
   let r = M.readBackup(old);
   assert.equal(r.ok, true); assert.equal(r.checksumOk, null); assert.equal(r.migratedFrom, 1);
-  assert.equal(r.data.schemaVersion, 2); assert.equal(r.data.priceRecords.length, 4);
+  assert.equal(r.data.schemaVersion, M.SCHEMA_VERSION); assert.equal(r.data.priceRecords.length, 4);
   assert.equal(M.readBackup("not json").error, "not_backup");
   assert.equal(M.readBackup(JSON.stringify({ app: "Other", data: { requests: [], receipts: [] } })).error, "not_backup");
   assert.equal(M.readBackup(JSON.stringify({ app: "Jason Shop", data: { requests: [] } })).error, "not_backup");

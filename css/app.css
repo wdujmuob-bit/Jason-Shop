@@ -114,6 +114,7 @@ nav button{
  background:#162138;color:white;border:1px solid #27324a;
  border-radius:10px;padding:8px 12px;font-size:14px;margin:8px 6px 0 0
 }
+.mini.ok{background:#123524;border-color:#1f6b45}
 .mini.buy{background:#123524;border-color:#1f6b45}
 
 /* ---------- Budget / navigation ---------- */
@@ -342,3 +343,56 @@ details summary{cursor:pointer;padding:6px 0}
 .three label{display:block;line-height:1.25}
 html{scroll-padding-bottom:calc(96px + env(safe-area-inset-bottom));scroll-padding-top:8px}
 .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top));pointer-events:none}
+
+/* ===================== Stage 2: inventory, list, trip, cycle, review ===================== */
+.inv-ok,.state.inv-ok{color:var(--safe);border-color:#1f6b45;background:#12352433}
+.inv-low{color:var(--warning);border-color:#6b5326;background:#2a211233}
+.inv-urgent,.inv-out{color:var(--hard);border-color:#7a2a2a;background:#3a151533}
+.inv-untracked{color:#cfd6e4;border-color:#35405a}
+.exp-soon,.exp-today{color:var(--warning);border-color:#6b5326;background:#2a211233}
+.exp-expired{color:var(--hard);border-color:#7a2a2a;background:#3a151533}
+.conf-high{color:var(--safe);border-color:#1f6b45}
+.conf-review{color:var(--warning);border-color:#6b5326}
+.conf-unknown{color:#cfd6e4;border-color:#35405a}
+.inv-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4px 0 8px}
+.inv-tile{background:#090e19;border:1px solid #27324a;border-radius:12px;padding:8px 4px;text-align:center}
+.inv-tile b{display:block;font-size:24px}
+.inv-tile small{font-size:12px;color:#aab4c7}
+.t-out b,.t-urgent b{color:var(--hard)} .t-low b,.t-exp b{color:var(--warning)}
+.inv-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1d2638}
+.inv-row:last-child{border-bottom:0}
+.inv-main{flex:1;min-width:0;overflow-wrap:anywhere;cursor:pointer}
+.inv-main small{display:block}
+.inv-step{display:flex;gap:6px;flex-shrink:0}
+.inv-days{color:#aab4c7}
+.mini.on{background:#1769ff;border-color:#1769ff;color:#fff}
+.tag.pin{background:#16213a;color:#8fb4ff}
+.tag.pri-high{background:#3a1515;color:#ff9b9b}
+.li-row small.li-price{display:block}
+.trip-banner{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.trip-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1d2638}
+.trip-row:last-child{border-bottom:0}
+.trip-row.in .trip-name b{text-decoration:line-through;color:#8e99ad}
+.trip-check{width:44px;height:44px;flex-shrink:0;border-radius:12px;border:2px solid #3b4a68;background:#090e19;color:#67e09a;font-size:24px;font-weight:bold}
+.trip-row.in .trip-check{background:#123524;border-color:#1f6b45}
+.trip-name{flex:1;min-width:0;overflow-wrap:anywhere}
+.trip-name small{display:block}
+.trip-price{width:96px;flex-shrink:0;text-align:right;margin:0}
+.trip-bar{position:fixed;left:0;right:0;bottom:calc(62px + env(safe-area-inset-bottom));z-index:11;max-width:700px;margin:auto;background:#101725;border:1px solid #27324a;border-bottom:0;border-radius:18px 18px 0 0;padding:10px 14px 8px;box-shadow:0 -6px 20px #0008}
+.trip-bar.red{border-color:#7a2a2a;background:#1d0f12}
+.trip-bar.orange{border-color:#6b5326}
+.tb-nums{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tb-nums small{display:block;color:#aab4c7;font-size:12px}
+.tb-nums b{font-size:22px}
+.tb-warn{margin:6px 0 0;font-weight:bold;color:var(--hard)}
+.trip-bar .primary{margin:8px 0 0;padding:12px}
+.trip-bar .form-msg:empty{display:none}
+html.trip-on{scroll-padding-bottom:calc(250px + env(safe-area-inset-bottom))}
+html.trip-on main{padding-bottom:260px}
+.review-row{padding:10px 0;border-bottom:1px solid #1d2638}
+.review-row:last-child{border-bottom:0}
+.review-row small{display:block}
+.review-actions{grid-template-columns:1fr 1fr;margin:8px 0 0}
+.review-actions .mini{margin:0;padding:10px 6px}
+.match-sum{color:#aab4c7}
+.inv-forecast{background:#0b1220}
