@@ -57,6 +57,22 @@ const MAX_OUTPUT_TOKENS = Number(process.env.OPENAI_MAX_OUTPUT_TOKENS) || 10000;
 const REASONING_EFFORT = process.env.OPENAI_REASONING_EFFORT || "low";
 const OPENAI_TIMEOUT_MS = 240000;
 
+/* Spending categories (same list in the app). */
+const CATEGORIES = ["Groceries", "Household", "Electronics & Appliances", "Baby & Kids", "Pet",
+  "Health & Personal Care", "Clothing", "Home & Furniture", "Food & Dining", "Other"];
+
+function cleanCategory(value) {
+  if (!value) return null;
+  const v = String(value).trim().toLowerCase();
+  return CATEGORIES.find(c => c.toLowerCase() === v) ||
+    CATEGORIES.find(c => v && c.toLowerCase().split(/[ &]+/).includes(v.split(/[ &]+/)[0])) || null;
+}
+
+function extractCategory(report) {
+  const match = String(report || "").match(/CATEGORY:\s*\**\s*([^\n*]+)/i);
+  return match ? cleanCategory(match[1]) : null;
+}
+
 function pesoText(value) {
   return "₱" + Math.round(Number(value) || 0).toLocaleString("en-PH");
 }
@@ -97,6 +113,8 @@ function buildResearchPrompt(query, budget) {
     "Use Philippine pesos where practical." +
     budgetSentence(budget) + " " +
     "Keep the report concise and easy to read on a phone. " +
+    "Just before the end, add one line that starts exactly with 'CATEGORY:' followed by the single best " +
+    "shopping category for this request from this list: " + CATEGORIES.join(", ") + ". " +
     "Finish with one final line that starts exactly with 'VOICE SUMMARY:' " +
     "followed by one or two short, plain sentences (no markdown, no links) " +
     "that say which product you recommend, its approximate price, and BUY, WAIT, WATCH, or SKIP. " +
@@ -317,6 +335,7 @@ async function runResearch(query, budget) {
   return {
     report: answer.text,
     summary: extractVoiceSummary(answer.text),
+    category: extractCategory(answer.text),
     model: answer.model,
     complete: answer.complete
   };
@@ -345,7 +364,8 @@ app.post("/api/research", async (req, res) => {
       query: String(query).trim(),
       status: "complete",
       report: result.report,
-      summary: result.summary
+      summary: result.summary,
+      category: result.category || null
     });
 
   } catch (error) {
@@ -436,6 +456,7 @@ app.post("/api/research/start", (req, res) => {
       job.status = "complete";
       job.report = result.report;
       job.summary = result.summary;
+      job.category = result.category;
     })
     .catch(error => {
       console.error("Research job " + id + " failed:", error.message);
@@ -475,7 +496,8 @@ app.get(["/api/research/status/:id", "/api/jobs/:id"], (req, res) => {
       status: "complete",
       query: job.query,
       report: job.report,
-      summary: job.summary
+      summary: job.summary,
+      category: job.category || null
     });
   }
 
@@ -521,7 +543,7 @@ const PRODUCT_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: ["is_product", "image_kind", "product_name", "brand", "model", "product_type",
-    "key_specs", "search_query", "listing", "confidence", "notes"],
+    "key_specs", "search_query", "listing", "confidence", "notes", "category"],
   properties: {
     is_product: { type: "boolean" },
     image_kind: { type: "string", enum: ["product_photo", "shop_screenshot", "other"] },
@@ -548,7 +570,8 @@ const PRODUCT_SCHEMA = {
       }
     },
     confidence: { type: "string", enum: ["high", "medium", "low"] },
-    notes: { type: "string" }
+    notes: { type: "string" },
+    category: { type: "string", enum: CATEGORIES }
   }
 };
 
@@ -556,7 +579,7 @@ const RECEIPT_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: ["is_receipt", "readability", "store", "branch", "date", "time", "items", "subtotal",
-    "vat", "discount", "service_charge", "total", "currency", "payment_method", "receipt_number", "problems"],
+    "vat", "discount", "service_charge", "total", "currency", "payment_method", "receipt_number", "problems", "category"],
   properties: {
     is_receipt: { type: "boolean" },
     readability: { type: "string", enum: ["clear", "partly_readable", "unreadable"] },
@@ -586,7 +609,8 @@ const RECEIPT_SCHEMA = {
     currency: nullableString,
     payment_method: nullableString,
     receipt_number: nullableString,
-    problems: { type: "string" }
+    problems: { type: "string" },
+    category: { type: "string", enum: CATEGORIES }
   }
 };
 
@@ -600,6 +624,7 @@ const PRODUCT_PROMPT =
   "from the exact model (e.g. size, capacity, wattage, colour). search_query: a concise search phrase to find this exact product. " +
   "Never invent a model number you cannot read — use null and lower the confidence instead. " +
   "If there is no identifiable product, set is_product false, product_name to '', and explain in notes. " +
+  "category: the best shopping category from: " + CATEGORIES.join(", ") + ". " +
   "Reply with JSON only, matching the requested schema.";
 
 const RECEIPT_PROMPT =
@@ -610,6 +635,7 @@ const RECEIPT_PROMPT =
   "commas or currency signs. Use null for anything you cannot read; never guess. " +
   "If the image is not a receipt or invoice, set is_receipt false. If it is too blurry, dark or cut off to read, set readability " +
   "'unreadable' (or 'partly_readable') and explain what is wrong in problems, e.g. 'Total is cut off'. " +
+  "category: the best shopping category from: " + CATEGORIES.join(", ") + ". " +
   "Reply with JSON only, matching the requested schema.";
 
 function parseJSONLoose(text) {
@@ -668,7 +694,8 @@ function normalizeProduct(raw) {
       shipping: listingFound ? cleanString(l.shipping, 80) : null
     },
     confidence: ["high", "medium", "low"].includes(r.confidence) ? r.confidence : "low",
-    notes: cleanString(r.notes, 300) || ""
+    notes: cleanString(r.notes, 300) || "",
+    category: cleanCategory(r.category)
   };
 
 }
@@ -710,6 +737,7 @@ function normalizeReceipt(raw) {
     payment_method: cleanString(r.payment_method, 40),
     receipt_number: cleanString(r.receipt_number, 40),
     problems: cleanString(r.problems, 300) || "",
+    category: cleanCategory(r.category),
     warnings: []
   };
 
@@ -818,6 +846,64 @@ app.post("/api/photo/start", (req, res) => {
     return res.status(202).json({ success: true, jobId: job.id, status: "researching" });
 
   });
+
+});
+
+
+/* =========================================
+   MONTHLY SUMMARY (only when Jason taps the button)
+   POST /api/report/summary { stats } → { jobId }
+   Gets totals only (no photos), returns 2–3 sentences.
+========================================= */
+
+function buildSummaryPrompt(stats) {
+
+  const st = stats && typeof stats === "object" ? stats : {};
+  const list = (arr, fn) => (Array.isArray(arr) ? arr : []).slice(0, 6).map(fn).join("; ");
+
+  return "You are Jason Shop, Jason's personal shopping manager in the Philippines. " +
+    "Write a 2-3 sentence summary of his spending for " + cleanString(st.monthLabel, 30) + ". " +
+    "Use plain, friendly English, peso amounts with the ₱ sign and commas, no markdown, no lists. " +
+    "Mention the total and how it compares with his shopping fund and with last month, the biggest category, " +
+    "and one practical observation or tip if useful. Do not invent numbers. Data: " +
+    "total spent " + pesoText(st.total) + " across " + (Number(st.count) || 0) + " purchases; " +
+    "shopping fund " + (Number(st.fund) > 0 ? pesoText(st.fund) : "not set") + "; " +
+    "hard stop " + (Number(st.stop) > 0 ? pesoText(st.stop) : "not set") + "; " +
+    "last month " + pesoText(st.lastMonthTotal) + "; daily average " + pesoText(st.dailyAverage) + "; " +
+    "by category: " + list(st.byCategory, c => cleanString(c.name, 40) + " " + pesoText(c.amount)) + "; " +
+    "top stores: " + list(st.topStores, c => cleanString(c.name, 60) + " " + pesoText(c.amount)) + "; " +
+    "biggest purchases: " + list(st.biggest, c => cleanString(c.name, 80) + " " + pesoText(c.amount)) + ".";
+
+}
+
+app.post("/api/report/summary", (req, res) => {
+
+  const stats = req.body && req.body.stats;
+
+  if (!stats || typeof stats !== "object" || !stats.monthLabel) {
+    return res.status(400).json({ success: false, error: "Monthly numbers are required." });
+  }
+
+  if (!(Number(stats.count) > 0)) {
+    return res.status(400).json({ success: false, error: "There's no spending recorded for this month yet." });
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(503).json({ success: false, error: "AI is not set up on the server yet (missing OpenAI key)." });
+  }
+
+  const job = startJob("summary", async () => {
+    const answer = await askOpenAI({
+      input: buildSummaryPrompt(stats),
+      maxTokens: 2500,
+      label: "summary",
+      failMessage: "The AI couldn't write the summary right now. Please try again in a minute.",
+      emptyMessage: "The AI didn't return a summary. Please try again."
+    });
+    return { text: answer.text.replace(/[*#_`]/g, "").trim().slice(0, 1200) };
+  });
+
+  return res.status(202).json({ success: true, jobId: job.id, status: "researching" });
 
 });
 

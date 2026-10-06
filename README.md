@@ -16,10 +16,11 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 |---|---|
 | `GET /` and `GET /api/health` | Status checks |
 | `POST /api/research/start` | `{ "query": "...", "budget": { "fund", "spent", "stop" } }` → `{ jobId }` straight away (research runs in the background) |
-| `GET /api/research/status/:jobId` | `researching` → `complete` (with `report` and a short `summary` for reading aloud) or `error` |
+| `GET /api/research/status/:jobId` | `researching` → `complete` (with `report`, a short `summary` for reading aloud and a shopping `category`) or `error` |
 | `POST /api/research` | Same research in one long request (kept for compatibility) |
 | `POST /api/photo/start` | multipart: `image` (JPG/PNG/WebP, max 8 MB) + `kind` = `product` or `receipt` → `{ jobId }` |
-| `GET /api/jobs/:jobId` | Result of any background job: `product` (name, brand, model, specs, shop listing price/seller) or `receipt` (store, date, items, subtotal, VAT, total, payment, warnings) |
+| `GET /api/jobs/:jobId` | Result of any background job: `product` (name, brand, model, specs, shop listing price/seller) or `receipt` (store, date, items, subtotal, VAT, total, payment, warnings); both include a shopping `category` |
+| `POST /api/report/summary` | `{ "stats": { monthLabel, total, count, fund, lastMonthTotal, dailyAverage, byCategory, topStores, biggest } }` → `{ jobId }`; the job returns `{ text }`, a 2–3 sentence summary. Only called when Jason taps the button |
 | `POST /api/transcribe` | multipart form with an `audio` file (webm/mp4/ogg/wav/mp3, max 10 MB) and optional `language` (`en`/`fil`) → `{ "text": "..." }` |
 | `POST /api/budget/check` | Budget status (SAFE / WARNING / HARD_STOP) |
 | `POST /api/receipt` | Placeholder |
@@ -66,6 +67,18 @@ python3 -m http.server 8080              # app on http://localhost:8080 (talks t
 - **🛒 Mark purchased** on a shopping item asks what you paid and adds it to Spent (with **Undo**). Adding a receipt also asks for its total.
 - The status turns orange at 85% of the Hard Stop Limit and red at 100%; recording a purchase past the hard stop needs a second tap.
 - The budget is sent with each research request so the AI says whether options fit.
+
+## History, report and backup
+
+- **Purchase history** (History tab) lists everything that was spent in one place: items marked purchased, saved receipts and manual entries ("➕ Add spending"). You can filter by month and category, search, edit (amount, date, store, category, payment, "counts in Spent") and delete. Spent changes to match automatically.
+- **Categories**: Groceries, Household, Electronics & Appliances, Baby & Kids, Pet, Health & Personal Care, Clothing, Home & Furniture, Food & Dining, Other. The AI picks one inside the receipt, photo and research calls it already makes, so there are no extra calls. Manual entries and older data use a keyword guess (English/Filipino/PH stores). Jason can always change it.
+- **Monthly report** (Report tab) shows the month total vs the shopping fund, a breakdown by category (a CSS donut chart, no libraries), top stores, biggest purchases, the change vs last month and the daily average. There is a month picker. "AI summary" makes one AI call only when tapped, and the result is saved for that month.
+- **Backup** (Budget tab → Backup & Export):
+  - "Backup now" downloads `jason-shop-backup-YYYY-MM-DD.json`. "Share backup" opens the Android share sheet so the file can be sent to Google Drive, Gmail and so on.
+  - "Restore from backup" asks before replacing anything, and keeps the old data under `JasonShopData.beforeRestore`.
+  - "Export CSV" exports the chosen month or all time and opens in Google Sheets/Excel.
+  - A reminder banner appears if there has been no backup for 7+ days ("Later" snoozes it for a day).
+  - All data stays in the phone's browser storage. Nothing is stored on the server.
 
 ## Deploying
 
