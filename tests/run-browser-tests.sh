@@ -1,6 +1,6 @@
 #!/bin/bash
 # Headless mobile-Chrome tests. Needs Google Chrome (CHROME_PATH) and `npm install` in tests/.
-# usage: bash tests/run-browser-tests.sh [legacy|e2e|stage2|stage3|all|<file> <mock>]
+# usage: bash tests/run-browser-tests.sh [legacy|e2e|stage2|stage3|stage4|all|<file> <mock>]
 # The AI is always mocked (fake api.openai.com) — no paid calls, no real key.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -37,8 +37,11 @@ case "${1:-all}" in
     ;;&
   e2e|stage3|all)
     run_one e2e/stage3.test.js "$HERE/legacy/mock5.js" || FAIL=1
+    ;;&
+  e2e|stage4|all)
+    run_one e2e/stage4.test.js "$HERE/legacy/mock5.js" || FAIL=1
     ;;
-  legacy|e2e|stage2|stage3|all) ;;
+  legacy|e2e|stage2|stage3|stage4|all) ;;
   *) run_one "$1" "$HERE/legacy/${2:-mock4.js}" || FAIL=1 ;;
 esac
 [ $FAIL = 0 ] && echo "ALL BROWSER SUITES PASSED" || echo "SOME BROWSER SUITES FAILED"

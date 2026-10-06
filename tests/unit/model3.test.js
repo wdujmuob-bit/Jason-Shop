@@ -18,20 +18,20 @@ function v3() {
   return r;
 }
 
-test("schema is v4", () => {
-  assert.equal(M.SCHEMA_VERSION, 4);
-  assert.match(M.APP_VERSION, /^4\./);
+test("schema is v4 or later (Stage 3 collections present)", () => {
+  assert.ok(M.SCHEMA_VERSION >= 4);
+  assert.match(M.APP_VERSION, new RegExp("^" + M.SCHEMA_VERSION + "\\."));
   assert.ok(M.COLLECTIONS.includes("recurring") && M.COLLECTIONS.includes("alerts"));
 });
 
-test("v3 → v4 upgrade is additive and keeps every record", () => {
+test("v3 → current upgrade is additive and keeps every record", () => {
   const src = v3();
   const before = JSON.stringify(src);
   const r = M.migrate(src);
   assert.equal(JSON.stringify(src), before, "input not mutated");
   assert.ok(r.valid, JSON.stringify(r.problems));
   assert.equal(r.fromVersion, 3);
-  assert.equal(r.toVersion, 4);
+  assert.equal(r.toVersion, M.SCHEMA_VERSION);
   const a = M.countsOf(src), b = M.countsOf(r.data);
   for (const k of M.LEGACY_COUNT_KEYS.concat(M.STAGE1_COUNT_KEYS, M.STAGE2_COUNT_KEYS)) assert.equal(b[k], a[k], k);
   assert.deepEqual(r.data.recurring, []);
@@ -43,7 +43,7 @@ test("v3 → v4 upgrade is additive and keeps every record", () => {
   assert.ok(r.data.stores.every(s => s.travel && s.travel.minutes === null && s.travel.km === null));
   assert.ok(r.data.products.every(p => p.targetPrice === null && Array.isArray(p.substitutes)));
   assert.equal(M.integrityCheck(r.data).errors, 0);
-  assert.equal(r.steps.length, 1);
+  assert.equal(r.steps.length, M.SCHEMA_VERSION - 3);
   assert.equal(M.migrate(r.data).steps.length, 0, "second run is a no-op");
 });
 

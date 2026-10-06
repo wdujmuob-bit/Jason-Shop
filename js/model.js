@@ -17,8 +17,8 @@
 }(typeof self !== "undefined" ? self : this, function (C) {
   "use strict";
 
-  var SCHEMA_VERSION = 4;
-  var APP_VERSION = "4.0.0-stage3";
+  var SCHEMA_VERSION = 5;
+  var APP_VERSION = "5.0.0-stage4";
 
   /* ---------- ids & helpers ---------- */
 
@@ -145,8 +145,29 @@
     route: { mode: "balance", betweenStoresMinutes: 10, betweenStoresKm: 3, shoppingMinutes: 20, timeValuePerHour: 100, fuelPerKm: null },
     fund: { expensiveAt: 5000 },                    // fund check shown automatically from this amount
     priceAlerts: { dropPct: 5, enabled: true },
-    recurring: { autoCommitDaysBefore: 7 }
+    recurring: { autoCommitDaysBefore: 7 },
+    // Stage 4
+    preferences: { preferredStores: [], avoidStores: [], preferredBrands: [], avoidBrands: [], notes: "", startView: "home", insightsRange: "90d" }
   };
+
+  /*
+    Stage 4: people & roles, prepared for a future login. There is NO authentication:
+    "acting as" is chosen on this phone and the permissions only guide the screens
+    (who may approve a household request, etc.). It is not security.
+  */
+  var ROLES = {
+    owner: { label: "Owner", icon: "👑", perms: ["view", "request", "add_list", "approve", "inventory", "spend", "settings", "people"] },
+    adult: { label: "Adult / co-manager", icon: "🧑", perms: ["view", "request", "add_list", "approve", "inventory", "spend"] },
+    staff: { label: "Staff (maid, nanny, driver…)", icon: "🧹", perms: ["view", "request", "inventory"] },
+    child: { label: "Child", icon: "🧒", perms: ["view", "request"] },
+    viewer: { label: "Viewer", icon: "👀", perms: ["view"] }
+  };
+  var PERMISSIONS = { view: "See the app", request: "Ask for items", add_list: "Add to the shopping list directly", approve: "Approve requests",
+    inventory: "Update home stock", spend: "Record spending", settings: "Change settings", people: "Manage people & roles" };
+  var REQUEST_STATUS = { pending: { icon: "⏳", label: "Waiting for approval" }, approved: { icon: "✅", label: "Approved — on the list" },
+    rejected: { icon: "🚫", label: "Not approved" }, cancelled: { icon: "↩️", label: "Cancelled" } };
+  var START_VIEWS = { home: "Home", shop: "Shop", inventory: "Inventory", budget: "Budget", insights: "Insights", ai: "AI" };
+  var INSIGHT_RANGES = { "30d": "Last 30 days", "90d": "Last 90 days", "180d": "Last 6 months", "365d": "Last 12 months", all: "All time" };
 
   // Stage 3: alert center kinds, recurring purchase units.
   var ALERT_KINDS = {
@@ -170,7 +191,8 @@
     "houses", "memberGroups", "stores", "products", "priceRecords",
     "budgetCategories", "commitments", "reserves", "auditLog", "backupLog",
     "inventoryItems", "inventoryTransactions", "shoppingLists", "shoppingCycles", "trips",
-    "recurring", "alerts"];
+    "recurring", "alerts",
+    "people", "householdRequests", "planHistory", "forecastSnapshots"];
 
   /* ---------- factories ---------- */
 
@@ -254,6 +276,14 @@
       corrections: arr(L.corrections),
       alertScanAt: L.alertScanAt || null
     };
+    var pf = Object.assign({}, DEFAULT_SETTINGS.preferences, d.settings.preferences && typeof d.settings.preferences === "object" ? d.settings.preferences : {});
+    ["preferredStores", "avoidStores", "preferredBrands", "avoidBrands"].forEach(function (k) { pf[k] = arr(pf[k]).filter(function (x) { return typeof x === "string" && x.trim(); }); });
+    if (!START_VIEWS[pf.startView]) pf.startView = "home";
+    if (!INSIGHT_RANGES[pf.insightsRange]) pf.insightsRange = "90d";
+    pf.notes = typeof pf.notes === "string" ? pf.notes.slice(0, 500) : "";
+    d.settings.preferences = pf;
+    if (d.settings.activePersonId && !d.people.some(function (x) { return x && x.id === d.settings.activePersonId && !x.archived; })) d.settings.activePersonId = null;
+    if (!d.settings.activePersonId) { var own = d.people.find(function (x) { return x && x.role === "owner" && !x.archived; }); d.settings.activePersonId = own ? own.id : null; }
     if (!d.budgetPlan || typeof d.budgetPlan !== "object") d.budgetPlan = { mode: "peso", items: [], updatedAt: null };
     d.budgetPlan.items = arr(d.budgetPlan.items);
     if (d.budgetPlan.mode !== "percent") d.budgetPlan.mode = "peso";
@@ -476,6 +506,68 @@
 
   /* ---------- Stage 3 helpers ---------- */
 
+  /* ---------- Stage 4: people, roles, household requests, search ---------- */
+
+  function makePerson(fields, at) {
+    var f = fields || {};
+    return { id: newId("person"), name: String(f.name || "").trim().slice(0, 60) || "Person", role: ROLES[f.role] ? f.role : "viewer",
+      houseId: f.houseId || null, groupId: f.groupId || null, notes: f.notes || "", archived: false, createdAt: at, updatedAt: at };
+  }
+
+  // can(person, "approve") — guides the screens only; there is no login.
+  function can(person, perm) {
+    if (!person || person.archived) return false;
+    var r = ROLES[person.role];
+    return !!r && r.perms.indexOf(perm) >= 0;
+  }
+
+  function makeHouseholdRequest(fields, at) {
+    var f = fields || {};
+    var qty = Number(f.qty);
+    return { id: newId("hreq"), title: String(f.title || "").trim().slice(0, 120), qty: isFinite(qty) && qty > 0 ? Math.round(qty * 100) / 100 : 1,
+      unit: f.unit || "", note: String(f.note || "").slice(0, 300), urgency: f.urgency === "urgent" ? "urgent" : "normal",
+      requestedBy: f.requestedBy || null, requestedByName: f.requestedByName || "", houseId: f.houseId || null, productId: f.productId || null,
+      status: "pending", decidedBy: null, decidedByName: "", decidedAt: null, decisionNote: "", listItemId: null,
+      history: [{ status: "pending", at: at, by: f.requestedBy || null }], createdAt: at, updatedAt: at };
+  }
+
+  /*
+    searchScore("eg tr", "Eggs tray") → 0..100. Every word of the query must match the start of a word
+    (or appear inside the text for 3+ letters). Exact 100 · starts with 90 · word starts 75 · inside 55.
+  */
+  function searchScore(query, text) {
+    var q = normalizeName(query), t = normalizeName(text);
+    if (!q || !t) return 0;
+    if (t === q) return 100;
+    if (t.indexOf(q) === 0) return 90;
+    var words = t.split(" ");
+    var toks = q.split(" ");
+    var allPrefix = toks.every(function (k) { return words.some(function (w) { return w.indexOf(k) === 0; }); });
+    if (allPrefix) return 75;
+    var allIn = toks.every(function (k) { return k.length >= 3 ? t.indexOf(k) >= 0 : words.some(function (w) { return w.indexOf(k) === 0; }); });
+    if (allIn) return 55;
+    // Typo tolerance: every word of 4+ letters may be one edit away (missing, extra, swapped or wrong letter);
+    // the first letter must match, so "rice" doesn't find "price".
+    var fuzzy = toks.every(function (k) {
+      if (k.length < 4) return words.some(function (w) { return w.indexOf(k) === 0; });
+      return words.some(function (w) { return w.indexOf(k) === 0 || (w[0] === k[0] && (withinOneEdit(k, w) || (w.length > k.length && withinOneEdit(k, w.slice(0, k.length))))); });
+    });
+    return fuzzy ? 35 : 0;
+  }
+  // True when a and b differ by at most one insertion, deletion, substitution or adjacent swap.
+  function withinOneEdit(a, b) {
+    if (a === b) return true;
+    var la = a.length, lb = b.length;
+    if (Math.abs(la - lb) > 1) return false;
+    var i = 0;
+    while (i < la && i < lb && a[i] === b[i]) i++;
+    if (la === lb) {
+      if (a.slice(i + 1) === b.slice(i + 1)) return true;
+      return a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2);
+    }
+    return la > lb ? a.slice(i + 1) === b.slice(i) : a.slice(i) === b.slice(i + 1);
+  }
+
   function makeRecurring(fields, at) {
     var every = fields.every || {};
     var n = Math.max(1, Math.floor(Number(every.n) || 1));
@@ -580,7 +672,8 @@
       purchaseTotal: C.sum(arr(x.requests), function (r) { return r && r.purchased ? Number(r.purchased.amount) || 0 : 0; })
     };
     ["houses", "memberGroups", "stores", "products", "priceRecords", "budgetCategories", "commitments", "reserves", "auditLog", "backupLog",
-      "inventoryItems", "inventoryTransactions", "shoppingLists", "shoppingCycles", "trips", "recurring", "alerts"].forEach(function (k) {
+      "inventoryItems", "inventoryTransactions", "shoppingLists", "shoppingCycles", "trips", "recurring", "alerts",
+      "people", "householdRequests", "planHistory", "forecastSnapshots"].forEach(function (k) {
       c[k] = arr(x[k]).length;
     });
     c.listItems = 0;
@@ -592,6 +685,7 @@
   // Stage 1 lists that later upgrades must never lose
   var STAGE1_COUNT_KEYS = ["houses", "memberGroups", "stores", "products", "priceRecords", "budgetCategories", "commitments", "reserves"];
   var STAGE2_COUNT_KEYS = ["inventoryItems", "inventoryTransactions", "shoppingLists", "listItems", "shoppingCycles", "trips"];
+  var STAGE3_COUNT_KEYS = ["recurring", "alerts"];
 
   function compareCounts(before, after, keys) {
     var problems = [];
@@ -659,6 +753,22 @@
         if (!Array.isArray(p.rejectedSubstitutes)) p.rejectedSubstitutes = [];
       });
       return { note: "Added where-to-buy, route planner, price alerts, recurring purchases, forecasts and learning", learned: { storesWithTravel: stores, productsWithTargets: prods } };
+    },
+    // v4 = Stage 3. → v5 = Stage 4 analytics, people & roles (no login), household requests, preferences. Additive only.
+    4: function (d, at) {
+      ensureShape(d);
+      var added = { people: 0, planHistory: 0 };
+      if (!d.people.length) {
+        var owner = makePerson({ name: "Jason", role: "owner", houseId: (d.houses[0] && d.houses[0].id) || null }, at);
+        d.people.push(owner); added.people++;
+        d.settings.activePersonId = owner.id;
+      }
+      // The plan in use now becomes the first entry of the plan history (used to judge plan accuracy later).
+      if (!d.planHistory.length && d.budgetPlan.items.length) {
+        d.planHistory.push({ id: newId("plan"), at: d.budgetPlan.updatedAt || at, mode: d.budgetPlan.mode, items: clone(d.budgetPlan.items), fund: Number(d.fund) || 0, source: "upgrade" });
+        added.planHistory++;
+      }
+      return { note: "Added analytics, people & roles (no login), household requests, preferences and the receipt archive", learned: added };
     }
   };
 
@@ -690,6 +800,7 @@
     var problems = steps.length ? compareCounts(before, after) : [];
     if (steps.length && from >= 2) problems = problems.concat(compareCounts(before, after, STAGE1_COUNT_KEYS));
     if (steps.length && from >= 3) problems = problems.concat(compareCounts(before, after, STAGE2_COUNT_KEYS));
+    if (steps.length && from >= 4) problems = problems.concat(compareCounts(before, after, STAGE3_COUNT_KEYS));
     if (steps.length) {
       if (after.stores < SEED_STORES.length) problems.push("stores missing");
       if (after.budgetCategories < DEFAULT_CATEGORIES.length) problems.push("categories missing");
@@ -783,6 +894,18 @@
     });
     arr(d.alerts).forEach(function (a) { if (!ALERT_KINDS[a.kind]) add("warning", "bad_kind", "Alert " + a.id + " has an unknown kind.", "alerts", a.id); });
     if (arr(d.trips).filter(function (t) { return t.status === "active"; }).length > 1) add("warning", "multiple_trips", "More than one shopping trip is open.", "trips");
+    // Stage 4
+    var people = {};
+    arr(d.people).forEach(function (pp) {
+      people[pp.id] = pp;
+      if (!ROLES[pp.role]) add("error", "bad_role", "Person " + (pp.name || pp.id) + " has an unknown role.", "people", pp.id);
+    });
+    if (arr(d.people).length && !arr(d.people).some(function (pp) { return pp.role === "owner" && !pp.archived; })) add("warning", "no_owner", "Nobody has the Owner role.", "people");
+    arr(d.householdRequests).forEach(function (r) {
+      if (!REQUEST_STATUS[r.status]) add("error", "bad_status", "Household request " + (r.title || r.id) + " has an unknown status.", "householdRequests", r.id);
+      if (!r.title) add("error", "missing_title", "A household request has no item name.", "householdRequests", r.id);
+      if (r.requestedBy && !people[r.requestedBy]) add("warning", "broken_link", "Household request " + (r.title || r.id) + " points to a missing person.", "householdRequests", r.id);
+    });
     arr(d.budgetPlan && d.budgetPlan.items).forEach(function (it) {
       if (!cats[it.categoryId]) add("warning", "broken_link", "Budget plan line points to a missing category.", "budgetPlan", it.categoryId);
     });
@@ -856,6 +979,8 @@
     priceRecordsFromReceipt: priceRecordsFromReceipt,
     countsOf: countsOf, compareCounts: compareCounts, LEGACY_COUNT_KEYS: LEGACY_COUNT_KEYS, STAGE1_COUNT_KEYS: STAGE1_COUNT_KEYS, STAGE2_COUNT_KEYS: STAGE2_COUNT_KEYS,
     ALERT_KINDS: ALERT_KINDS, RECURRING_UNITS: RECURRING_UNITS, SOURCE_QUALITY: SOURCE_QUALITY,
+    makePerson: makePerson, can: can, makeHouseholdRequest: makeHouseholdRequest, searchScore: searchScore,
+    ROLES: ROLES, PERMISSIONS: PERMISSIONS, REQUEST_STATUS: REQUEST_STATUS, START_VIEWS: START_VIEWS, INSIGHT_RANGES: INSIGHT_RANGES, STAGE3_COUNT_KEYS: STAGE3_COUNT_KEYS,
     makeRecurring: makeRecurring, substitutesFor: substitutesFor, sourceQuality: sourceQuality, parseOffers: parseOffers, stripOfferLines: stripOfferLines,
     INVENTORY_LOCATIONS: INVENTORY_LOCATIONS, LIST_PRIORITIES: LIST_PRIORITIES, MATCH_CONFIDENCE: MATCH_CONFIDENCE,
     matchProduct: matchProduct, coreTokens: coreTokens, findDuplicateReceipt: findDuplicateReceipt,

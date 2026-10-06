@@ -1,0 +1,3202 @@
+{
+ "generatedFrom": "f91cda6 (Stage 3 production app)",
+ "generatedAt": "2026-10-06T04:00:00.000Z",
+ "data": {
+  "fund": 60000,
+  "stop": 50000,
+  "spent": 31652,
+  "requests": [
+   {
+    "id": "R1791291026919467",
+    "text": "air fryer under 5000 pesos",
+    "date": "2026-10-06T12:50:26.919Z",
+    "source": "text",
+    "status": "done",
+    "report": "## Best Overall\n**Hanabishi HSF-16** – ₱1,799 at Lazada (cheaper than the ₱1,899 Shopee listing).\nRecommendation: BUY\nCATEGORY: Electronics & Appliances\n\nVOICE SUMMARY: The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "summary": "The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "category": "Electronics & Appliances",
+    "purchased": {
+     "amount": 1799,
+     "date": "2026-10-06T12:50:32.531Z",
+     "category": "Electronics & Appliances",
+     "store": ""
+    }
+   },
+   {
+    "id": "R1791291022113518",
+    "text": "Hanabishi stand fan",
+    "date": "2026-10-06T12:50:22.113Z",
+    "source": "text",
+    "status": "done",
+    "report": "## Best Overall\n**Hanabishi HSF-16** – ₱1,799 at Lazada (cheaper than the ₱1,899 Shopee listing).\nRecommendation: BUY\nCATEGORY: Electronics & Appliances\n\nVOICE SUMMARY: The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "summary": "The Hanabishi HSF-16 is 1,799 pesos at Lazada, a bit cheaper than your Shopee listing. My call is BUY.",
+    "category": "Electronics & Appliances"
+   }
+  ],
+  "receipts": [
+   {
+    "id": "RC1791291043480",
+    "date": "2026-10-06T12:50:43.480Z",
+    "receiptDate": "2026-09-12",
+    "store": "Landers Superstore",
+    "payment": "Cash",
+    "items": [
+     {
+      "name": "Hanabishi Stand Fan 16in",
+      "qty": 1,
+      "price": 1899
+     },
+     {
+      "name": "Mineral Water 6x1L",
+      "qty": 2,
+      "price": 180
+     },
+     {
+      "name": "Rice Jasmine 5kg",
+      "qty": 1,
+      "price": 345
+     }
+    ],
+    "subtotal": 2424,
+    "vat": 259.71,
+    "total": 2424,
+    "addedToSpent": true,
+    "thumb": "data:image/jpeg;base64,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",
+    "readByAI": true,
+    "category": "Groceries"
+   },
+   {
+    "id": "RC1791291037564",
+    "date": "2026-10-06T12:50:37.564Z",
+    "receiptDate": "2026-10-05",
+    "store": "SM Supermarket",
+    "payment": "Cash",
+    "items": [
+     {
+      "name": "Hanabishi Stand Fan 16in",
+      "qty": 1,
+      "price": 1899
+     },
+     {
+      "name": "Mineral Water 6x1L",
+      "qty": 2,
+      "price": 180
+     },
+     {
+      "name": "Rice Jasmine 5kg",
+      "qty": 1,
+      "price": 345
+     }
+    ],
+    "subtotal": 2424,
+    "vat": 259.71,
+    "total": 2424,
+    "addedToSpent": true,
+    "readByAI": true,
+    "category": "Groceries"
+   }
+  ],
+  "manual": [
+   {
+    "id": "M1791259207983_1",
+    "date": "2026-10-06",
+    "store": "Puregold",
+    "item": "Shopping trip · 2 items",
+    "items": [
+     {
+      "name": "Eggs",
+      "qty": 1,
+      "price": 250
+     },
+     {
+      "name": "Cooking oil",
+      "qty": 2,
+      "price": 180
+     }
+    ],
+    "amount": 430,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true,
+    "tripId": "trip_muw5hdwh0t95hj"
+   },
+   {
+    "id": "M1791259207982_0",
+    "date": "2026-10-06",
+    "store": "Landers Superstore Angeles",
+    "item": "Shopping trip · 1 item",
+    "items": [
+     {
+      "name": "Rice",
+      "qty": 1,
+      "price": 345
+     }
+    ],
+    "amount": 345,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true,
+    "tripId": "trip_muw5hdwh0t95hj"
+   },
+   {
+    "id": "M1791259206171",
+    "date": "2026-09-27",
+    "store": "Mercury Drug",
+    "item": "Vitamins",
+    "amount": 850,
+    "category": "Health & Personal Care",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259205738",
+    "date": "2026-09-27",
+    "store": "Mercury Drug",
+    "item": "Vitamins",
+    "amount": 850,
+    "category": "Health & Personal Care",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259205304",
+    "date": "2026-09-15",
+    "store": "Pampang Market",
+    "item": "Party food for 30",
+    "amount": 6500,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259204867",
+    "date": "2026-08-23",
+    "store": "Pampang Market",
+    "item": "Weekly market",
+    "amount": 1380,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259204426",
+    "date": "2026-08-06",
+    "store": "Pampang Market",
+    "item": "Weekly market",
+    "amount": 1300,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259203994",
+    "date": "2026-07-22",
+    "store": "Pampang Market",
+    "item": "Weekly market",
+    "amount": 1400,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259203558",
+    "date": "2026-07-05",
+    "store": "Pampang Market",
+    "item": "Weekly market",
+    "amount": 1250,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259203121",
+    "date": "2026-06-21",
+    "store": "Pampang Market",
+    "item": "Weekly market",
+    "amount": 1320,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259202687",
+    "date": "2026-06-04",
+    "store": "Pampang Market",
+    "item": "Weekly market",
+    "amount": 1280,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259202253",
+    "date": "2026-05-20",
+    "store": "Pampang Market",
+    "item": "Weekly market",
+    "amount": 1350,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791259201814",
+    "date": "2026-05-03",
+    "store": "Pampang Market",
+    "item": "Weekly market",
+    "amount": 1200,
+    "category": "Groceries",
+    "payment": "",
+    "counted": true
+   },
+   {
+    "id": "M1791291051297",
+    "date": "2026-09-20",
+    "store": "Mercury Drug",
+    "item": "Vitamins and medicine",
+    "amount": 3500,
+    "category": "Health & Personal Care",
+    "payment": "Card",
+    "counted": true
+   },
+   {
+    "id": "M1791291048714",
+    "date": "2026-10-01",
+    "store": "Pampang Palengke",
+    "item": "Pork and vegetables",
+    "amount": 850,
+    "category": "Groceries",
+    "payment": "Cash",
+    "counted": true
+   },
+   {
+    "id": "M1791291046115",
+    "date": "2026-10-03",
+    "store": "Jollibee",
+    "item": "Chickenjoy bucket",
+    "amount": 1200,
+    "category": "Food & Dining",
+    "payment": "GCash",
+    "counted": true
+   }
+  ],
+  "reportSummaries": {},
+  "lastBackup": "2026-10-06T12:50:52.509Z",
+  "houses": [
+   {
+    "id": "house_main",
+    "name": "Main house",
+    "primary": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   }
+  ],
+  "memberGroups": [
+   {
+    "id": "grp_main_adults",
+    "houseId": "house_main",
+    "type": "adults",
+    "label": "Adults",
+    "count": 2,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:09.309Z"
+   },
+   {
+    "id": "grp_main_children",
+    "houseId": "house_main",
+    "type": "children",
+    "label": "Children",
+    "count": 2,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:10.109Z"
+   },
+   {
+    "id": "grp_main_nannies",
+    "houseId": "house_main",
+    "type": "nannies",
+    "label": "Nannies",
+    "count": 0,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "grp_main_maids",
+    "houseId": "house_main",
+    "type": "maids",
+    "label": "Maids",
+    "count": 1,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:10.509Z"
+   },
+   {
+    "id": "grp_main_security",
+    "houseId": "house_main",
+    "type": "security",
+    "label": "Security / bodyguards",
+    "count": 0,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "grp_main_drivers",
+    "houseId": "house_main",
+    "type": "drivers",
+    "label": "Drivers",
+    "count": 0,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "grp_main_other_staff",
+    "houseId": "house_main",
+    "type": "other_staff",
+    "label": "Other staff",
+    "count": 0,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "grp_main_pets",
+    "houseId": "house_main",
+    "type": "pets",
+    "label": "Pets",
+    "count": 1,
+    "weight": 1,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:10.909Z"
+   }
+  ],
+  "stores": [
+   {
+    "id": "store_newstar",
+    "name": "Newstar Shopping Mart",
+    "shortName": "",
+    "type": "supermarket",
+    "location": "",
+    "aliases": [
+     "newstar",
+     "new star",
+     "newstar shopping mart",
+     "newstar supermarket",
+     "newstar mart"
+    ],
+    "tendencies": [
+     "Groceries",
+     "Household supplies"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "travel": {
+     "minutes": null,
+     "km": null
+    }
+   },
+   {
+    "id": "store_johnnys",
+    "name": "Johnny's Supermarket",
+    "shortName": "",
+    "type": "supermarket",
+    "location": "",
+    "aliases": [
+     "johnnys",
+     "johnny",
+     "johnnys supermarket",
+     "johnnys grocery"
+    ],
+    "tendencies": [
+     "Groceries",
+     "Household supplies"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "travel": {
+     "minutes": null,
+     "km": null
+    }
+   },
+   {
+    "id": "store_pampang",
+    "name": "Pampang Public Market",
+    "shortName": "Pampang Palengke",
+    "type": "public_market",
+    "location": "Angeles City",
+    "aliases": [
+     "pampang",
+     "pampang market",
+     "pampang public market",
+     "pampang palengke",
+     "palengke pampang"
+    ],
+    "tendencies": [
+     "Fresh food",
+     "Meat",
+     "Poultry",
+     "Seafood",
+     "Vegetables",
+     "Fruits"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "travel": {
+     "minutes": null,
+     "km": null
+    }
+   },
+   {
+    "id": "store_landers",
+    "name": "Landers Superstore Angeles",
+    "shortName": "Landers",
+    "type": "membership",
+    "location": "Angeles City",
+    "aliases": [
+     "landers",
+     "landers superstore",
+     "landers angeles",
+     "landers superstore angeles"
+    ],
+    "tendencies": [
+     "Bulk buying",
+     "Imported products",
+     "Groceries",
+     "Household supplies"
+    ],
+    "membership": true,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "travel": {
+     "minutes": null,
+     "km": null
+    }
+   },
+   {
+    "id": "store_snr",
+    "name": "S&R Membership Shopping",
+    "shortName": "S&R",
+    "type": "membership",
+    "location": "",
+    "aliases": [
+     "s&r",
+     "snr",
+     "s and r",
+     "s&r membership",
+     "s&r membership shopping",
+     "s&r warehouse"
+    ],
+    "tendencies": [
+     "Bulk buying",
+     "Imported products",
+     "Groceries"
+    ],
+    "membership": true,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "travel": {
+     "minutes": null,
+     "km": null
+    }
+   },
+   {
+    "id": "store_puregold",
+    "name": "Puregold",
+    "shortName": "",
+    "type": "supermarket",
+    "location": "",
+    "aliases": [
+     "puregold",
+     "puregold price club",
+     "puregold supermarket"
+    ],
+    "tendencies": [
+     "Groceries",
+     "Household supplies",
+     "Personal care"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "travel": {
+     "minutes": null,
+     "km": null
+    }
+   },
+   {
+    "id": "store_dutyfree",
+    "name": "Puregold Duty Free Clark",
+    "shortName": "Duty Free",
+    "type": "duty_free",
+    "location": "Clark",
+    "aliases": [
+     "duty free",
+     "puregold duty free",
+     "duty free clark",
+     "puregold duty free clark",
+     "dfp clark"
+    ],
+    "tendencies": [
+     "Imported products"
+    ],
+    "membership": null,
+    "preferred": true,
+    "custom": false,
+    "seeded": true,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "travel": {
+     "minutes": null,
+     "km": null
+    }
+   },
+   {
+    "id": "store_sm_supermarket_ax0u",
+    "shortName": "",
+    "preferred": true,
+    "custom": true,
+    "seeded": false,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:17.960Z",
+    "name": "SM Supermarket",
+    "type": "supermarket",
+    "location": "",
+    "aliases": [
+     "SM Supermarket"
+    ],
+    "tendencies": [],
+    "membership": null,
+    "notes": "",
+    "updatedAt": "2026-10-06T13:20:17.960Z",
+    "travel": {
+     "minutes": null,
+     "km": null
+    }
+   }
+  ],
+  "products": [
+   {
+    "id": "prod_muwphjpc012xk4",
+    "name": "Hanabishi Stand Fan 16in",
+    "brand": "",
+    "variant": "",
+    "size": null,
+    "unit": null,
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "receipt",
+    "sizeSource": null,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "targetPrice": null,
+    "substitutes": [],
+    "rejectedSubstitutes": []
+   },
+   {
+    "id": "prod_muwphjpc03gft1",
+    "name": "Mineral Water 6x1L",
+    "brand": "",
+    "variant": "",
+    "size": 1,
+    "unit": "l",
+    "packCount": 6,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "receipt",
+    "sizeSource": "read_from_name",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "targetPrice": null,
+    "substitutes": [],
+    "rejectedSubstitutes": []
+   },
+   {
+    "id": "prod_muwphjpc0573zb",
+    "name": "Rice Jasmine 5kg",
+    "brand": "",
+    "variant": "",
+    "size": 5,
+    "unit": "kg",
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "receipt",
+    "sizeSource": "read_from_name",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "updatedAt": "2026-10-06T13:20:06.911Z",
+    "targetPrice": null,
+    "substitutes": [],
+    "rejectedSubstitutes": []
+   },
+   {
+    "id": "prod_muw5hak504fm7u",
+    "name": "Rice Jasmine 25kg sack",
+    "brand": "",
+    "variant": "",
+    "size": 25,
+    "unit": "kg",
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "manual",
+    "sizeSource": "entered",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:02.741Z",
+    "updatedAt": "2026-10-06T04:00:02.741Z",
+    "targetPrice": null,
+    "substitutes": [],
+    "rejectedSubstitutes": []
+   },
+   {
+    "id": "prod_muw5hdza06mvt6",
+    "name": "Rice Dinorado 5kg",
+    "brand": "",
+    "variant": "",
+    "size": 5,
+    "unit": "kg",
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "manual",
+    "sizeSource": "entered",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:07.174Z",
+    "updatedAt": "2026-10-06T04:00:07.174Z",
+    "targetPrice": null,
+    "substitutes": [],
+    "rejectedSubstitutes": []
+   },
+   {
+    "id": "prod_muw5hhdy08dkju",
+    "name": "Eggs tray",
+    "brand": "",
+    "variant": "",
+    "size": 30,
+    "unit": "piece",
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "manual",
+    "sizeSource": "entered",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:11.590Z",
+    "updatedAt": "2026-10-06T04:00:11.590Z",
+    "targetPrice": null,
+    "substitutes": [],
+    "rejectedSubstitutes": []
+   },
+   {
+    "id": "prod_muw5hkt50ay3uh",
+    "name": "Cooking Oil 1L",
+    "brand": "",
+    "variant": "",
+    "size": 1,
+    "unit": "l",
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "manual",
+    "sizeSource": "entered",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:16.025Z",
+    "updatedAt": "2026-10-06T04:00:16.025Z",
+    "targetPrice": null,
+    "substitutes": [],
+    "rejectedSubstitutes": []
+   },
+   {
+    "id": "prod_muw5ho880c3zlm",
+    "name": "Dish soap 250ml",
+    "brand": "",
+    "variant": "",
+    "size": 250,
+    "unit": "ml",
+    "packCount": null,
+    "categoryName": "Groceries",
+    "aliases": [],
+    "scope": {
+     "type": "household",
+     "refId": null
+    },
+    "notes": "",
+    "createdFrom": "manual",
+    "sizeSource": "entered",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:20.456Z",
+    "updatedAt": "2026-10-06T04:00:20.456Z",
+    "targetPrice": null,
+    "substitutes": [],
+    "rejectedSubstitutes": []
+   }
+  ],
+  "priceRecords": [
+   {
+    "id": "price_muwphjpc02g6wg",
+    "productId": "prod_muwphjpc012xk4",
+    "itemName": "Hanabishi Stand Fan 16in",
+    "storeId": null,
+    "storeName": "SM Supermarket",
+    "price": 1899,
+    "qty": 1,
+    "date": "2026-10-05",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291037564",
+     "line": 0
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "matchConfidence": "high",
+    "matchReason": "exact_name",
+    "needsReview": false
+   },
+   {
+    "id": "price_muwphjpc04s2yc",
+    "productId": "prod_muwphjpc03gft1",
+    "itemName": "Mineral Water 6x1L",
+    "storeId": null,
+    "storeName": "SM Supermarket",
+    "price": 180,
+    "qty": 2,
+    "date": "2026-10-05",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291037564",
+     "line": 1
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "matchConfidence": "high",
+    "matchReason": "exact_name",
+    "needsReview": false
+   },
+   {
+    "id": "price_muwphjpc06ct0f",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice Jasmine 5kg",
+    "storeId": null,
+    "storeName": "SM Supermarket",
+    "price": 345,
+    "qty": 1,
+    "date": "2026-10-05",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291037564",
+     "line": 2
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "matchConfidence": "high",
+    "matchReason": "exact_name",
+    "needsReview": false
+   },
+   {
+    "id": "price_muwphjpc07byx3",
+    "productId": "prod_muwphjpc012xk4",
+    "itemName": "Hanabishi Stand Fan 16in",
+    "storeId": "store_landers",
+    "storeName": "Landers Superstore",
+    "price": 1899,
+    "qty": 1,
+    "date": "2026-09-12",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291043480",
+     "line": 0
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "matchConfidence": "high",
+    "matchReason": "exact_name",
+    "needsReview": false
+   },
+   {
+    "id": "price_muwphjpc081hcb",
+    "productId": "prod_muwphjpc03gft1",
+    "itemName": "Mineral Water 6x1L",
+    "storeId": "store_landers",
+    "storeName": "Landers Superstore",
+    "price": 180,
+    "qty": 2,
+    "date": "2026-09-12",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291043480",
+     "line": 1
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "matchConfidence": "high",
+    "matchReason": "exact_name",
+    "needsReview": false
+   },
+   {
+    "id": "price_muwphjpd09s2ls",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice Jasmine 5kg",
+    "storeId": "store_landers",
+    "storeName": "Landers Superstore",
+    "price": 345,
+    "qty": 1,
+    "date": "2026-09-12",
+    "source": "receipt",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "receipt",
+     "id": "RC1791291043480",
+     "line": 2
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z",
+    "matchConfidence": "high",
+    "matchReason": "exact_name",
+    "needsReview": false
+   },
+   {
+    "id": "price_muwphtg60oidgr",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice Jasmine 5kg",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 360,
+    "qty": 1,
+    "date": "2026-10-04",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:19.542Z",
+    "matchConfidence": "high",
+    "matchReason": "entered",
+    "needsReview": false
+   },
+   {
+    "id": "price_muw5hrnv0e6kwr",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice Jasmine 5kg",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 380,
+    "qty": 1,
+    "date": "2026-08-20",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:24.907Z"
+   },
+   {
+    "id": "price_muw5hv3g0gv62x",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice Jasmine 5kg",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 370,
+    "qty": 1,
+    "date": "2026-09-05",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:29.356Z"
+   },
+   {
+    "id": "price_muw5hyil0ivolh",
+    "productId": "prod_muw5hak504fm7u",
+    "itemName": "Rice Jasmine 25kg sack",
+    "storeId": "store_landers",
+    "storeName": "Landers Superstore Angeles",
+    "price": 1550,
+    "qty": 1,
+    "date": "2026-09-20",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:33.789Z"
+   },
+   {
+    "id": "price_muw5i1xq0kpn9v",
+    "productId": "prod_muw5hdza06mvt6",
+    "itemName": "Rice Dinorado 5kg",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 330,
+    "qty": 1,
+    "date": "2026-10-03",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:38.222Z"
+   },
+   {
+    "id": "price_muw5i5cf0mpn2u",
+    "productId": "prod_muw5hhdy08dkju",
+    "itemName": "Eggs tray",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 255,
+    "qty": 1,
+    "date": "2026-09-15",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:42.639Z"
+   },
+   {
+    "id": "price_muw5i8r30odu71",
+    "productId": "prod_muw5hhdy08dkju",
+    "itemName": "Eggs tray",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 240,
+    "qty": 1,
+    "date": "2026-09-29",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:47.055Z"
+   },
+   {
+    "id": "price_muw5ic680q9tlv",
+    "productId": "prod_muw5hhdy08dkju",
+    "itemName": "Eggs tray",
+    "storeId": "store_sm_supermarket_ax0u",
+    "storeName": "SM Supermarket",
+    "price": 270,
+    "qty": 1,
+    "date": "2026-10-02",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:51.488Z"
+   },
+   {
+    "id": "price_muw5ifky0sufoq",
+    "productId": "prod_muw5hhdy08dkju",
+    "itemName": "Eggs tray",
+    "storeId": "store_pampang",
+    "storeName": "Pampang Public Market",
+    "price": 225,
+    "qty": 1,
+    "date": "2026-10-01",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:55.906Z"
+   },
+   {
+    "id": "price_muw5iizm0uq2t0",
+    "productId": "prod_muw5hkt50ay3uh",
+    "itemName": "Cooking Oil 1L",
+    "storeId": "store_sm_supermarket_ax0u",
+    "storeName": "SM Supermarket",
+    "price": 95,
+    "qty": 1,
+    "date": "2026-10-02",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:01:00.322Z"
+   },
+   {
+    "id": "price_muw5imea0wkzmu",
+    "productId": "prod_muw5hkt50ay3uh",
+    "itemName": "Cooking Oil 1L",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 89,
+    "qty": 1,
+    "date": "2026-09-28",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:01:04.738Z"
+   },
+   {
+    "id": "price_muw5ipsz0yusls",
+    "productId": "prod_muw5ho880c3zlm",
+    "itemName": "Dish soap 250ml",
+    "storeId": "store_sm_supermarket_ax0u",
+    "storeName": "SM Supermarket",
+    "price": 45,
+    "qty": 1,
+    "date": "2026-10-02",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:01:09.155Z"
+   },
+   {
+    "id": "price_muw5it8410npm6",
+    "productId": "prod_muw5ho880c3zlm",
+    "itemName": "Dish soap 250ml",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 49,
+    "qty": 1,
+    "date": "2026-10-01",
+    "source": "shelf",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "manual",
+     "id": null
+    },
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:01:13.588Z"
+   },
+   {
+    "id": "price_muw5helq0vx64c",
+    "productId": "prod_muwphjpc0573zb",
+    "itemName": "Rice",
+    "storeId": "store_landers",
+    "storeName": "Landers Superstore Angeles",
+    "price": 345,
+    "qty": 1,
+    "date": "2026-10-06",
+    "source": "purchase",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "trip",
+     "id": "trip_muw5hdwh0t95hj",
+     "entryId": "M1791259207982_0",
+     "line": 0
+    },
+    "matchConfidence": "high",
+    "matchReason": "entered",
+    "needsReview": false,
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:07.982Z"
+   },
+   {
+    "id": "price_muw5helr0xgbpg",
+    "productId": "prod_muw5hhdy08dkju",
+    "itemName": "Eggs",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 250,
+    "qty": 1,
+    "date": "2026-10-06",
+    "source": "purchase",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "trip",
+     "id": "trip_muw5hdwh0t95hj",
+     "entryId": "M1791259207983_1",
+     "line": 0
+    },
+    "matchConfidence": "high",
+    "matchReason": "entered",
+    "needsReview": false,
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:07.982Z"
+   },
+   {
+    "id": "price_muw5helr0zsde8",
+    "productId": "prod_muw5hkt50ay3uh",
+    "itemName": "Cooking oil",
+    "storeId": "store_puregold",
+    "storeName": "Puregold",
+    "price": 180,
+    "qty": 2,
+    "date": "2026-10-06",
+    "source": "purchase",
+    "status": "confirmed",
+    "sourceRef": {
+     "type": "trip",
+     "id": "trip_muw5hdwh0t95hj",
+     "entryId": "M1791259207983_1",
+     "line": 1
+    },
+    "matchConfidence": "high",
+    "matchReason": "entered",
+    "needsReview": false,
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:00:07.982Z"
+   }
+  ],
+  "budgetCategories": [
+   {
+    "id": "cat_groceries",
+    "name": "Groceries",
+    "icon": "🛒",
+    "color": "#67e09a",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_household",
+    "name": "Household",
+    "icon": "🧴",
+    "color": "#7fb0ff",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_electronics_and_appliances",
+    "name": "Electronics & Appliances",
+    "icon": "🔌",
+    "color": "#1769ff",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_baby_and_kids",
+    "name": "Baby & Kids",
+    "icon": "🍼",
+    "color": "#ff9ad5",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_pet",
+    "name": "Pet",
+    "icon": "🐶",
+    "color": "#c49a6c",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_health_and_personal_care",
+    "name": "Health & Personal Care",
+    "icon": "💊",
+    "color": "#ff6b6b",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_clothing",
+    "name": "Clothing",
+    "icon": "👕",
+    "color": "#b18cff",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_home_and_furniture",
+    "name": "Home & Furniture",
+    "icon": "🛋️",
+    "color": "#ffbd66",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_food_and_dining",
+    "name": "Food & Dining",
+    "icon": "🍔",
+    "color": "#ff8a3d",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   },
+   {
+    "id": "cat_other",
+    "name": "Other",
+    "icon": "📦",
+    "color": "#8e99ad",
+    "builtIn": true,
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:06.911Z"
+   }
+  ],
+  "commitments": [
+   {
+    "id": "cmt_muwphogl0inec5",
+    "status": "committed",
+    "createdAt": "2026-10-06T13:20:13.077Z",
+    "updatedAt": "2026-10-06T13:20:13.077Z",
+    "title": "Landers monthly haul",
+    "amount": 3000,
+    "dueDate": null,
+    "categoryName": "Groceries",
+    "storeId": "store_landers",
+    "storeName": "Landers",
+    "note": ""
+   }
+  ],
+  "reserves": [
+   {
+    "id": "rsv_muwphps90kezkx",
+    "name": "Emergency",
+    "amount": 10000,
+    "note": "",
+    "archived": false,
+    "createdAt": "2026-10-06T13:20:14.793Z"
+   }
+  ],
+  "auditLog": [
+   {
+    "id": "aud_muwphjqd0bco51",
+    "at": "2026-10-06T13:20:06.949Z",
+    "action": "data.upgraded",
+    "summary": "Jason Shop data upgraded to version 2 (all 2 receipts, 3 manual entries and 2 requests kept; 6 prices learned from receipts)",
+    "entity": "data",
+    "entityId": null,
+    "amountDelta": null,
+    "before": {
+     "counts": {
+      "requests": 2,
+      "purchases": 1,
+      "receipts": 2,
+      "receiptItems": 6,
+      "manual": 3,
+      "fund": 60000,
+      "stop": 50000,
+      "spent": 12197,
+      "receiptTotal": 4848,
+      "manualTotal": 5550,
+      "purchaseTotal": 1799,
+      "houses": 0,
+      "memberGroups": 0,
+      "stores": 0,
+      "products": 0,
+      "priceRecords": 0,
+      "budgetCategories": 0,
+      "commitments": 0,
+      "reserves": 0,
+      "auditLog": 0,
+      "backupLog": 0
+     }
+    },
+    "after": {
+     "counts": {
+      "requests": 2,
+      "purchases": 1,
+      "receipts": 2,
+      "receiptItems": 6,
+      "manual": 3,
+      "fund": 60000,
+      "stop": 50000,
+      "spent": 12197,
+      "receiptTotal": 4848,
+      "manualTotal": 5550,
+      "purchaseTotal": 1799,
+      "houses": 1,
+      "memberGroups": 8,
+      "stores": 7,
+      "products": 3,
+      "priceRecords": 6,
+      "budgetCategories": 10,
+      "commitments": 0,
+      "reserves": 0,
+      "auditLog": 0,
+      "backupLog": 0
+     }
+    }
+   },
+   {
+    "id": "aud_muwphl8u0clnc0",
+    "at": "2026-10-06T13:20:08.910Z",
+    "action": "household.count",
+    "summary": "Adults: 0 → 1",
+    "entity": "memberGroups",
+    "entityId": "grp_main_adults",
+    "amountDelta": null,
+    "before": {
+     "count": 0
+    },
+    "after": {
+     "count": 1
+    }
+   },
+   {
+    "id": "aud_muwphljy0dt9nh",
+    "at": "2026-10-06T13:20:09.310Z",
+    "action": "household.count",
+    "summary": "Adults: 1 → 2",
+    "entity": "memberGroups",
+    "entityId": "grp_main_adults",
+    "amountDelta": null,
+    "before": {
+     "count": 1
+    },
+    "after": {
+     "count": 2
+    }
+   },
+   {
+    "id": "aud_muwphlv10e5oic",
+    "at": "2026-10-06T13:20:09.709Z",
+    "action": "household.count",
+    "summary": "Children: 0 → 1",
+    "entity": "memberGroups",
+    "entityId": "grp_main_children",
+    "amountDelta": null,
+    "before": {
+     "count": 0
+    },
+    "after": {
+     "count": 1
+    }
+   },
+   {
+    "id": "aud_muwphm650f0bdt",
+    "at": "2026-10-06T13:20:10.109Z",
+    "action": "household.count",
+    "summary": "Children: 1 → 2",
+    "entity": "memberGroups",
+    "entityId": "grp_main_children",
+    "amountDelta": null,
+    "before": {
+     "count": 1
+    },
+    "after": {
+     "count": 2
+    }
+   },
+   {
+    "id": "aud_muwphmh90ghwja",
+    "at": "2026-10-06T13:20:10.509Z",
+    "action": "household.count",
+    "summary": "Maids: 0 → 1",
+    "entity": "memberGroups",
+    "entityId": "grp_main_maids",
+    "amountDelta": null,
+    "before": {
+     "count": 0
+    },
+    "after": {
+     "count": 1
+    }
+   },
+   {
+    "id": "aud_muwphmsd0hepio",
+    "at": "2026-10-06T13:20:10.909Z",
+    "action": "household.count",
+    "summary": "Pets: 0 → 1",
+    "entity": "memberGroups",
+    "entityId": "grp_main_pets",
+    "amountDelta": null,
+    "before": {
+     "count": 0
+    },
+    "after": {
+     "count": 1
+    }
+   },
+   {
+    "id": "aud_muwphogl0jhmou",
+    "at": "2026-10-06T13:20:13.077Z",
+    "action": "commitment.add",
+    "summary": "Committed ₱3,000: Landers monthly haul",
+    "entity": "commitments",
+    "entityId": "cmt_muwphogl0inec5",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "title": "Landers monthly haul",
+     "amount": 3000,
+     "dueDate": null,
+     "categoryName": "Groceries",
+     "storeId": "store_landers",
+     "storeName": "Landers",
+     "note": ""
+    }
+   },
+   {
+    "id": "aud_muwphps90lyr7j",
+    "at": "2026-10-06T13:20:14.793Z",
+    "action": "reserve.add",
+    "summary": "Protected reserve added: Emergency ₱10,000",
+    "entity": "reserves",
+    "entityId": "rsv_muwphps90kezkx",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "name": "Emergency",
+     "amount": 10000
+    }
+   },
+   {
+    "id": "aud_muwphrd70mxlxk",
+    "at": "2026-10-06T13:20:16.843Z",
+    "action": "plan.save",
+    "summary": "Budget plan saved: ₱25,000 in 2 categories (pesos)",
+    "entity": "budgetPlan",
+    "entityId": null,
+    "amountDelta": null,
+    "before": {
+     "mode": "peso",
+     "items": [],
+     "updatedAt": null
+    },
+    "after": {
+     "mode": "peso",
+     "items": [
+      {
+       "categoryId": "cat_groceries",
+       "value": 20000
+      },
+      {
+       "categoryId": "cat_food_and_dining",
+       "value": 5000
+      }
+     ],
+     "updatedAt": "2026-10-06T13:20:16.843Z"
+    }
+   },
+   {
+    "id": "aud_muwphs880nfdkb",
+    "at": "2026-10-06T13:20:17.960Z",
+    "action": "store.add",
+    "summary": "Store added: SM Supermarket",
+    "entity": "stores",
+    "entityId": "store_sm_supermarket_ax0u",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muwphtg60p51cj",
+    "at": "2026-10-06T13:20:19.542Z",
+    "action": "price.add",
+    "summary": "Price added: Rice Jasmine 5kg ₱360 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muwphtg60oidgr",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 360,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5h8hd03wta1",
+    "at": "2026-10-06T04:00:00.049Z",
+    "action": "data.upgraded",
+    "summary": "Jason Shop data upgraded to version 3 (all 2 receipts, 3 manual entries and 2 requests kept; 0 prices learned from receipts)",
+    "entity": "data",
+    "entityId": null,
+    "amountDelta": null,
+    "before": {
+     "counts": {
+      "requests": 2,
+      "purchases": 1,
+      "receipts": 2,
+      "receiptItems": 6,
+      "manual": 3,
+      "fund": 60000,
+      "stop": 50000,
+      "spent": 12197,
+      "receiptTotal": 4848,
+      "manualTotal": 5550,
+      "purchaseTotal": 1799,
+      "houses": 1,
+      "memberGroups": 8,
+      "stores": 8,
+      "products": 3,
+      "priceRecords": 7,
+      "budgetCategories": 10,
+      "commitments": 1,
+      "reserves": 1,
+      "auditLog": 12,
+      "backupLog": 1,
+      "inventoryItems": 0,
+      "inventoryTransactions": 0,
+      "shoppingLists": 0,
+      "shoppingCycles": 0,
+      "trips": 0,
+      "listItems": 0
+     }
+    },
+    "after": {
+     "counts": {
+      "requests": 2,
+      "purchases": 1,
+      "receipts": 2,
+      "receiptItems": 6,
+      "manual": 3,
+      "fund": 60000,
+      "stop": 50000,
+      "spent": 12197,
+      "receiptTotal": 4848,
+      "manualTotal": 5550,
+      "purchaseTotal": 1799,
+      "houses": 1,
+      "memberGroups": 8,
+      "stores": 8,
+      "products": 3,
+      "priceRecords": 7,
+      "budgetCategories": 10,
+      "commitments": 1,
+      "reserves": 1,
+      "auditLog": 12,
+      "backupLog": 1,
+      "inventoryItems": 0,
+      "inventoryTransactions": 0,
+      "shoppingLists": 1,
+      "shoppingCycles": 0,
+      "trips": 0,
+      "listItems": 0
+     }
+    }
+   },
+   {
+    "id": "aud_muw5hak505xwsh",
+    "at": "2026-10-06T04:00:02.741Z",
+    "action": "product.add",
+    "summary": "Product added: Rice Jasmine 25kg sack",
+    "entity": "products",
+    "entityId": "prod_muw5hak504fm7u",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5hdza079h25",
+    "at": "2026-10-06T04:00:07.174Z",
+    "action": "product.add",
+    "summary": "Product added: Rice Dinorado 5kg",
+    "entity": "products",
+    "entityId": "prod_muw5hdza06mvt6",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5hhdy09mf4p",
+    "at": "2026-10-06T04:00:11.590Z",
+    "action": "product.add",
+    "summary": "Product added: Eggs tray",
+    "entity": "products",
+    "entityId": "prod_muw5hhdy08dkju",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5hkt50bwz6b",
+    "at": "2026-10-06T04:00:16.025Z",
+    "action": "product.add",
+    "summary": "Product added: Cooking Oil 1L",
+    "entity": "products",
+    "entityId": "prod_muw5hkt50ay3uh",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5ho890ddfa2",
+    "at": "2026-10-06T04:00:20.457Z",
+    "action": "product.add",
+    "summary": "Product added: Dish soap 250ml",
+    "entity": "products",
+    "entityId": "prod_muw5ho880c3zlm",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5hrnv0fi07n",
+    "at": "2026-10-06T04:00:24.907Z",
+    "action": "price.add",
+    "summary": "Price added: Rice Jasmine 5kg ₱380 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muw5hrnv0e6kwr",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 380,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5hv3g0hc8mh",
+    "at": "2026-10-06T04:00:29.356Z",
+    "action": "price.add",
+    "summary": "Price added: Rice Jasmine 5kg ₱370 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muw5hv3g0gv62x",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 370,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5hyil0j0vab",
+    "at": "2026-10-06T04:00:33.789Z",
+    "action": "price.add",
+    "summary": "Price added: Rice Jasmine 25kg sack ₱1,550 at Landers",
+    "entity": "priceRecords",
+    "entityId": "price_muw5hyil0ivolh",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 1550,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5i1xq0l6aeb",
+    "at": "2026-10-06T04:00:38.222Z",
+    "action": "price.add",
+    "summary": "Price added: Rice Dinorado 5kg ₱330 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muw5i1xq0kpn9v",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 330,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5i5cf0nbec8",
+    "at": "2026-10-06T04:00:42.639Z",
+    "action": "price.add",
+    "summary": "Price added: Eggs tray ₱255 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muw5i5cf0mpn2u",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 255,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5i8r30p1hs8",
+    "at": "2026-10-06T04:00:47.055Z",
+    "action": "price.add",
+    "summary": "Price added: Eggs tray ₱240 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muw5i8r30odu71",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 240,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5ic690rri2o",
+    "at": "2026-10-06T04:00:51.489Z",
+    "action": "price.add",
+    "summary": "Price added: Eggs tray ₱270 at SM Supermarket",
+    "entity": "priceRecords",
+    "entityId": "price_muw5ic680q9tlv",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 270,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5ifky0td3l1",
+    "at": "2026-10-06T04:00:55.906Z",
+    "action": "price.add",
+    "summary": "Price added: Eggs tray ₱225 at Pampang Palengke",
+    "entity": "priceRecords",
+    "entityId": "price_muw5ifky0sufoq",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 225,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5iizm0v0aqw",
+    "at": "2026-10-06T04:01:00.322Z",
+    "action": "price.add",
+    "summary": "Price added: Cooking Oil 1L ₱95 at SM Supermarket",
+    "entity": "priceRecords",
+    "entityId": "price_muw5iizm0uq2t0",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 95,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5imeb0xq7d3",
+    "at": "2026-10-06T04:01:04.739Z",
+    "action": "price.add",
+    "summary": "Price added: Cooking Oil 1L ₱89 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muw5imea0wkzmu",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 89,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5ipsz0zbnht",
+    "at": "2026-10-06T04:01:09.155Z",
+    "action": "price.add",
+    "summary": "Price added: Dish soap 250ml ₱45 at SM Supermarket",
+    "entity": "priceRecords",
+    "entityId": "price_muw5ipsz0yusls",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 45,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5it8411q1bt",
+    "at": "2026-10-06T04:01:13.588Z",
+    "action": "price.add",
+    "summary": "Price added: Dish soap 250ml ₱49 at Puregold",
+    "entity": "priceRecords",
+    "entityId": "price_muw5it8410npm6",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "price": 49,
+     "qty": 1,
+     "source": "shelf"
+    }
+   },
+   {
+    "id": "aud_muw5iy9m14g0gd",
+    "at": "2026-10-06T04:01:20.122Z",
+    "action": "inventory.add",
+    "summary": "Inventory item added: Rice (6 kg)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5iy9l12hz4g",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "quantity": 6
+    }
+   },
+   {
+    "id": "aud_muw5j0k017ik3o",
+    "at": "2026-10-06T04:01:23.088Z",
+    "action": "inventory.add",
+    "summary": "Inventory item added: Eggs (6 pcs)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j0k015c95x",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "quantity": 6
+    }
+   },
+   {
+    "id": "aud_muw5j240191meu",
+    "at": "2026-10-06T04:01:25.104Z",
+    "action": "inventory.add",
+    "summary": "Inventory item added: Dish soap (0 bottles)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j24018elfj",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "quantity": 0
+    }
+   },
+   {
+    "id": "aud_muw5j40i1ccezc",
+    "at": "2026-10-06T04:01:27.570Z",
+    "action": "inventory.add",
+    "summary": "Inventory item added: Cooking oil (2 bottles)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j40i1aod2d",
+    "amountDelta": null,
+    "before": null,
+    "after": {
+     "quantity": 2
+    }
+   },
+   {
+    "id": "aud_muw5j85l1eyl47",
+    "at": "2026-10-06T04:01:32.937Z",
+    "action": "list.add",
+    "summary": "Added to list: Rice (need)",
+    "entity": "shoppingLists",
+    "entityId": "li_muw5j85l1d66j6",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5j9dl1gqq34",
+    "at": "2026-10-06T04:01:34.521Z",
+    "action": "list.add",
+    "summary": "Added to list: Eggs (need)",
+    "entity": "shoppingLists",
+    "entityId": "li_muw5j9dk1f2awv",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5jal31ic4gl",
+    "at": "2026-10-06T04:01:36.087Z",
+    "action": "list.add",
+    "summary": "Added to list: Cooking oil ×2 (need)",
+    "entity": "shoppingLists",
+    "entityId": "li_muw5jal31hpzlf",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5jbsl1kc87s",
+    "at": "2026-10-06T04:01:37.653Z",
+    "action": "list.add",
+    "summary": "Added to list: Dish soap (need)",
+    "entity": "shoppingLists",
+    "entityId": "li_muw5jbsl1j4hch",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5jd041muhlp",
+    "at": "2026-10-06T04:01:39.220Z",
+    "action": "list.add",
+    "summary": "Added to list: Birthday cake (need)",
+    "entity": "shoppingLists",
+    "entityId": "li_muw5jd041libjd",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5h8ho041x4a",
+    "at": "2026-10-06T04:00:00.060Z",
+    "action": "data.upgraded",
+    "summary": "Jason Shop data upgraded to version 4 (all 2 receipts, 3 manual entries and 2 requests kept; 0 prices learned from receipts)",
+    "entity": "data",
+    "entityId": null,
+    "amountDelta": null,
+    "before": {
+     "counts": {
+      "requests": 2,
+      "purchases": 1,
+      "receipts": 2,
+      "receiptItems": 6,
+      "manual": 3,
+      "fund": 60000,
+      "stop": 50000,
+      "spent": 12197,
+      "receiptTotal": 4848,
+      "manualTotal": 5550,
+      "purchaseTotal": 1799,
+      "houses": 1,
+      "memberGroups": 8,
+      "stores": 8,
+      "products": 8,
+      "priceRecords": 19,
+      "budgetCategories": 10,
+      "commitments": 1,
+      "reserves": 1,
+      "auditLog": 39,
+      "backupLog": 2,
+      "inventoryItems": 4,
+      "inventoryTransactions": 3,
+      "shoppingLists": 1,
+      "shoppingCycles": 0,
+      "trips": 0,
+      "recurring": 0,
+      "alerts": 0,
+      "listItems": 5
+     }
+    },
+    "after": {
+     "counts": {
+      "requests": 2,
+      "purchases": 1,
+      "receipts": 2,
+      "receiptItems": 6,
+      "manual": 3,
+      "fund": 60000,
+      "stop": 50000,
+      "spent": 12197,
+      "receiptTotal": 4848,
+      "manualTotal": 5550,
+      "purchaseTotal": 1799,
+      "houses": 1,
+      "memberGroups": 8,
+      "stores": 8,
+      "products": 8,
+      "priceRecords": 19,
+      "budgetCategories": 10,
+      "commitments": 1,
+      "reserves": 1,
+      "auditLog": 39,
+      "backupLog": 2,
+      "inventoryItems": 4,
+      "inventoryTransactions": 3,
+      "shoppingLists": 1,
+      "shoppingCycles": 0,
+      "trips": 0,
+      "recurring": 0,
+      "alerts": 0,
+      "listItems": 5
+     }
+    }
+   },
+   {
+    "id": "aud_muw5h9ue05bi5e",
+    "at": "2026-10-06T04:00:01.814Z",
+    "action": "spending.add",
+    "summary": "Added spending: Weekly market ₱1,200",
+    "entity": "manual",
+    "entityId": "M1791259201814",
+    "amountDelta": 1200,
+    "before": null,
+    "after": {
+     "amount": 1200,
+     "date": "2026-05-03",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5ha6l06t9sd",
+    "at": "2026-10-06T04:00:02.253Z",
+    "action": "spending.add",
+    "summary": "Added spending: Weekly market ₱1,350",
+    "entity": "manual",
+    "entityId": "M1791259202253",
+    "amountDelta": 1350,
+    "before": null,
+    "after": {
+     "amount": 1350,
+     "date": "2026-05-20",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hain07ya70",
+    "at": "2026-10-06T04:00:02.687Z",
+    "action": "spending.add",
+    "summary": "Added spending: Weekly market ₱1,280",
+    "entity": "manual",
+    "entityId": "M1791259202687",
+    "amountDelta": 1280,
+    "before": null,
+    "after": {
+     "amount": 1280,
+     "date": "2026-06-04",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5haup0894w8",
+    "at": "2026-10-06T04:00:03.121Z",
+    "action": "spending.add",
+    "summary": "Added spending: Weekly market ₱1,320",
+    "entity": "manual",
+    "entityId": "M1791259203121",
+    "amountDelta": 1320,
+    "before": null,
+    "after": {
+     "amount": 1320,
+     "date": "2026-06-21",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hb6u09n17c",
+    "at": "2026-10-06T04:00:03.558Z",
+    "action": "spending.add",
+    "summary": "Added spending: Weekly market ₱1,250",
+    "entity": "manual",
+    "entityId": "M1791259203558",
+    "amountDelta": 1250,
+    "before": null,
+    "after": {
+     "amount": 1250,
+     "date": "2026-07-05",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hbiy0a79oz",
+    "at": "2026-10-06T04:00:03.994Z",
+    "action": "spending.add",
+    "summary": "Added spending: Weekly market ₱1,400",
+    "entity": "manual",
+    "entityId": "M1791259203994",
+    "amountDelta": 1400,
+    "before": null,
+    "after": {
+     "amount": 1400,
+     "date": "2026-07-22",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hbuy0b9x4n",
+    "at": "2026-10-06T04:00:04.426Z",
+    "action": "spending.add",
+    "summary": "Added spending: Weekly market ₱1,300",
+    "entity": "manual",
+    "entityId": "M1791259204426",
+    "amountDelta": 1300,
+    "before": null,
+    "after": {
+     "amount": 1300,
+     "date": "2026-08-06",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hc770ck6lw",
+    "at": "2026-10-06T04:00:04.867Z",
+    "action": "spending.add",
+    "summary": "Added spending: Weekly market ₱1,380",
+    "entity": "manual",
+    "entityId": "M1791259204867",
+    "amountDelta": 1380,
+    "before": null,
+    "after": {
+     "amount": 1380,
+     "date": "2026-08-23",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hcjd0dtv5x",
+    "at": "2026-10-06T04:00:05.305Z",
+    "action": "spending.add",
+    "summary": "Added spending: Party food for 30 ₱6,500",
+    "entity": "manual",
+    "entityId": "M1791259205304",
+    "amountDelta": 6500,
+    "before": null,
+    "after": {
+     "amount": 6500,
+     "date": "2026-09-15",
+     "store": "Pampang Market",
+     "category": "Groceries",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hcve0e8y2b",
+    "at": "2026-10-06T04:00:05.738Z",
+    "action": "spending.add",
+    "summary": "Added spending: Vitamins ₱850",
+    "entity": "manual",
+    "entityId": "M1791259205738",
+    "amountDelta": 850,
+    "before": null,
+    "after": {
+     "amount": 850,
+     "date": "2026-09-27",
+     "store": "Mercury Drug",
+     "category": "Health & Personal Care",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hd7f0fimbj",
+    "at": "2026-10-06T04:00:06.171Z",
+    "action": "spending.add",
+    "summary": "Added spending: Vitamins ₱850",
+    "entity": "manual",
+    "entityId": "M1791259206171",
+    "amountDelta": 850,
+    "before": null,
+    "after": {
+     "amount": 850,
+     "date": "2026-09-27",
+     "store": "Mercury Drug",
+     "category": "Health & Personal Care",
+     "counted": true
+    }
+   },
+   {
+    "id": "aud_muw5hdlu0h16ah",
+    "at": "2026-10-06T04:00:06.690Z",
+    "action": "inventory.use",
+    "summary": "Used 1 bottles Cooking oil (2 → 1)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j40i1aod2d",
+    "amountDelta": null,
+    "before": {
+     "quantity": 2
+    },
+    "after": {
+     "quantity": 1
+    }
+   },
+   {
+    "id": "aud_muw5hdm90jtg4j",
+    "at": "2026-10-06T04:00:06.705Z",
+    "action": "inventory.use",
+    "summary": "Used 1 bottles Cooking oil (1 → 0)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j40i1aod2d",
+    "amountDelta": null,
+    "before": {
+     "quantity": 1
+    },
+    "after": {
+     "quantity": 0
+    }
+   },
+   {
+    "id": "aud_muw5hdmo0mqlbo",
+    "at": "2026-10-06T04:00:06.720Z",
+    "action": "inventory.use",
+    "summary": "Used 1 pcs Eggs (6 → 5)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j0k015c95x",
+    "amountDelta": null,
+    "before": {
+     "quantity": 6
+    },
+    "after": {
+     "quantity": 5
+    }
+   },
+   {
+    "id": "aud_muw5hdn10ob3hk",
+    "at": "2026-10-06T04:00:06.733Z",
+    "action": "inventory.use",
+    "summary": "Used 1 pcs Eggs (5 → 4)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j0k015c95x",
+    "amountDelta": null,
+    "before": {
+     "quantity": 5
+    },
+    "after": {
+     "quantity": 4
+    }
+   },
+   {
+    "id": "aud_muw5hdnd0qbdw9",
+    "at": "2026-10-06T04:00:06.745Z",
+    "action": "inventory.use",
+    "summary": "Used 1 pcs Eggs (4 → 3)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j0k015c95x",
+    "amountDelta": null,
+    "before": {
+     "quantity": 4
+    },
+    "after": {
+     "quantity": 3
+    }
+   },
+   {
+    "id": "aud_muw5hdno0s6smd",
+    "at": "2026-10-06T04:00:06.756Z",
+    "action": "inventory.use",
+    "summary": "Used 1 pcs Eggs (3 → 2)",
+    "entity": "inventoryItems",
+    "entityId": "inv_muw5j0k015c95x",
+    "amountDelta": null,
+    "before": {
+     "quantity": 3
+    },
+    "after": {
+     "quantity": 2
+    }
+   },
+   {
+    "id": "aud_muw5hdwh0udp3f",
+    "at": "2026-10-06T04:00:07.073Z",
+    "action": "trip.start",
+    "summary": "Shopping trip started (5 items on the list)",
+    "entity": "trips",
+    "entityId": "trip_muw5hdwh0t95hj",
+    "amountDelta": null,
+    "before": null,
+    "after": null
+   },
+   {
+    "id": "aud_muw5helr115yhu",
+    "at": "2026-10-06T04:00:07.983Z",
+    "action": "trip.finish",
+    "summary": "Shopping trip finished: 3 items ₱775 · 3 prices saved to Price Book · 3 items restocked",
+    "entity": "trips",
+    "entityId": "trip_muw5hdwh0t95hj",
+    "amountDelta": 775,
+    "before": {
+     "spent": 30877
+    },
+    "after": {
+     "spent": 31652,
+     "entries": [
+      "M1791259207982_0",
+      "M1791259207983_1"
+     ]
+    }
+   }
+  ],
+  "backupLog": [
+   {
+    "id": "blog_muwphjqd0ajthj",
+    "at": "2026-10-06T13:20:06.949Z",
+    "action": "Migration backup created",
+    "status": "success",
+    "ref": "snap_muwphjpmjd9t",
+    "detail": "before upgrade v1 → v2 · saved in safety vault (IndexedDB)"
+   },
+   {
+    "id": "blog_muw5h8hd02gdwi",
+    "at": "2026-10-06T04:00:00.049Z",
+    "action": "Migration backup created",
+    "status": "success",
+    "ref": "snap_muw5h8gl5t6v",
+    "detail": "before upgrade v2 → v3 · saved in safety vault (IndexedDB)"
+   },
+   {
+    "id": "blog_muw5h8ho03p3jk",
+    "at": "2026-10-06T04:00:00.060Z",
+    "action": "Migration backup created",
+    "status": "success",
+    "ref": "snap_muw5h8gyk2bs",
+    "detail": "before upgrade v3 → v4 · saved in safety vault (IndexedDB)"
+   }
+  ],
+  "inventoryItems": [
+   {
+    "id": "inv_muw5iy9l12hz4g",
+    "name": "Rice",
+    "productId": "prod_muwphjpc0573zb",
+    "location": "pantry",
+    "unit": "kg",
+    "quantity": 11,
+    "minQty": null,
+    "packSize": 5,
+    "usage": {
+     "mode": "per_person",
+     "perDay": null,
+     "perPersonPerDay": 0.2,
+     "perPetPerDay": null
+    },
+    "houseId": null,
+    "perishable": false,
+    "expiryDate": null,
+    "shelfLifeDays": null,
+    "learnedAtPeople": null,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:01:20.121Z",
+    "updatedAt": "2026-10-06T04:00:07.982Z"
+   },
+   {
+    "id": "inv_muw5j0k015c95x",
+    "name": "Eggs",
+    "productId": "prod_muw5hhdy08dkju",
+    "location": "pantry",
+    "unit": "pcs",
+    "quantity": 32,
+    "minQty": 12,
+    "packSize": 30,
+    "usage": {
+     "mode": "auto",
+     "perDay": null,
+     "perPersonPerDay": null,
+     "perPetPerDay": null
+    },
+    "houseId": null,
+    "perishable": false,
+    "expiryDate": null,
+    "shelfLifeDays": null,
+    "learnedAtPeople": null,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:01:23.088Z",
+    "updatedAt": "2026-10-06T04:00:07.983Z"
+   },
+   {
+    "id": "inv_muw5j24018elfj",
+    "name": "Dish soap",
+    "productId": "prod_muw5ho880c3zlm",
+    "location": "pantry",
+    "unit": "bottles",
+    "quantity": 0,
+    "minQty": null,
+    "packSize": 1,
+    "usage": {
+     "mode": "auto",
+     "perDay": null,
+     "perPersonPerDay": null,
+     "perPetPerDay": null
+    },
+    "houseId": null,
+    "perishable": false,
+    "expiryDate": null,
+    "shelfLifeDays": null,
+    "learnedAtPeople": null,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:01:25.104Z",
+    "updatedAt": "2026-10-06T04:01:25.104Z"
+   },
+   {
+    "id": "inv_muw5j40i1aod2d",
+    "name": "Cooking oil",
+    "productId": "prod_muw5hkt50ay3uh",
+    "location": "pantry",
+    "unit": "bottles",
+    "quantity": 2,
+    "minQty": 1,
+    "packSize": 1,
+    "usage": {
+     "mode": "auto",
+     "perDay": null,
+     "perPersonPerDay": null,
+     "perPetPerDay": null
+    },
+    "houseId": null,
+    "perishable": false,
+    "expiryDate": null,
+    "shelfLifeDays": null,
+    "learnedAtPeople": null,
+    "notes": "",
+    "archived": false,
+    "createdAt": "2026-10-06T04:01:27.570Z",
+    "updatedAt": "2026-10-06T04:00:07.983Z"
+   }
+  ],
+  "inventoryTransactions": [
+   {
+    "id": "itx_muw5iy9m1393gb",
+    "itemId": "inv_muw5iy9l12hz4g",
+    "type": "add",
+    "qty": 6,
+    "before": 0,
+    "after": 6,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:01:20.122Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": "starting stock"
+   },
+   {
+    "id": "itx_muw5j0k016v8xb",
+    "itemId": "inv_muw5j0k015c95x",
+    "type": "add",
+    "qty": 6,
+    "before": 0,
+    "after": 6,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:01:23.088Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": "starting stock"
+   },
+   {
+    "id": "itx_muw5j40i1brt6q",
+    "itemId": "inv_muw5j40i1aod2d",
+    "type": "add",
+    "qty": 2,
+    "before": 0,
+    "after": 2,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:01:27.570Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": "starting stock"
+   },
+   {
+    "id": "itx_muw5hdlu0gd5ia",
+    "itemId": "inv_muw5j40i1aod2d",
+    "type": "use",
+    "qty": -1,
+    "before": 2,
+    "after": 1,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:06.690Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": ""
+   },
+   {
+    "id": "itx_muw5hdm90icx4c",
+    "itemId": "inv_muw5j40i1aod2d",
+    "type": "use",
+    "qty": -1,
+    "before": 1,
+    "after": 0,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:06.705Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": ""
+   },
+   {
+    "id": "itx_muw5hdmo0lthc8",
+    "itemId": "inv_muw5j0k015c95x",
+    "type": "use",
+    "qty": -1,
+    "before": 6,
+    "after": 5,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:06.720Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": ""
+   },
+   {
+    "id": "itx_muw5hdn10naadh",
+    "itemId": "inv_muw5j0k015c95x",
+    "type": "use",
+    "qty": -1,
+    "before": 5,
+    "after": 4,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:06.733Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": ""
+   },
+   {
+    "id": "itx_muw5hdnd0px894",
+    "itemId": "inv_muw5j0k015c95x",
+    "type": "use",
+    "qty": -1,
+    "before": 4,
+    "after": 3,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:06.745Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": ""
+   },
+   {
+    "id": "itx_muw5hdno0ris8o",
+    "itemId": "inv_muw5j0k015c95x",
+    "type": "use",
+    "qty": -1,
+    "before": 3,
+    "after": 2,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:06.756Z",
+    "people": 5,
+    "sourceRef": null,
+    "note": ""
+   },
+   {
+    "id": "itx_muw5helr0w6k3w",
+    "itemId": "inv_muw5iy9l12hz4g",
+    "type": "trip",
+    "qty": 5,
+    "before": 6,
+    "after": 11,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:07.982Z",
+    "people": 5,
+    "sourceRef": {
+     "type": "trip",
+     "id": "trip_muw5hdwh0t95hj",
+     "line": 0
+    },
+    "note": ""
+   },
+   {
+    "id": "itx_muw5helr0yciij",
+    "itemId": "inv_muw5j0k015c95x",
+    "type": "trip",
+    "qty": 30,
+    "before": 2,
+    "after": 32,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:07.983Z",
+    "people": 5,
+    "sourceRef": {
+     "type": "trip",
+     "id": "trip_muw5hdwh0t95hj",
+     "line": 0
+    },
+    "note": ""
+   },
+   {
+    "id": "itx_muw5helr1066ne",
+    "itemId": "inv_muw5j40i1aod2d",
+    "type": "trip",
+    "qty": 2,
+    "before": 0,
+    "after": 2,
+    "day": "2026-10-06",
+    "at": "2026-10-06T04:00:07.983Z",
+    "people": 5,
+    "sourceRef": {
+     "type": "trip",
+     "id": "trip_muw5hdwh0t95hj",
+     "line": 1
+    },
+    "note": ""
+   }
+  ],
+  "shoppingLists": [
+   {
+    "id": "list_muw5h8g801ehwn",
+    "name": "Shopping list",
+    "status": "active",
+    "items": [
+     {
+      "id": "li_muw5j85l1d66j6",
+      "name": "Rice",
+      "productId": "prod_muwphjpc0573zb",
+      "inventoryItemId": "inv_muw5iy9l12hz4g",
+      "qty": 1,
+      "unit": "",
+      "kind": "need",
+      "priority": 2,
+      "pinned": false,
+      "storeId": null,
+      "categoryName": "",
+      "status": "bought",
+      "addedFrom": "manual",
+      "cycleStart": "2026-10-01",
+      "note": "",
+      "createdAt": "2026-10-06T04:01:32.937Z",
+      "updatedAt": "2026-10-06T04:01:32.937Z",
+      "plannedAmount": 345,
+      "boughtAt": "2026-10-06T04:00:07.982Z",
+      "boughtAmount": 345,
+      "boughtVia": "trip"
+     },
+     {
+      "id": "li_muw5j9dk1f2awv",
+      "name": "Eggs",
+      "productId": "prod_muw5hhdy08dkju",
+      "inventoryItemId": "inv_muw5j0k015c95x",
+      "qty": 1,
+      "unit": "",
+      "kind": "need",
+      "priority": 2,
+      "pinned": false,
+      "storeId": null,
+      "categoryName": "",
+      "status": "bought",
+      "addedFrom": "manual",
+      "cycleStart": "2026-10-01",
+      "note": "",
+      "createdAt": "2026-10-06T04:01:34.520Z",
+      "updatedAt": "2026-10-06T04:01:34.520Z",
+      "plannedAmount": 270,
+      "boughtAt": "2026-10-06T04:00:07.982Z",
+      "boughtAmount": 250,
+      "boughtVia": "trip"
+     },
+     {
+      "id": "li_muw5jal31hpzlf",
+      "name": "Cooking oil",
+      "productId": "prod_muw5hkt50ay3uh",
+      "inventoryItemId": "inv_muw5j40i1aod2d",
+      "qty": 2,
+      "unit": "",
+      "kind": "need",
+      "priority": 2,
+      "pinned": false,
+      "storeId": null,
+      "categoryName": "",
+      "status": "bought",
+      "addedFrom": "manual",
+      "cycleStart": "2026-10-01",
+      "note": "",
+      "createdAt": "2026-10-06T04:01:36.087Z",
+      "updatedAt": "2026-10-06T04:01:36.087Z",
+      "plannedAmount": 190,
+      "boughtAt": "2026-10-06T04:00:07.982Z",
+      "boughtAmount": 180,
+      "boughtVia": "trip"
+     },
+     {
+      "id": "li_muw5jbsl1j4hch",
+      "name": "Dish soap",
+      "productId": "prod_muw5ho880c3zlm",
+      "inventoryItemId": "inv_muw5j24018elfj",
+      "qty": 1,
+      "unit": "",
+      "kind": "need",
+      "priority": 2,
+      "pinned": false,
+      "storeId": null,
+      "categoryName": "",
+      "status": "open",
+      "addedFrom": "manual",
+      "cycleStart": "2026-10-01",
+      "note": "",
+      "createdAt": "2026-10-06T04:01:37.653Z",
+      "updatedAt": "2026-10-06T04:01:37.653Z",
+      "plannedAmount": 45
+     },
+     {
+      "id": "li_muw5jd041libjd",
+      "name": "Birthday cake",
+      "productId": null,
+      "inventoryItemId": null,
+      "qty": 1,
+      "unit": "",
+      "kind": "need",
+      "priority": 2,
+      "pinned": false,
+      "storeId": null,
+      "categoryName": "",
+      "status": "open",
+      "addedFrom": "manual",
+      "cycleStart": "2026-10-01",
+      "note": "",
+      "createdAt": "2026-10-06T04:01:39.220Z",
+      "updatedAt": "2026-10-06T04:01:39.220Z",
+      "plannedAmount": null
+     }
+    ],
+    "createdAt": "2026-10-06T04:00:00.007Z",
+    "updatedAt": "2026-10-06T04:01:39.220Z"
+   }
+  ],
+  "shoppingCycles": [],
+  "trips": [
+   {
+    "id": "trip_muw5hdwh0t95hj",
+    "status": "finished",
+    "listId": "list_muw5h8g801ehwn",
+    "cart": [
+     {
+      "listItemId": "li_muw5j85l1d66j6",
+      "name": "Rice",
+      "productId": "prod_muwphjpc0573zb",
+      "storeId": "store_landers",
+      "qty": 1,
+      "amount": 345,
+      "checked": true
+     },
+     {
+      "listItemId": "li_muw5j9dk1f2awv",
+      "name": "Eggs",
+      "productId": "prod_muw5hhdy08dkju",
+      "storeId": "store_puregold",
+      "qty": 1,
+      "amount": 250,
+      "checked": true
+     },
+     {
+      "listItemId": "li_muw5jal31hpzlf",
+      "name": "Cooking oil",
+      "productId": "prod_muw5hkt50ay3uh",
+      "storeId": "store_puregold",
+      "qty": 2,
+      "amount": 180,
+      "checked": true
+     }
+    ],
+    "startedAt": "2026-10-06T04:00:07.073Z",
+    "cycleStart": "2026-10-01",
+    "finishedAt": "2026-10-06T04:00:07.982Z",
+    "total": 775,
+    "entryIds": [
+     "M1791259207982_0",
+     "M1791259207983_1"
+    ],
+    "priceRecordIds": [
+     "price_muw5helq0vx64c",
+     "price_muw5helr0xgbpg",
+     "price_muw5helr0zsde8"
+    ],
+    "overStopConfirmed": false
+   }
+  ],
+  "settings": {
+   "thresholds": {
+    "watch": 70,
+    "warning": 85,
+    "hardStop": 100
+   },
+   "budgetPeriod": {
+    "type": "monthly",
+    "startDay": 1
+   },
+   "currency": "PHP",
+   "cycle": {
+    "mode": "days",
+    "lengthDays": 15,
+    "anchorDate": "2026-10-01"
+   },
+   "inventory": {
+    "lowDays": 7,
+    "urgentDays": 3,
+    "expirySoonDays": 3,
+    "bufferDays": 3,
+    "duplicateWindowDays": 7
+   },
+   "route": {
+    "mode": "balance",
+    "betweenStoresMinutes": 10,
+    "betweenStoresKm": 3,
+    "shoppingMinutes": 20,
+    "timeValuePerHour": 100,
+    "fuelPerKm": null
+   },
+   "fund": {
+    "expensiveAt": 5000
+   },
+   "priceAlerts": {
+    "dropPct": 5,
+    "enabled": true
+   },
+   "recurring": {
+    "autoCommitDaysBefore": 7
+   }
+  },
+  "budgetPlan": {
+   "mode": "peso",
+   "items": [
+    {
+     "categoryId": "cat_groceries",
+     "value": 20000
+    },
+    {
+     "categoryId": "cat_food_and_dining",
+     "value": 5000
+    }
+   ],
+   "updatedAt": "2026-10-06T13:20:16.843Z"
+  },
+  "meta": {
+   "migrations": [
+    {
+     "from": 1,
+     "to": 2,
+     "at": "2026-10-06T13:20:06.911Z",
+     "appVersion": "2.0.0-stage1",
+     "counts": {
+      "before": {
+       "requests": 2,
+       "purchases": 1,
+       "receipts": 2,
+       "receiptItems": 6,
+       "manual": 3,
+       "fund": 60000,
+       "stop": 50000,
+       "spent": 12197,
+       "receiptTotal": 4848,
+       "manualTotal": 5550,
+       "purchaseTotal": 1799,
+       "houses": 0,
+       "memberGroups": 0,
+       "stores": 0,
+       "products": 0,
+       "priceRecords": 0,
+       "budgetCategories": 0,
+       "commitments": 0,
+       "reserves": 0,
+       "auditLog": 0,
+       "backupLog": 0
+      },
+      "after": {
+       "requests": 2,
+       "purchases": 1,
+       "receipts": 2,
+       "receiptItems": 6,
+       "manual": 3,
+       "fund": 60000,
+       "stop": 50000,
+       "spent": 12197,
+       "receiptTotal": 4848,
+       "manualTotal": 5550,
+       "purchaseTotal": 1799,
+       "houses": 1,
+       "memberGroups": 8,
+       "stores": 7,
+       "products": 3,
+       "priceRecords": 6,
+       "budgetCategories": 10,
+       "commitments": 0,
+       "reserves": 0,
+       "auditLog": 0,
+       "backupLog": 0
+      }
+     },
+     "ok": true
+    },
+    {
+     "from": 2,
+     "to": 3,
+     "at": "2026-10-06T04:00:00.007Z",
+     "appVersion": "3.0.0-stage2",
+     "counts": {
+      "before": {
+       "requests": 2,
+       "purchases": 1,
+       "receipts": 2,
+       "receiptItems": 6,
+       "manual": 3,
+       "fund": 60000,
+       "stop": 50000,
+       "spent": 12197,
+       "receiptTotal": 4848,
+       "manualTotal": 5550,
+       "purchaseTotal": 1799,
+       "houses": 1,
+       "memberGroups": 8,
+       "stores": 8,
+       "products": 3,
+       "priceRecords": 7,
+       "budgetCategories": 10,
+       "commitments": 1,
+       "reserves": 1,
+       "auditLog": 12,
+       "backupLog": 1,
+       "inventoryItems": 0,
+       "inventoryTransactions": 0,
+       "shoppingLists": 0,
+       "shoppingCycles": 0,
+       "trips": 0,
+       "listItems": 0
+      },
+      "after": {
+       "requests": 2,
+       "purchases": 1,
+       "receipts": 2,
+       "receiptItems": 6,
+       "manual": 3,
+       "fund": 60000,
+       "stop": 50000,
+       "spent": 12197,
+       "receiptTotal": 4848,
+       "manualTotal": 5550,
+       "purchaseTotal": 1799,
+       "houses": 1,
+       "memberGroups": 8,
+       "stores": 8,
+       "products": 3,
+       "priceRecords": 7,
+       "budgetCategories": 10,
+       "commitments": 1,
+       "reserves": 1,
+       "auditLog": 12,
+       "backupLog": 1,
+       "inventoryItems": 0,
+       "inventoryTransactions": 0,
+       "shoppingLists": 1,
+       "shoppingCycles": 0,
+       "trips": 0,
+       "listItems": 0
+      }
+     },
+     "ok": true
+    },
+    {
+     "from": 3,
+     "to": 4,
+     "at": "2026-10-06T04:00:00.016Z",
+     "appVersion": "4.0.0-stage3",
+     "counts": {
+      "before": {
+       "requests": 2,
+       "purchases": 1,
+       "receipts": 2,
+       "receiptItems": 6,
+       "manual": 3,
+       "fund": 60000,
+       "stop": 50000,
+       "spent": 12197,
+       "receiptTotal": 4848,
+       "manualTotal": 5550,
+       "purchaseTotal": 1799,
+       "houses": 1,
+       "memberGroups": 8,
+       "stores": 8,
+       "products": 8,
+       "priceRecords": 19,
+       "budgetCategories": 10,
+       "commitments": 1,
+       "reserves": 1,
+       "auditLog": 39,
+       "backupLog": 2,
+       "inventoryItems": 4,
+       "inventoryTransactions": 3,
+       "shoppingLists": 1,
+       "shoppingCycles": 0,
+       "trips": 0,
+       "recurring": 0,
+       "alerts": 0,
+       "listItems": 5
+      },
+      "after": {
+       "requests": 2,
+       "purchases": 1,
+       "receipts": 2,
+       "receiptItems": 6,
+       "manual": 3,
+       "fund": 60000,
+       "stop": 50000,
+       "spent": 12197,
+       "receiptTotal": 4848,
+       "manualTotal": 5550,
+       "purchaseTotal": 1799,
+       "houses": 1,
+       "memberGroups": 8,
+       "stores": 8,
+       "products": 8,
+       "priceRecords": 19,
+       "budgetCategories": 10,
+       "commitments": 1,
+       "reserves": 1,
+       "auditLog": 39,
+       "backupLog": 2,
+       "inventoryItems": 4,
+       "inventoryTransactions": 3,
+       "shoppingLists": 1,
+       "shoppingCycles": 0,
+       "trips": 0,
+       "recurring": 0,
+       "alerts": 0,
+       "listItems": 5
+      }
+     },
+     "ok": true
+    }
+   ],
+   "createdAt": "2026-10-06T13:20:06.911Z"
+  },
+  "schemaVersion": 4,
+  "recurring": [],
+  "alerts": [
+   {
+    "id": "al_muw5h8gw01ij8p",
+    "kind": "low_stock",
+    "key": "low:inv_muw5j0k015c95x:URGENT#resolved:2026-10-06T04:00:07.992Z",
+    "title": "🥫 Eggs — urgent",
+    "text": "No daily use set",
+    "at": "2026-10-06T04:00:00.032Z",
+    "seen": false,
+    "dismissed": true,
+    "inventoryItemId": "inv_muw5j0k015c95x",
+    "resolved": true,
+    "resolvedAt": "2026-10-06T04:00:07.992Z"
+   },
+   {
+    "id": "al_muw5h8gx02o5ue",
+    "kind": "low_stock",
+    "key": "low:inv_muw5j24018elfj:OUT",
+    "title": "🥫 Dish soap — out",
+    "text": "None left",
+    "at": "2026-10-06T04:00:00.033Z",
+    "seen": false,
+    "dismissed": false,
+    "inventoryItemId": "inv_muw5j24018elfj"
+   },
+   {
+    "id": "al_muw5hdmg0k4rb2",
+    "kind": "low_stock",
+    "key": "low:inv_muw5j40i1aod2d:OUT#resolved:2026-10-06T04:00:07.992Z",
+    "title": "🥫 Cooking oil — out",
+    "text": "None left",
+    "at": "2026-10-06T04:00:06.712Z",
+    "seen": false,
+    "dismissed": true,
+    "inventoryItemId": "inv_muw5j40i1aod2d",
+    "resolved": true,
+    "resolvedAt": "2026-10-06T04:00:07.992Z"
+   }
+  ],
+  "learning": {
+   "terms": {},
+   "storePrefs": {},
+   "routeModeCounts": {},
+   "corrections": [],
+   "alertScanAt": "2026-10-06T04:00:00.016Z"
+  }
+ }
+}

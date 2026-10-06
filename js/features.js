@@ -81,7 +81,7 @@ function finishBootSafety(){
    let L=(bootInfo.steps[0] && bootInfo.steps[0].learned) || {};
    audit("data.upgraded","Jason Shop data upgraded to version "+bootInfo.toVersion+" (all "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries and "+bootInfo.after.requests+" requests kept; "+(L.priceRecords||0)+" prices learned from receipts)",
     {entity:"data",before:{counts:bootInfo.before},after:{counts:bootInfo.after}});
-   showBootBanner("✅ Jason Shop was upgraded. All your data was checked and kept: "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries, "+bootInfo.after.requests+" shopping requests, Spent "+peso(bootInfo.after.spent)+". "+(L.priceRecords ? L.priceRecords+" prices were added to your new Price Book from your receipts. " : "")+(bootInfo.fromVersion>=3 ? "New: smart store picks, a trip planner, price alerts, recurring purchases, a 30-day forecast and Taglish commands. " : (bootInfo.fromVersion>=2 ? "New: home inventory, a smart shopping list, shopping trips and 15-day cycles. " : ""))+"A safety copy of the old data was saved first.");
+   showBootBanner("✅ Jason Shop was upgraded. All your data was checked and kept: "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries, "+bootInfo.after.requests+" shopping requests, Spent "+peso(bootInfo.after.spent)+". "+(L.priceRecords ? L.priceRecords+" prices were added to your new Price Book from your receipts. " : "")+(bootInfo.fromVersion<5 ? "New in this version: Insights (spending trends, your basket price index, real savings, waste and stock-outs, plan accuracy, unusual spending, CSV/PDF export), search, household requests, a receipt archive and product pages. " : "")+(bootInfo.fromVersion===3 ? "Also: smart store picks, a trip planner, price alerts, recurring purchases, a 30-day forecast and Taglish commands. " : (bootInfo.fromVersion===2 ? "Also: home inventory, a smart shopping list, shopping trips and 15-day cycles. " : ""))+"A safety copy of the old data was saved first.");
   }else{
    logBackup("Migration","failed","",(bootInfo.problems||[]).join("; "));
    showBootBanner("⚠️ The upgrade was paused because a safety check didn't match. Your data is unchanged and safe. ("+(bootInfo.problems||[]).join("; ")+")",true);
@@ -366,6 +366,7 @@ function renderActiveView(){
   }
   if(typeof renderStage2Active==="function") renderStage2Active();
   if(typeof renderStage3Active==="function") renderStage3Active();
+  if(typeof renderStage4Active==="function") renderStage4Active();
  }catch(error){
   console.warn("render",error);
  }
@@ -1304,11 +1305,15 @@ function renderMoreMenu(){
   ["recurring","📅","Recurring purchases","Monthly rice, gas, water — set aside automatically"],
   ["alerts","🔔","Alert center","Price drops, targets, low stock, expiry, budget"],
   ["forecast","📈","30-day forecast","What's coming up and whether the fund lasts"],
+  ["insights","📊","Insights & analytics","Trends, basket price index, savings, waste, accuracy, export"],
+  ["requests","📨","Household requests","Family and staff ask · you approve"+(typeof pendingHouseholdRequests==="function" && pendingHouseholdRequests().length ? " · "+pendingHouseholdRequests().length+" waiting" : "")],
+  ["receiptArchive","🗂️","Receipt archive","Every receipt, searchable by store, item and month"],
+  ["search","🔎","Search everything","Products, stock, list, stores, receipts, trips"],
   ["data","💾","Data & Backup","Backups, restore, safety copies, integrity check"],
   ["audit","🧾","Change history","Every money and data change"],
   ["settings","⚙️","Settings","Warning levels, budget period, app info"]
  ];
- $id("moreMenu").innerHTML=items.map(([k,icon,title,sub])=>`<button class="menu-item" id="more_${k}" onclick="${k==="alerts" ? "openAlerts()" : "goTo('"+k+"')"}"><span class="mi-icon">${icon}</span><span><b>${title}</b><small>${sub}</small></span><span class="chev">›</span></button>`).join("");
+ $id("moreMenu").innerHTML=items.map(([k,icon,title,sub])=>`<button class="menu-item" id="more_${k}" onclick="${k==="alerts" ? "openAlerts()" : (k==="search" ? "openSearch()" : "goTo('"+k+"')")}"><span class="mi-icon">${icon}</span><span><b>${title}</b><small>${sub}</small></span><span class="chev">›</span></button>`).join("");
 }
 
 /* ---------- DATA & BACKUP (§98–120, §113) ---------- */
