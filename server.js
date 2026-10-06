@@ -152,15 +152,18 @@ function supportsReasoning(model) {
   return /^(gpt-5|o\d)/i.test(model);
 }
 
-async function callResponsesAPI({ model, input, maxTokens, effort }) {
+async function callResponsesAPI({ model, input, maxTokens, effort, tools, textFormat }) {
 
   const body = {
     model,
     max_output_tokens: maxTokens,
-    tools: [{ type: "web_search" }],
-    text: { format: { type: "text" } },
+    text: { format: textFormat || { type: "text" } },
     input
   };
+
+  if (tools && tools.length) {
+    body.tools = tools;
+  }
 
   if (effort && supportsReasoning(model)) {
     body.reasoning = { effort };
@@ -204,6 +207,18 @@ function isReasoningParamProblem(result) {
     /reasoning/i.test(String(err.message || "")));
 }
 
+function isTextFormatProblem(result) {
+  const err = (result.data && result.data.error) || {};
+  return result.status === 400 && (/^text/.test(String(err.param || "")) ||
+    /json_schema|text\.format|response_format|structured output/i.test(String(err.message || "")));
+}
+
+function isImageProblem(result) {
+  const err = (result.data && result.data.error) || {};
+  return result.status === 400 && (/image/i.test(String(err.code || "")) ||
+    /image/i.test(String(err.param || "")) || /image/i.test(String(err.message || "")));
+}
+
 class ResearchError extends Error {
   constructor(message, publicMessage) {
     super(message);
@@ -211,28 +226,30 @@ class ResearchError extends Error {
   }
 }
 
-async function runResearch(query, budget) {
+/* One OpenAI call with automatic recovery from known problems:
+   model name rejected → fallback model; reasoning setting rejected →
+   drop it; structured output rejected → plain text; ran out of space →
+   retry once with double room. Never logs the input (it can hold images). */
+async function askOpenAI({ input, tools, textFormat, maxTokens, label, failMessage, emptyMessage }) {
 
   if (!process.env.OPENAI_API_KEY) {
     throw new ResearchError("OPENAI_API_KEY is not set",
-      "AI research is not set up on the server yet (missing OpenAI key).");
+      "AI is not set up on the server yet (missing OpenAI key).");
   }
-
-  const input = buildResearchPrompt(query, budget);
 
   let model = RESEARCH_MODEL;
   let effort = REASONING_EFFORT;
-  let maxTokens = MAX_OUTPUT_TOKENS;
+  let format = textFormat || null;
+  let tokens = maxTokens || MAX_OUTPUT_TOKENS;
   let retriedForSpace = false;
 
-  // Up to 3 attempts, each fixing a specific, known problem.
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 4; attempt++) {
 
-    const result = await callResponsesAPI({ model, input, maxTokens, effort });
+    const result = await callResponsesAPI({ model, input, maxTokens: tokens, effort, tools, textFormat: format });
 
     if (!result.ok) {
 
-      console.error("OpenAI research error (" + model + "):", result.status, JSON.stringify(result.data && result.data.error));
+      console.error("OpenAI " + label + " error (" + model + "):", result.status, JSON.stringify(result.data && result.data.error));
 
       if (isReasoningParamProblem(result) && effort) {
         effort = null;              // model doesn't accept reasoning settings
@@ -245,30 +262,35 @@ async function runResearch(query, budget) {
         continue;
       }
 
-      throw new ResearchError("OpenAI research failed: " + result.status,
-        "The AI research service returned an error. Please tap Retry in a minute.");
+      if (format && isTextFormatProblem(result)) {
+        format = null;              // fall back to plain text (prompt asks for JSON)
+        continue;
+      }
+
+      if (isImageProblem(result)) {
+        throw new ResearchError("OpenAI rejected the image",
+          "The AI couldn't open that picture. Please try another photo or a screenshot.");
+      }
+
+      throw new ResearchError("OpenAI " + label + " failed: " + result.status,
+        failMessage || "The AI service returned an error. Please tap Retry in a minute.");
 
     }
 
     const text = extractOutputText(result.data);
 
     if (text) {
-      return {
-        report: text,
-        summary: extractVoiceSummary(text),
-        model,
-        complete: result.data.status !== "incomplete"
-      };
+      return { text, model, complete: result.data.status !== "incomplete", structured: !!format };
     }
 
-    console.error("OpenAI returned no readable text. Shape:", describeShape(result.data));
+    console.error("OpenAI " + label + " returned no readable text. Shape:", describeShape(result.data));
 
     const ranOut = result.data && result.data.status === "incomplete" &&
       result.data.incomplete_details && result.data.incomplete_details.reason === "max_output_tokens";
 
-    if (ranOut && !retriedForSpace && attempt < 3) {
+    if (ranOut && !retriedForSpace) {
       retriedForSpace = true;
-      maxTokens = maxTokens * 2;     // give the model more room, once
+      tokens = tokens * 2;          // give the model more room, once
       continue;
     }
 
@@ -276,8 +298,28 @@ async function runResearch(query, budget) {
 
   }
 
-  throw new ResearchError("No readable report from OpenAI",
-    "The AI finished without writing a report. Please tap Retry.");
+  throw new ResearchError("No readable output from OpenAI (" + label + ")",
+    emptyMessage || "The AI finished without an answer. Please tap Retry.");
+
+}
+
+async function runResearch(query, budget) {
+
+  const answer = await askOpenAI({
+    input: buildResearchPrompt(query, budget),
+    tools: [{ type: "web_search" }],
+    maxTokens: MAX_OUTPUT_TOKENS,
+    label: "research",
+    failMessage: "The AI research service returned an error. Please tap Retry in a minute.",
+    emptyMessage: "The AI finished without writing a report. Please tap Retry."
+  });
+
+  return {
+    report: answer.text,
+    summary: extractVoiceSummary(answer.text),
+    model: answer.model,
+    complete: answer.complete
+  };
 
 }
 
@@ -334,6 +376,37 @@ function cleanupJobs() {
   }
 }
 
+// Generic background job: worker() resolves to the result fields.
+// Only the result is kept on the job (never the uploaded image).
+function startJob(kind, worker) {
+
+  cleanupJobs();
+
+  const id = "JS-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+
+  const job = { id, kind, status: "researching", createdAt: Date.now() };
+
+  researchJobs.set(id, job);
+
+  Promise.resolve()
+    .then(worker)
+    .then(result => {
+      job.status = "complete";
+      job.result = result;
+    })
+    .catch(error => {
+      console.error(kind + " job " + id + " failed:", error.message);
+      job.status = "error";
+      job.error = error.publicMessage || "Something went wrong. Please tap Retry.";
+    })
+    .finally(() => {
+      job.finishedAt = Date.now();
+    });
+
+  return job;
+
+}
+
 app.post("/api/research/start", (req, res) => {
 
   const { query, budget } = req.body || {};
@@ -381,7 +454,7 @@ app.post("/api/research/start", (req, res) => {
 
 });
 
-app.get("/api/research/status/:id", (req, res) => {
+app.get(["/api/research/status/:id", "/api/jobs/:id"], (req, res) => {
 
   const job = researchJobs.get(req.params.id);
 
@@ -394,6 +467,9 @@ app.get("/api/research/status/:id", (req, res) => {
   }
 
   if (job.status === "complete") {
+    if (job.result) {
+      return res.json(Object.assign({ success: true, status: "complete", kind: job.kind }, job.result));
+    }
     return res.json({
       success: true,
       status: "complete",
@@ -415,6 +491,332 @@ app.get("/api/research/status/:id", (req, res) => {
     success: true,
     status: "researching",
     seconds: Math.round((Date.now() - job.createdAt) / 1000)
+  });
+
+});
+
+
+/* =========================================
+   PHOTO READING (OpenAI vision)
+   POST /api/photo/start  (multipart: image, kind=product|receipt)
+     → { jobId }   then poll GET /api/jobs/:id
+   The app shrinks photos to ~1600px JPEG before upload.
+   Image bytes are only held in memory for the OpenAI call and are
+   never logged or stored.
+========================================= */
+
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8 MB hard limit
+const VISION_MAX_TOKENS = Number(process.env.OPENAI_VISION_MAX_OUTPUT_TOKENS) || 6000;
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_BYTES, files: 1, fields: 5 }
+});
+
+const nullableString = { type: ["string", "null"] };
+const nullableNumber = { type: ["number", "null"] };
+
+const PRODUCT_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["is_product", "image_kind", "product_name", "brand", "model", "product_type",
+    "key_specs", "search_query", "listing", "confidence", "notes"],
+  properties: {
+    is_product: { type: "boolean" },
+    image_kind: { type: "string", enum: ["product_photo", "shop_screenshot", "other"] },
+    product_name: { type: "string" },
+    brand: nullableString,
+    model: nullableString,
+    product_type: nullableString,
+    key_specs: { type: "array", items: { type: "string" } },
+    search_query: { type: "string" },
+    listing: {
+      type: "object",
+      additionalProperties: false,
+      required: ["found", "platform", "title", "price_php", "original_price_php", "seller", "rating", "sold", "shipping"],
+      properties: {
+        found: { type: "boolean" },
+        platform: nullableString,
+        title: nullableString,
+        price_php: nullableNumber,
+        original_price_php: nullableNumber,
+        seller: nullableString,
+        rating: nullableString,
+        sold: nullableString,
+        shipping: nullableString
+      }
+    },
+    confidence: { type: "string", enum: ["high", "medium", "low"] },
+    notes: { type: "string" }
+  }
+};
+
+const RECEIPT_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["is_receipt", "readability", "store", "branch", "date", "time", "items", "subtotal",
+    "vat", "discount", "service_charge", "total", "currency", "payment_method", "receipt_number", "problems"],
+  properties: {
+    is_receipt: { type: "boolean" },
+    readability: { type: "string", enum: ["clear", "partly_readable", "unreadable"] },
+    store: nullableString,
+    branch: nullableString,
+    date: nullableString,
+    time: nullableString,
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "qty", "unit_price", "line_total"],
+        properties: {
+          name: { type: "string" },
+          qty: nullableNumber,
+          unit_price: nullableNumber,
+          line_total: nullableNumber
+        }
+      }
+    },
+    subtotal: nullableNumber,
+    vat: nullableNumber,
+    discount: nullableNumber,
+    service_charge: nullableNumber,
+    total: nullableNumber,
+    currency: nullableString,
+    payment_method: nullableString,
+    receipt_number: nullableString,
+    problems: { type: "string" }
+  }
+};
+
+const PRODUCT_PROMPT =
+  "You are Jason Shop's product spotter for a shopper in the Philippines. Look at the image and identify the product. " +
+  "If it is a screenshot of a shopping app or website (Shopee, Lazada, TikTok Shop, Amazon, Zalora, etc.), set image_kind to " +
+  "'shop_screenshot' and fill listing with what is visibly shown: platform, listing title, current price in PHP as a plain number, " +
+  "original/crossed-out price, seller or shop name, rating, number sold, and shipping info; set listing.found true. " +
+  "Otherwise set listing.found false and the listing fields to null. " +
+  "product_name: brand + model + product type in one short line. key_specs: up to 6 short specs that are visible or certain " +
+  "from the exact model (e.g. size, capacity, wattage, colour). search_query: a concise search phrase to find this exact product. " +
+  "Never invent a model number you cannot read — use null and lower the confidence instead. " +
+  "If there is no identifiable product, set is_product false, product_name to '', and explain in notes. " +
+  "Reply with JSON only, matching the requested schema.";
+
+const RECEIPT_PROMPT =
+  "You read shopping receipts for Jason Shop (Philippines, amounts usually in PHP). Extract: store name, branch/address line, " +
+  "date as YYYY-MM-DD, time, every line item (name, qty, unit price, line total), subtotal, VAT amount (the VAT itself, not " +
+  "'VATable sales'), discount, service charge, the final total paid, currency code, and payment method (e.g. Cash, GCash, Maya, " +
+  "Credit card, Debit card). For cards give only the card type — never copy card numbers. Amounts are plain numbers without " +
+  "commas or currency signs. Use null for anything you cannot read; never guess. " +
+  "If the image is not a receipt or invoice, set is_receipt false. If it is too blurry, dark or cut off to read, set readability " +
+  "'unreadable' (or 'partly_readable') and explain what is wrong in problems, e.g. 'Total is cut off'. " +
+  "Reply with JSON only, matching the requested schema.";
+
+function parseJSONLoose(text) {
+  try { return JSON.parse(text); } catch (e) { /* try to find a JSON object */ }
+  const match = String(text).match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch (e) { /* fall through */ }
+  }
+  return null;
+}
+
+function cleanString(value, max) {
+  if (value === null || value === undefined) return null;
+  const text = String(value).replace(/\s+/g, " ").trim();
+  return text ? text.slice(0, max || 200) : null;
+}
+
+function cleanNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.\-]/g, ""));
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
+}
+
+function normalizeProduct(raw) {
+
+  const r = raw && typeof raw === "object" ? raw : {};
+  const l = r.listing && typeof r.listing === "object" ? r.listing : {};
+
+  const brand = cleanString(r.brand, 80);
+  const model = cleanString(r.model, 80);
+  const type = cleanString(r.product_type, 80);
+
+  let name = cleanString(r.product_name, 160) ||
+    [brand, model, type].filter(Boolean).join(" ") || "";
+
+  const listingFound = !!l.found && !!(cleanNumber(l.price_php) || cleanString(l.seller) || cleanString(l.title));
+
+  return {
+    is_product: r.is_product !== false && !!name,
+    image_kind: ["product_photo", "shop_screenshot", "other"].includes(r.image_kind) ? r.image_kind : "other",
+    product_name: name,
+    brand,
+    model,
+    product_type: type,
+    key_specs: (Array.isArray(r.key_specs) ? r.key_specs : []).map(x => cleanString(x, 80)).filter(Boolean).slice(0, 6),
+    search_query: cleanString(r.search_query, 200) || name,
+    listing: {
+      found: listingFound,
+      platform: listingFound ? cleanString(l.platform, 40) : null,
+      title: listingFound ? cleanString(l.title, 200) : null,
+      price_php: listingFound ? cleanNumber(l.price_php) : null,
+      original_price_php: listingFound ? cleanNumber(l.original_price_php) : null,
+      seller: listingFound ? cleanString(l.seller, 80) : null,
+      rating: listingFound ? cleanString(l.rating, 40) : null,
+      sold: listingFound ? cleanString(l.sold, 40) : null,
+      shipping: listingFound ? cleanString(l.shipping, 80) : null
+    },
+    confidence: ["high", "medium", "low"].includes(r.confidence) ? r.confidence : "low",
+    notes: cleanString(r.notes, 300) || ""
+  };
+
+}
+
+function normalizeReceipt(raw) {
+
+  const r = raw && typeof raw === "object" ? raw : {};
+
+  const items = (Array.isArray(r.items) ? r.items : [])
+    .map(it => ({
+      name: cleanString(it && it.name, 120) || "",
+      qty: cleanNumber(it && it.qty),
+      unit_price: cleanNumber(it && it.unit_price),
+      line_total: cleanNumber(it && it.line_total)
+    }))
+    .filter(it => it.name || it.line_total !== null)
+    .slice(0, 80);
+
+  let date = cleanString(r.date, 20);
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const d = new Date(date);
+    date = isNaN(d) ? null : d.toISOString().slice(0, 10);
+  }
+
+  const out = {
+    is_receipt: r.is_receipt !== false,
+    readability: ["clear", "partly_readable", "unreadable"].includes(r.readability) ? r.readability : "partly_readable",
+    store: cleanString(r.store, 100),
+    branch: cleanString(r.branch, 160),
+    date,
+    time: cleanString(r.time, 20),
+    items,
+    subtotal: cleanNumber(r.subtotal),
+    vat: cleanNumber(r.vat),
+    discount: cleanNumber(r.discount),
+    service_charge: cleanNumber(r.service_charge),
+    total: cleanNumber(r.total),
+    currency: cleanString(r.currency, 8) || "PHP",
+    payment_method: cleanString(r.payment_method, 40),
+    receipt_number: cleanString(r.receipt_number, 40),
+    problems: cleanString(r.problems, 300) || "",
+    warnings: []
+  };
+
+  // Sanity checks the user should see before confirming.
+  const itemsSum = items.reduce((sum, it) =>
+    sum + (it.line_total !== null ? it.line_total : (it.qty || 1) * (it.unit_price || 0)), 0);
+
+  if (out.is_receipt && out.total === null) {
+    out.warnings.push("The total couldn't be read — please type it in.");
+  }
+
+  if (out.total !== null && itemsSum > 0) {
+    const expected = out.subtotal !== null ? out.subtotal : out.total;
+    if (Math.abs(itemsSum - expected) > Math.max(1, expected * 0.02) &&
+        Math.abs(itemsSum - out.total) > Math.max(1, out.total * 0.02)) {
+      out.warnings.push("The items add up to ₱" + itemsSum.toLocaleString("en-PH") +
+        ", which doesn't match the receipt. Please check the amounts.");
+    }
+  }
+
+  return out;
+
+}
+
+async function readImage(kind, file) {
+
+  const dataUrl = "data:" + file.mimetype + ";base64," + file.buffer.toString("base64");
+
+  const isReceipt = kind === "receipt";
+
+  const answer = await askOpenAI({
+    input: [{
+      role: "user",
+      content: [
+        { type: "input_text", text: isReceipt ? RECEIPT_PROMPT : PRODUCT_PROMPT },
+        { type: "input_image", image_url: dataUrl, detail: "high" }
+      ]
+    }],
+    textFormat: {
+      type: "json_schema",
+      name: isReceipt ? "receipt" : "product",
+      strict: true,
+      schema: isReceipt ? RECEIPT_SCHEMA : PRODUCT_SCHEMA
+    },
+    maxTokens: VISION_MAX_TOKENS,
+    label: isReceipt ? "receipt" : "product photo",
+    failMessage: "The AI couldn't read the photo right now. Please tap Retry in a minute.",
+    emptyMessage: "The AI couldn't read this photo. Please try again with a clearer picture."
+  });
+
+  const parsed = parseJSONLoose(answer.text);
+
+  if (!parsed) {
+    console.error("Photo (" + kind + "): AI reply was not JSON (" + answer.text.length + " chars).");
+    throw new ResearchError("AI reply was not JSON",
+      "The AI couldn't read this photo. Please try again with a clearer picture.");
+  }
+
+  return isReceipt
+    ? { receipt: normalizeReceipt(parsed) }
+    : { product: normalizeProduct(parsed) };
+
+}
+
+app.post("/api/photo/start", (req, res) => {
+
+  imageUpload.single("image")(req, res, (uploadError) => {
+
+    if (uploadError) {
+      const tooBig = uploadError.code === "LIMIT_FILE_SIZE";
+      return res.status(tooBig ? 413 : 400).json({
+        success: false,
+        error: tooBig
+          ? "That photo is too large (max 8 MB). Please try again."
+          : "Could not read the photo upload. Please try again."
+      });
+    }
+
+    const file = req.file;
+    const kind = req.body && req.body.kind;
+
+    if (kind !== "product" && kind !== "receipt") {
+      return res.status(400).json({ success: false, error: "Unknown photo type." });
+    }
+
+    if (!file || !file.buffer || file.size < 100) {
+      return res.status(400).json({ success: false, error: "No photo was received. Please try again." });
+    }
+
+    if (!IMAGE_TYPES.includes(String(file.mimetype).toLowerCase())) {
+      return res.status(415).json({
+        success: false,
+        error: "Please use a JPG, PNG or WebP photo or screenshot."
+      });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({
+        success: false,
+        error: "Photo reading is not set up on the server yet (missing OpenAI key)."
+      });
+    }
+
+    const job = startJob(kind, () => readImage(kind, file));
+
+    return res.status(202).json({ success: true, jobId: job.id, status: "researching" });
+
   });
 
 });
@@ -621,7 +1023,7 @@ app.post("/api/receipt", async (req, res) => {
       status: "received",
 
       message:
-        "Receipt received by Jason Shop. AI receipt extraction will be connected in the next phase."
+        "Receipt reading has moved to POST /api/photo/start with kind=receipt."
 
     });
 
