@@ -6,16 +6,25 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 
 | File | What it is |
 |---|---|
-| `index.html` | The app (static frontend, Render service `jason-shop`). Saves budget and requests in the phone's browser storage. |
+| `index.html` | The app shell and screens (static frontend, Render service `jason-shop`). |
+| `css/app.css` | All styles (mobile-first). |
+| `js/calc.js` | **The one place for money & household math** (pure, unit-tested): unit prices and conversions, safe to spend, available cash, category / cycle remaining, variance, allocation, warning states, price statistics, household size. |
+| `js/model.js` | Data model: schema version, migrations, seeds (stores, categories, household), product/price matching, integrity check, backup file format. Pure, unit-tested. |
+| `js/storage.js` | On-phone safety vault (IndexedDB) for safety copies, storage estimate. |
+| `js/features.js` | Stage 1 screens: navigation, home dashboard, AI command bar, household, stores, price book, budget plan, commitments, reserve, warning levels, audit trail, Data & Backup. |
+| `js/app.js` | The original app logic (voice, research, photos, receipts, history, report, backup/restore), now using `calc.js`/`model.js`. |
 | `server.js` | The API (Node/Express, Render service `jason-shop-api`). |
 | `package.json` | Backend dependencies (`express`, `cors`, `multer`). |
+| `tests/` | Unit tests (no dependencies) and headless mobile-Chrome tests (own `package.json`, so Render's backend install is unaffected). |
+
+The frontend is still plain static files (no build step), so the Render static site keeps working as before. Scripts load in this order: `calc.js`, `model.js`, `storage.js`, `features.js`, `app.js`.
 
 ## API
 
 | Endpoint | Purpose |
 |---|---|
 | `GET /` and `GET /api/health` | Status checks |
-| `POST /api/research/start` | `{ "query": "...", "budget": { "fund", "spent", "stop" } }` → `{ jobId }` straight away (research runs in the background) |
+| `POST /api/research/start` | `{ "query": "...", "budget": { "fund", "spent", "stop", "committed", "reserve" } }` → `{ jobId }` straight away (research runs in the background). Committed purchases and the protected reserve are treated as not spendable. |
 | `GET /api/research/status/:jobId` | `researching` → `complete` (with `report`, a short `summary` for reading aloud and a shopping `category`) or `error` |
 | `POST /api/research` | Same research in one long request (kept for compatibility) |
 | `POST /api/photo/start` | multipart: `image` (JPG/PNG/WebP, max 8 MB) + `kind` = `product` or `receipt` → `{ jobId }` |
@@ -61,25 +70,69 @@ python3 -m http.server 8080              # app on http://localhost:8080 (talks t
 - **🧾 Receipt**: snap a receipt. The AI reads the store, date, items, subtotal, VAT, total and payment method into an editable card. **Save** adds the total to Spent (untick to skip) and keeps the receipt with a thumbnail in Receipt Manager. Deleting a receipt takes its amount off Spent. Blurry or non-receipt photos get a Retake / Enter manually option.
 - Photos are shrunk on the phone to max 1600 px JPEG before upload. The server keeps them only in memory for the AI call and never logs or stores them. Small thumbnails are saved on the phone only.
 
+## Navigation (Stage 1)
+
+Bottom tabs: **🏠 Home · 🛍️ Shop · 📦 Inventory · 💰 Budget · 🤖 AI · ☰ More**.
+
+| Tab | What's there |
+|---|---|
+| Home | Safe to Spend with a usage bar (WATCH / WARNING ticks), fund / spent / committed / reserve / available cash / this period, the **Ask Jason Shop** command bar (type, mic, 📷 product, 🧾 receipt), budget plan snapshot, commitments, household, Price Book highlights, recent spending. Only real numbers; empty states otherwise. |
+| Shop | **Stores**, **Price Book**, **Receipts** (Receipt Manager), **Lists** (placeholder for Stage 2). |
+| Inventory | Placeholder for Stage 2. |
+| Budget | **Overview** (budget form, how Safe to Spend is worked out, committed purchases, protected reserve, warning levels), **Plan** (category allocation, categories, budget period), **History**, **Report**. |
+| AI | The shopping inbox: research requests, photo items, Mark purchased. |
+| More | Household profile, My stores, Price Book, Budget plan, **Data & Backup**, Change history (audit), Settings. |
+
+Old section names still work in code (`goTo("history")`, `goTo("backup")`…).
+
 ## Budget
 
-- Tap **Safe to Spend**, **Shopping Fund** or **Spent** (or the 💰 Budget tab) to set the budget. Amounts can be typed as `500000`, `500,000`, `₱500,000`, `500k` or `1.5m`.
-- **🛒 Mark purchased** on a shopping item asks what you paid and adds it to Spent (with **Undo**). Adding a receipt also asks for its total.
-- The status turns orange at 85% of the Hard Stop Limit and red at 100%; recording a purchase past the hard stop needs a second tap.
-- The budget is sent with each research request so the AI says whether options fit.
+- Amounts can be typed as `500000`, `500,000`, `₱500,000`, `500k` or `1.5m`.
+- **Safe to spend = fund − spent − committed − reserve**, and never more than **hard stop − spent − committed** (the lower one applies). It never shows a negative number: when over, it shows **₱0** plus **"OVER LIMIT BY ₱X"**.
+- **Available cash** = fund − spent (money still in the fund, including committed and reserved money).
+- **Warning levels** (percent of the limit used by spent + committed) are editable. Defaults: 0–69 ✅ SAFE, 70–84 👀 WATCH, 85–99 ⚠️ WARNING, 100 ⛔ HARD STOP. Every state shows an icon and words, not only a colour. Recording a purchase or commitment past the hard stop needs a second tap.
+- **Committed purchases**: money promised but not paid (orders, deposits, a planned haul). Taken off Safe to Spend straight away. **✅ Paid** moves it into Spent and Purchase History; **Cancel** releases it.
+- **Protected reserve**: money in the fund that is never counted as spendable.
+- **Budget plan**: split *fund − reserve* across categories in pesos or percent. It shows unallocated / over-allocated amounts live, and saves only after a **preview**. The plan repeats each period (monthly, configurable start day, e.g. payday). Each category shows spent + committed vs plan, the remaining amount, its state, and whether you're under or over plan. Categories can be renamed (history follows), added or hidden.
+- **AI command bar**: "can I afford 5000?" and "how much is left?" are answered on the phone (no AI call). Anything else becomes a research request, and the research AI is told about committed money and the reserve.
+
+## Household, stores and prices
+
+- **Household profile**: one or more houses, each with editable counts of adults, children, nannies, maids, security, drivers, other staff and pets, plus custom groups and optional forecast weights.
+- **My stores**: Newstar, Johnny's, Pampang Palengke, Landers (Angeles), S&R, Puregold and Puregold Duty Free Clark are pre-filled; custom stores can be added. "Usually good for" is labelled as a **tendency** (editable), not a fact. Store numbers (purchases, total, average basket, last visit) are computed only from recorded purchases. Store names in history that aren't in My Stores are listed with an **Add** button and are never added automatically.
+- **Price Book**: products (name, brand, variant, size, unit, pack, aliases, who it's for) and price records. Prices come only from **receipts** (each item line, automatically) and **prices Jason enters** (paid / shelf / online listing). Every price shows its source. Shown per product: latest, lowest, highest, average, cheapest store (or "same price at N stores"), and the trend vs the previous price. Prices are compared per kg / litre / piece when the size is known, otherwise per item. Different products (e.g. 1.5 L vs 330 ml) are never merged; an exact duplicate is blocked.
 
 ## History, report and backup
 
-- **Purchase history** (History tab) lists everything that was spent in one place: items marked purchased, saved receipts and manual entries ("➕ Add spending"). You can filter by month and category, search, edit (amount, date, store, category, payment, "counts in Spent") and delete. Spent changes to match automatically.
+- **Purchase history** (Budget → History) lists everything that was spent in one place: items marked purchased, saved receipts and manual entries ("➕ Add spending"). You can filter by month and category, search, edit (amount, date, store, category, payment, "counts in Spent") and delete. Spent changes to match automatically.
 - **Categories**: Groceries, Household, Electronics & Appliances, Baby & Kids, Pet, Health & Personal Care, Clothing, Home & Furniture, Food & Dining, Other. The AI picks one inside the receipt, photo and research calls it already makes, so there are no extra calls. Manual entries and older data use a keyword guess (English/Filipino/PH stores). Jason can always change it.
-- **Monthly report** (Report tab) shows the month total vs the shopping fund, a breakdown by category (a CSS donut chart, no libraries), top stores, biggest purchases, the change vs last month and the daily average. There is a month picker. "AI summary" makes one AI call only when tapped, and the result is saved for that month.
-- **Backup** (Budget tab → Backup & Export):
+- **Monthly report** (Budget → Report) shows the month total vs the shopping fund, a breakdown by category (a CSS donut chart, no libraries), top stores, biggest purchases, the change vs last month and the daily average. There is a month picker. "AI summary" makes one AI call only when tapped, and the result is saved for that month.
+- **Backup** (More → Data & Backup):
   - "Backup now" downloads `jason-shop-backup-YYYY-MM-DD.json`. "Share backup" opens the Android share sheet so the file can be sent to Google Drive, Gmail and so on.
-  - "Restore from backup" asks before replacing anything, and keeps the old data under `JasonShopData.beforeRestore`.
+  - "Restore from backup" checks the file first (is it a Jason Shop backup, from a newer version, do the record counts match, is the checksum intact), shows what's inside (items, receipts, entries, Spent, prices, products) and asks before replacing anything. A safety copy of the current data is saved first (`JasonShopData.beforeRestore` + the safety vault). After restoring, the saved data is read back and counted; if anything doesn't match, the previous data is put back automatically.
+  - Backups from older versions still restore (they're upgraded on the way in), and older app versions can still read new backups.
   - "Export CSV" exports the chosen month or all time and opens in Google Sheets/Excel.
   - A reminder banner appears if there has been no backup for 7+ days ("Later" snoozes it for a day).
-  - All data stays in the phone's browser storage. Nothing is stored on the server.
+  - **Data check** looks for missing ids, duplicates, invalid amounts and broken links. It never changes anything.
+  - **Safety copies** are listed with download / restore buttons. **Backup history** logs every backup, restore, failure, safety copy and data check.
+  - **Automatic cloud backup** is marked **⚙️ NEEDS SETUP**. It needs a cloud storage connection that hasn't been configured, so it is off.
+- **Change history** (More): every change to money, budget and data (purchases, receipts, entries, budget, plan, commitments, reserve, warning levels, stores, products, prices, household, restores, upgrades), with before/after values.
 
-## Deploying
+## Data model and upgrades
 
-Render auto-deploy is **off**. After merging to `main`, manually deploy **both** services on Render: `jason-shop-api` (backend) and `jason-shop` (frontend).
+- Everything stays on the phone in `localStorage["JasonShopData"]` (same key as before; there is no login). Safety copies live in a separate IndexedDB store, `JasonShopVault`.
+- The data has a `schemaVersion` (now **2**). Data without one is version 1, i.e. the app up to PR #4.
+- **Upgrade 1 → 2** is additive. All old fields and records are kept exactly as they were. It adds `houses`, `memberGroups`, `stores`, `products`, `priceRecords`, `budgetCategories`, `budgetPlan`, `commitments`, `reserves`, `auditLog`, `backupLog`, `settings`, and `meta.migrations`. Lists for Stage 2 (`inventoryItems`, `inventoryTransactions`, `shoppingLists`, `shoppingCycles`, `trips`) are created empty. It seeds the stores, categories and a "Main house", adds categories found in the history, and learns price records from existing receipt lines.
+- **Safety first**: before the upgraded data is saved, the untouched original is copied to the safety vault (or `JasonShopData.preMigration.v1` if the vault isn't available). Nothing is written until that copy exists. The upgrade compares record counts and peso totals (requests, purchases, receipts, receipt items, manual entries, fund, stop, spent and each total) before and after. If anything differs, the upgrade is paused and the app runs on the original data.
+- Damaged saved data is never overwritten silently: it's kept under `JasonShopData.damaged.<time>`.
+- Every record has a stable id. The model is laid out so a cloud database and multi-user roles can be added later without reshaping the data.
+
+## Tests
+
+```bash
+npm run test:unit                      # calc + model unit tests (Node, no dependencies)
+cd tests && npm install                # puppeteer-core (needs Google Chrome installed)
+bash run-browser-tests.sh all          # legacy suites 1–4 + Stage 1 end-to-end, headless mobile Chrome
+```
+
+The AI is always mocked in tests (a fake `api.openai.com` inside the test server), so no key and no paid calls are needed. `tests/fixtures/pre-upgrade-snapshot.json` is real data produced by driving the pre-Stage-1 production app through its UI (`tests/fixtures/generate-pre-upgrade-snapshot.js`); the Stage 1 suite upgrades it and checks nothing was lost.

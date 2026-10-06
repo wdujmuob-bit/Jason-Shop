@@ -1,0 +1,14 @@
+{
+  "name": "jason-shop-tests",
+  "private": true,
+  "description": "Browser tests for Jason Shop (kept separate so Render's backend install is unaffected)",
+  "scripts": {
+    "unit": "node --test unit/",
+    "legacy": "bash run-browser-tests.sh legacy",
+    "e2e": "bash run-browser-tests.sh e2e",
+    "all": "node --test unit/ && bash run-browser-tests.sh all"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.12.0"
+  }
+}
