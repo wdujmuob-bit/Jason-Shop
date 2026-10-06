@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const multer = require("multer");
 
 const app = express();
 
@@ -104,7 +105,11 @@ app.post("/api/research", async (req, res) => {
         "quality, specifications, reviews, seller/store reliability, shipping considerations, " +
         "and value for money. Give Best Overall, Cheapest Good Option, Best Quality, " +
         "and a clear BUY, WAIT, WATCH, or SKIP recommendation. " +
-        "Use Philippine pesos where practical."
+        "Use Philippine pesos where practical. " +
+        "Finish with one final line that starts exactly with 'VOICE SUMMARY:' " +
+        "followed by one or two short, plain sentences (no markdown, no links) " +
+        "that say which product you recommend, its approximate price, and BUY, WAIT, WATCH, or SKIP. " +
+        "This line will be read aloud to Jason."
     })
   }
 );
@@ -128,7 +133,8 @@ return res.json({
   success: true,
   query: query.trim(),
   status: "complete",
-  report: aiText
+  report: aiText,
+  summary: extractVoiceSummary(aiText)
 });
 
 const researchTask = {
@@ -178,6 +184,192 @@ const researchTask = {
     });
 
   }
+
+});
+
+
+/* =========================================
+   VOICE SUMMARY HELPER
+   Pulls the short "VOICE SUMMARY:" line out of
+   the AI report so the app can read it aloud.
+========================================= */
+
+function extractVoiceSummary(report) {
+
+  if (!report) return "";
+
+  const match = String(report).match(/VOICE SUMMARY:\s*\**\s*(.+)/i);
+
+  if (!match) return "";
+
+  return match[1]
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_#`>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 400);
+
+}
+
+
+/* =========================================
+   VOICE TRANSCRIPTION
+   Fallback for phones/browsers without the
+   built-in speech recognition. The app records
+   audio and sends it here; OpenAI turns it
+   into text using the same OPENAI_API_KEY.
+========================================= */
+
+const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10 MB (~10 minutes of voice)
+
+const audioUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_AUDIO_BYTES, files: 1 }
+});
+
+const AUDIO_EXTENSIONS = {
+  "audio/webm": "webm",
+  "audio/ogg": "ogg",
+  "audio/mp4": "mp4",
+  "audio/m4a": "m4a",
+  "audio/x-m4a": "m4a",
+  "audio/aac": "m4a",
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+  "audio/wave": "wav",
+  "audio/flac": "flac",
+  "video/webm": "webm",
+  "video/mp4": "mp4"
+};
+
+app.post("/api/transcribe", (req, res) => {
+
+  audioUpload.single("audio")(req, res, async (uploadError) => {
+
+    if (uploadError) {
+
+      const tooBig = uploadError.code === "LIMIT_FILE_SIZE";
+
+      return res.status(tooBig ? 413 : 400).json({
+        success: false,
+        error: tooBig
+          ? "That recording is too long. Please keep voice requests short."
+          : "Could not read the voice recording. Please try again."
+      });
+
+    }
+
+    try {
+
+      const file = req.file;
+
+      if (!file || !file.buffer || file.size < 1000) {
+
+        return res.status(400).json({
+          success: false,
+          error: "No voice recording was received. Please tap the mic and speak again."
+        });
+
+      }
+
+      const baseType = String(file.mimetype || "").split(";")[0].trim().toLowerCase();
+      const extension = AUDIO_EXTENSIONS[baseType];
+
+      if (!extension) {
+
+        return res.status(415).json({
+          success: false,
+          error: "This audio format is not supported. Please try again or type your request."
+        });
+
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+
+        console.error("Transcription skipped: OPENAI_API_KEY is not set.");
+
+        return res.status(503).json({
+          success: false,
+          error: "Voice transcription is not set up on the server yet. Please type your request for now."
+        });
+
+      }
+
+      const form = new FormData();
+
+      form.append(
+        "file",
+        new Blob([file.buffer], { type: baseType }),
+        "voice." + extension
+      );
+
+      form.append(
+        "model",
+        process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-mini-transcribe"
+      );
+
+      form.append(
+        "prompt",
+        "A shopping request for Jason Shop in the Philippines. It may mix English and Filipino (Taglish) " +
+        "and mention brands, product models, peso amounts, Shopee, Lazada, Amazon, S&R, or Landers."
+      );
+
+      // English is passed as a hint; Filipino/Taglish is left on auto-detect
+      // so mixed-language requests are not forced into one language.
+      if (req.body && req.body.language === "en") {
+        form.append("language", "en");
+      }
+
+      const aiResponse = await fetch(
+        "https://api.openai.com/v1/audio/transcriptions",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + process.env.OPENAI_API_KEY
+          },
+          body: form
+        }
+      );
+
+      const aiData = await aiResponse.json().catch(() => ({}));
+
+      if (!aiResponse.ok) {
+        console.error("OpenAI transcription error:", aiData);
+        throw new Error("OpenAI transcription failed");
+      }
+
+      const text = String(aiData.text || "").trim();
+
+      if (!text) {
+
+        return res.status(422).json({
+          success: false,
+          error: "I couldn't hear any words in that recording. Please try again."
+        });
+
+      }
+
+      return res.json({
+        success: true,
+        text
+      });
+
+    }
+
+    catch (error) {
+
+      console.error(error);
+
+      return res.status(500).json({
+        success: false,
+        error: "Voice transcription failed. Please try again or type your request."
+      });
+
+    }
+
+  });
 
 });
 
