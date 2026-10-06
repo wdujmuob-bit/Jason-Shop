@@ -8,17 +8,19 @@ Jason Shop is a personal AI shopping manager: ask for a product by **voice** or 
 |---|---|
 | `index.html` | The app shell and screens (static frontend, Render service `jason-shop`). |
 | `css/app.css` | All styles (mobile-first). |
-| `js/calc.js` | **The one place for money & household math** (pure, unit-tested): unit prices and conversions, safe to spend, available cash, category / cycle remaining, variance, allocation, warning states, price statistics, household size; Stage 2: shopping cycles, daily use (learned / per person / manual, scaled to the household), days of supply, stock status, smart reorder, forecasts, expiry, list totals, fit-to-budget, duplicate warnings, trip totals, planned vs actual. |
+| `js/calc.js` | **The one place for money & household math** (pure, unit-tested): unit prices and conversions, safe to spend, available cash, category / cycle remaining, variance, allocation, warning states, price statistics, household size; Stage 2: shopping cycles, daily use (learned / per person / manual, scaled to the household), days of supply, stock status, smart reorder, forecasts, expiry, list totals, fit-to-budget, duplicate warnings, trip totals, planned vs actual; Stage 3: price status labels and freshness, store ranking, best-store list split, route planner (4 modes), bulk break-even and pack-size value, Buy now / Wait advice, fund check, recurring dates, 30-day forecast. |
 | `js/model.js` | Data model: schema version, migrations, seeds (stores, categories, household), product/price matching (High / Review / Unknown confidence), duplicate-receipt detection, integrity check, backup file format. Pure, unit-tested. |
 | `js/storage.js` | On-phone safety vault (IndexedDB) for safety copies, storage estimate. |
 | `js/features.js` | Stage 1 screens: navigation, home dashboard, AI command bar, household, stores, price book, budget plan, commitments, reserve, warning levels, audit trail, Data & Backup. |
+| `js/nlu.js` | Stage 3 command understanding (pure, unit-tested): English + Filipino/Taglish phrases → an intent (out of, add to list, used, bought, remove, where to buy, price, buy now or wait, spent, budget left, afford, plan trip, forecast, alerts, yes/no) with item, quantity and unit; follow-ups ("isa pa", "eh yung gatas", "where?") use the previous turn. Open-ended requests return nothing, so they go to AI research. |
+| `js/features3.js` | Stage 3 screens: where to buy / Buy now or Wait / pack size / substitutes on each product, trip planner, fund check, 30-day forecast, recurring purchases, alert center, research price labels, the command and voice handler with action previews, learning from corrections. |
 | `js/features2.js` | Stage 2 screens: inventory, smart shopping list, Shopping Trip Mode, shopping cycle (planned vs actual), receipt-match review, Home stock/cycle cards, stock answers in the command bar. |
 | `js/app.js` | The original app logic (voice, research, photos, receipts, history, report, backup/restore), now using `calc.js`/`model.js`. |
 | `server.js` | The API (Node/Express, Render service `jason-shop-api`). |
 | `package.json` | Backend dependencies (`express`, `cors`, `multer`). |
 | `tests/` | Unit tests (no dependencies) and headless mobile-Chrome tests (own `package.json`, so Render's backend install is unaffected). |
 
-The frontend is still plain static files (no build step), so the Render static site keeps working as before. Scripts load in this order: `calc.js`, `model.js`, `storage.js`, `features.js`, `features2.js`, `app.js`.
+The frontend is still plain static files (no build step), so the Render static site keeps working as before. Scripts load in this order: `calc.js`, `model.js`, `nlu.js`, `storage.js`, `features.js`, `features2.js`, `features3.js`, `app.js`.
 
 ## API
 
@@ -26,7 +28,7 @@ The frontend is still plain static files (no build step), so the Render static s
 |---|---|
 | `GET /` and `GET /api/health` | Status checks |
 | `POST /api/research/start` | `{ "query": "...", "budget": { "fund", "spent", "stop", "committed", "reserve" } }` → `{ jobId }` straight away (research runs in the background). Committed purchases and the protected reserve are treated as not spendable. |
-| `GET /api/research/status/:jobId` | `researching` → `complete` (with `report`, a short `summary` for reading aloud and a shopping `category`) or `error` |
+| `GET /api/research/status/:jobId` | `researching` → `complete` (with `report`, a short `summary` for reading aloud, a shopping `category`, and since Stage 3 `sources` — the web pages the search cited, `[{ url, title }]` — and `researchedAt`) or `error`. The report may contain `OFFER:` lines (product · price or unknown · seller · URL or none · verified or estimate) that the app turns into labelled prices. All additions are optional, so older app versions keep working. |
 | `POST /api/research` | Same research in one long request (kept for compatibility) |
 | `POST /api/photo/start` | multipart: `image` (JPG/PNG/WebP, max 8 MB) + `kind` = `product` or `receipt` → `{ jobId }` |
 | `GET /api/jobs/:jobId` | Result of any background job: `product` (name, brand, model, specs, shop listing price/seller) or `receipt` (store, date, items, subtotal, VAT, total, payment, warnings); both include a shopping `category` |
@@ -119,6 +121,24 @@ Old section names still work in code (`goTo("history")`, `goTo("backup")`…).
 - **Receipts → products**: each receipt line is matched to the Price Book with a confidence: ✅ **High** (exact name or a name Jason confirmed before), 🔎 **Review** (similar words or a different size; linked as a suggestion, kept out of price comparisons and stock until checked), ❔ **Unknown** (new product created). The review card (Shop → Receipts, and a Home card) offers Same product (the name is remembered), Other product, New product, Not a product. Matched lines restock inventory and tick list items off. **Duplicate receipts** (same receipt number at the store, or same store + date + total) are flagged before saving.
 - The command bar answers "what's low?" and "do I need eggs?" on the phone, without an AI call.
 
+## Stage 3: intelligence
+
+Every recommendation has a **WHY** list underneath it. Prices are never invented: anything without recorded data says "not enough data".
+
+- **Price labels** on every price: 🟢 LIVE (found by today's search with a link) · 🌐 ONLINE VERIFIED (listing with a link) · 🧾 RECEIPT VERIFIED · ✍️ USER ENTERED (shelf / what you paid / typed) · 🕰️ HISTORICAL (older than 60 days) · 🤖 ESTIMATED (AI's guess, not verified) · ❔ UNKNOWN. With freshness ("5 days ago").
+- **Where should I buy this?** (each product in the Price Book): stores ranked by their latest price, per kg / litre / piece when sizes are known. **Best store for this list** is the trip planner below.
+- **Buy now / Wait**: compares the latest price with your recorded low / average / high (needs at least 3 prices). You can set a **target price**; an alert fires when a recorded price reaches it.
+- **Pack size & bulk**: compares sizes of the same product per unit; **bulk break-even** uses your daily use (Inventory) and shelf life to show the saving, how much must be used before it pays off, and storage / expiry risk.
+- **Substitutes**: similar products in the same category from your Price Book, cheapest per unit first. ✅ OK / 🚫 Not for me is remembered.
+- **Trip planner** (Shop → List → 🧭 Plan trip, or say "plan my trip"): BEST BALANCE (default; item prices + your time at ₱/hour + optional fuel ₱/km), CHEAPEST, FEWEST STOPS, FASTEST. Travel uses the minutes / km from home you type for each store (My stores → Edit) and the route settings (minutes and km between stores, shopping minutes per stop). **Live distance: NEEDS CONFIGURATION** — no maps service is connected. A store with no travel time is treated as being as far as your farthest set store in BEST BALANCE, so an unknown trip never looks free. ✏️ Edit lets you pick the store per item; ⚡ Optimize clears your picks; ✅ Approve sets each item's store and starts the trip.
+- **Fund check** (Affordable / Caution / Wait / Exceeds): shown for amounts at or above ₱5,000 (changeable in Settings), live while typing a commitment or recurring purchase, under "can I afford…" answers and under research results. It includes needs coming up in the next 14 days (list + recurring).
+- **30-day forecast** (Budget → Forecast and a Home card): your recorded daily pace (needs 14+ days of history) or the known items, whichever is higher: recurring purchases, plus list items and things running out, priced from the Price Book. Shows whether Safe to Spend lasts.
+- **Recurring purchases** (More → Recurring): every N days / weeks / months. 7 days before each due date (changeable) it becomes a committed purchase automatically, so Safe to Spend already counts it; the next date moves forward.
+- **Alert center** (🔔 in the header, More → Alert center, and a Home card): price drops (5%+ vs the previous price, only for prices recorded after the upgrade), target prices reached, recurring purchases committed, out / urgent stock, expired / expiring today, budget warning / hard stop. Alerts close themselves when the problem goes away; dismissed alerts are kept in the data.
+- **Commands** (type in the command bar or speak): e.g. "ubos na yung bigas", "add 2 kilo rice", "isa pa", "magkano natitira", "where should I buy eggs", "eh yung cooking oil", "should I buy rice", "nagamit ko 3 itlog", "bumili ako ng 12 eggs", "spent 250 at Puregold", "remove birthday cake", "plan my trip fastest", "forecast", "alerts". They are handled on the phone (no AI call); spoken commands get a short spoken reply. Each answer is an **action preview** with the WHY and ↩️ Undo / ✏️ Edit / ⚡ Optimize. **Money** (spent) and **destructive** (remove) actions wait for ✅ Approve or a spoken/typed "yes / oo"; "no / hindi" cancels. Questions about items with no prices offer 🔎 Research online (one AI request) instead of guessing. Anything open-ended ("best air fryer under ₱5,000") goes to AI research as before.
+- **Learning from corrections**: if a command picked the wrong product and you fix it with ✏️ Edit, the word is remembered. Picking the same store for a product on two approved trips makes it the suggestion, and choosing a route mode three times makes it the default. Settings shows what was learned, with **Forget**.
+- **Research results** show each price found with its label and the **source quality** (official store, marketplace, review site, community/forum, other, no source), the cited sources, and 🏷️ Save to put a price in the Price Book (linked listings as "online", guesses as "AI estimate", which are never used for store picks or Buy now / Wait).
+
 ## History, report and backup
 
 - **Purchase history** (Budget → History) lists everything that was spent in one place: items marked purchased, saved receipts and manual entries ("➕ Add spending"). You can filter by month and category, search, edit (amount, date, store, category, payment, "counts in Spent") and delete. Spent changes to match automatically.
@@ -138,9 +158,10 @@ Old section names still work in code (`goTo("history")`, `goTo("backup")`…).
 ## Data model and upgrades
 
 - Everything stays on the phone in `localStorage["JasonShopData"]` (same key as before; there is no login). Safety copies live in a separate IndexedDB store, `JasonShopVault`.
-- The data has a `schemaVersion` (now **3**). Data without one is version 1, i.e. the app up to PR #4; version 2 is Stage 1.
+- The data has a `schemaVersion` (now **4**). Data without one is version 1, i.e. the app up to PR #4; version 2 is Stage 1; version 3 is Stage 2.
 - **Upgrade 1 → 2** is additive. All old fields and records are kept exactly as they were. It adds `houses`, `memberGroups`, `stores`, `products`, `priceRecords`, `budgetCategories`, `budgetPlan`, `commitments`, `reserves`, `auditLog`, `backupLog`, `settings`, and `meta.migrations`. Lists for Stage 2 (`inventoryItems`, `inventoryTransactions`, `shoppingLists`, `shoppingCycles`, `trips`) are created empty. It seeds the stores, categories and a "Main house", adds categories found in the history, and learns price records from existing receipt lines.
 - **Upgrade 2 → 3** (Stage 2) is additive: it adds `settings.cycle` (15 days, anchored on the 1st of the month of the upgrade) and `settings.inventory` (alert thresholds), creates the active shopping list, and marks existing price records as High-confidence matches. Every Stage 1 list (stores, products, prices, plan, commitments, reserves, household) is counted before and after as well as the legacy totals.
+- **Upgrade 3 → 4** (Stage 3) is additive: it adds `recurring` and `alerts` lists, `learning` (learned words, usual stores, route-mode counts, corrections), settings for the route planner, fund check, price alerts and recurring purchases, `travel` (minutes / km from home, unknown at first) on each store, and `targetPrice` / `substitutes` on each product. Every Stage 2 list is counted before and after too.
 - **Safety first**: before the upgraded data is saved, the untouched original is copied to the safety vault (or `JasonShopData.preMigration.v1` if the vault isn't available). Nothing is written until that copy exists. The upgrade compares record counts and peso totals (requests, purchases, receipts, receipt items, manual entries, fund, stop, spent and each total) before and after. If anything differs, the upgrade is paused and the app runs on the original data.
 - Damaged saved data is never overwritten silently: it's kept under `JasonShopData.damaged.<time>`.
 - Every record has a stable id. The model is laid out so a cloud database and multi-user roles can be added later without reshaping the data.
@@ -150,8 +171,9 @@ Old section names still work in code (`goTo("history")`, `goTo("backup")`…).
 ```bash
 npm run test:unit                      # calc + model unit tests (Node, no dependencies)
 cd tests && npm install                # puppeteer-core (needs Google Chrome installed)
-bash run-browser-tests.sh all          # legacy suites 1–4 + Stage 1 + Stage 2 end-to-end, headless mobile Chrome
+bash run-browser-tests.sh all          # legacy suites 1–4 + Stage 1, 2 and 3 end-to-end, headless mobile Chrome
 bash run-browser-tests.sh stage2       # only the Stage 2 suite
+bash run-browser-tests.sh stage3       # only the Stage 3 suite
 ```
 
-The AI is always mocked in tests (a fake `api.openai.com` inside the test server), so no key and no paid calls are needed. `tests/fixtures/pre-upgrade-snapshot.json` is real data produced by driving the pre-Stage-1 production app through its UI (`tests/fixtures/generate-pre-upgrade-snapshot.js`); the Stage 1 suite upgrades it and checks nothing was lost. `tests/fixtures/stage1-snapshot.json` is real Stage 1 (v2) data made the same way (`generate-stage1-snapshot.js`); the Stage 2 suite upgrades it to v3 and then drives inventory, list, trip, cycle and receipt matching through the UI with the page clock pinned to 2026-10-06.
+The AI is always mocked in tests (a fake `api.openai.com` inside the test server), so no key and no paid calls are needed. `tests/fixtures/pre-upgrade-snapshot.json` is real data produced by driving the pre-Stage-1 production app through its UI (`tests/fixtures/generate-pre-upgrade-snapshot.js`); the Stage 1 suite upgrades it and checks nothing was lost. `tests/fixtures/stage1-snapshot.json` is real Stage 1 (v2) data made the same way (`generate-stage1-snapshot.js`); the Stage 2 suite upgrades it to v3 and then drives inventory, list, trip, cycle and receipt matching through the UI with the page clock pinned to 2026-10-06. `tests/fixtures/stage2-snapshot.json` is real Stage 2 (v3) data made with the Stage 2 production app (`generate-stage2-snapshot.js`); the Stage 3 suite upgrades it to v4 and drives every Stage 3 feature, with research replies mocked by `tests/legacy/mock5.js` (OFFER lines and web citations).

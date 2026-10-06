@@ -119,6 +119,10 @@ function buildResearchPrompt(query, budget) {
     "Use Philippine pesos where practical." +
     budgetSentence(budget) + " " +
     "Keep the report concise and easy to read on a phone. " +
+    "Never invent a price: if you did not find a current price, say it is unknown. " +
+    "After the report, add up to 5 machine-readable lines, one per product you found, in exactly this form: " +
+    "'OFFER: product name | price in PHP as a plain number, or unknown | store or seller | source URL, or none | verified or estimate'. " +
+    "Use 'verified' only when the price is shown on the linked page today; otherwise use 'estimate'. " +
     "Just before the end, add one line that starts exactly with 'CATEGORY:' followed by the single best " +
     "shopping category for this request from this list: " + CATEGORIES.join(", ") + ". " +
     "Finish with one final line that starts exactly with 'VOICE SUMMARY:' " +
@@ -153,6 +157,30 @@ function extractOutputText(aiData) {
   }
 
   return parts.join("\n\n").trim();
+
+}
+
+// Stage 3: web-search citations (url_citation annotations) → [{ url, title }], deduped.
+// Lets the app show where each research answer came from and how trustworthy it is.
+function extractSources(aiData) {
+
+  const seen = new Set();
+  const out = [];
+
+  for (const item of Array.isArray(aiData && aiData.output) ? aiData.output : []) {
+    if (!item || item.type !== "message" || !Array.isArray(item.content)) continue;
+    for (const part of item.content) {
+      for (const a of Array.isArray(part && part.annotations) ? part.annotations : []) {
+        if (!a || a.type !== "url_citation" || typeof a.url !== "string" || !/^https?:\/\//i.test(a.url)) continue;
+        const url = a.url.replace(/[?&]utm_source=openai$/, "");
+        if (seen.has(url)) continue;
+        seen.add(url);
+        out.push({ url, title: String(a.title || "").slice(0, 200) });
+      }
+    }
+  }
+
+  return out.slice(0, 20);
 
 }
 
@@ -304,7 +332,7 @@ async function askOpenAI({ input, tools, textFormat, maxTokens, label, failMessa
     const text = extractOutputText(result.data);
 
     if (text) {
-      return { text, model, complete: result.data.status !== "incomplete", structured: !!format };
+      return { text, model, complete: result.data.status !== "incomplete", structured: !!format, sources: extractSources(result.data) };
     }
 
     console.error("OpenAI " + label + " returned no readable text. Shape:", describeShape(result.data));
@@ -343,7 +371,9 @@ async function runResearch(query, budget) {
     summary: extractVoiceSummary(answer.text),
     category: extractCategory(answer.text),
     model: answer.model,
-    complete: answer.complete
+    complete: answer.complete,
+    sources: answer.sources || [],
+    researchedAt: new Date().toISOString()
   };
 
 }
@@ -371,7 +401,9 @@ app.post("/api/research", async (req, res) => {
       status: "complete",
       report: result.report,
       summary: result.summary,
-      category: result.category || null
+      category: result.category || null,
+      sources: result.sources || [],
+      researchedAt: result.researchedAt
     });
 
   } catch (error) {
@@ -463,6 +495,8 @@ app.post("/api/research/start", (req, res) => {
       job.report = result.report;
       job.summary = result.summary;
       job.category = result.category;
+      job.sources = result.sources || [];
+      job.researchedAt = result.researchedAt;
     })
     .catch(error => {
       console.error("Research job " + id + " failed:", error.message);
@@ -503,7 +537,9 @@ app.get(["/api/research/status/:id", "/api/jobs/:id"], (req, res) => {
       query: job.query,
       report: job.report,
       summary: job.summary,
-      category: job.category || null
+      category: job.category || null,
+      sources: job.sources || [],
+      researchedAt: job.researchedAt || null
     });
   }
 

@@ -17,8 +17,8 @@
 }(typeof self !== "undefined" ? self : this, function (C) {
   "use strict";
 
-  var SCHEMA_VERSION = 3;
-  var APP_VERSION = "3.0.0-stage2";
+  var SCHEMA_VERSION = 4;
+  var APP_VERSION = "4.0.0-stage3";
 
   /* ---------- ids & helpers ---------- */
 
@@ -140,8 +140,21 @@
     currency: "PHP",
     // Stage 2
     cycle: { mode: "days", lengthDays: 15, anchorDate: null },     // anchor set at upgrade (1st of that month)
-    inventory: { lowDays: 7, urgentDays: 3, expirySoonDays: 3, bufferDays: 3, duplicateWindowDays: 7 }
+    inventory: { lowDays: 7, urgentDays: 3, expirySoonDays: 3, bufferDays: 3, duplicateWindowDays: 7 },
+    // Stage 3
+    route: { mode: "balance", betweenStoresMinutes: 10, betweenStoresKm: 3, shoppingMinutes: 20, timeValuePerHour: 100, fuelPerKm: null },
+    fund: { expensiveAt: 5000 },                    // fund check shown automatically from this amount
+    priceAlerts: { dropPct: 5, enabled: true },
+    recurring: { autoCommitDaysBefore: 7 }
   };
+
+  // Stage 3: alert center kinds, recurring purchase units.
+  var ALERT_KINDS = {
+    price_drop: { icon: "📉", label: "Price drop" }, target_hit: { icon: "🎯", label: "Target price reached" },
+    recurring: { icon: "🔁", label: "Recurring purchase" }, low_stock: { icon: "🥫", label: "Running low" },
+    expiry: { icon: "⏰", label: "Expiring" }, fund: { icon: "💰", label: "Budget" }
+  };
+  var RECURRING_UNITS = { days: "day(s)", weeks: "week(s)", months: "month(s)" };
 
   // Where things are kept at home (Stage 2 inventory).
   var INVENTORY_LOCATIONS = { pantry: "Pantry", fridge: "Fridge", freezer: "Freezer", storeroom: "Storeroom", bathroom: "Bathroom", laundry: "Laundry", pets: "Pet supplies", other: "Other" };
@@ -156,7 +169,8 @@
   var COLLECTIONS = ["requests", "receipts", "manual",
     "houses", "memberGroups", "stores", "products", "priceRecords",
     "budgetCategories", "commitments", "reserves", "auditLog", "backupLog",
-    "inventoryItems", "inventoryTransactions", "shoppingLists", "shoppingCycles", "trips"];
+    "inventoryItems", "inventoryTransactions", "shoppingLists", "shoppingCycles", "trips",
+    "recurring", "alerts"];
 
   /* ---------- factories ---------- */
 
@@ -228,6 +242,18 @@
     if (!cyc.anchorDate) cyc.anchorDate = firstOfMonth(localDay(new Date()));
     d.settings.cycle = cyc;
     d.settings.inventory = Object.assign({}, DEFAULT_SETTINGS.inventory, d.settings.inventory && typeof d.settings.inventory === "object" ? d.settings.inventory : {});
+    ["route", "fund", "priceAlerts", "recurring"].forEach(function (k) {
+      d.settings[k] = Object.assign({}, DEFAULT_SETTINGS[k], d.settings[k] && typeof d.settings[k] === "object" ? d.settings[k] : {});
+    });
+    if (!C.ROUTE_MODES[d.settings.route.mode]) d.settings.route.mode = "balance";
+    var L = d.learning && typeof d.learning === "object" ? d.learning : {};
+    d.learning = {
+      terms: L.terms && typeof L.terms === "object" ? L.terms : {},              // "bigas" → product id / name Jason corrected to
+      storePrefs: L.storePrefs && typeof L.storePrefs === "object" ? L.storePrefs : {},   // productId → { storeId, count }
+      routeModeCounts: L.routeModeCounts && typeof L.routeModeCounts === "object" ? L.routeModeCounts : {},
+      corrections: arr(L.corrections),
+      alertScanAt: L.alertScanAt || null
+    };
     if (!d.budgetPlan || typeof d.budgetPlan !== "object") d.budgetPlan = { mode: "peso", items: [], updatedAt: null };
     d.budgetPlan.items = arr(d.budgetPlan.items);
     if (d.budgetPlan.mode !== "percent") d.budgetPlan.mode = "peso";
@@ -448,6 +474,92 @@
     return created;
   }
 
+  /* ---------- Stage 3 helpers ---------- */
+
+  function makeRecurring(fields, at) {
+    var every = fields.every || {};
+    var n = Math.max(1, Math.floor(Number(every.n) || 1));
+    return {
+      id: fields.id || newId("rec"),
+      title: String(fields.title || "").trim(),
+      amount: C.round2(Math.max(0, Number(fields.amount) || 0)),
+      categoryName: fields.categoryName || "",
+      storeId: fields.storeId || null,
+      productId: fields.productId || null,
+      every: { unit: RECURRING_UNITS[every.unit] ? every.unit : "months", n: n },
+      nextDue: fields.nextDue || localDay(at),
+      autoCommit: fields.autoCommit !== false,
+      active: fields.active !== false,
+      history: [],                 // { due, commitmentId, at }
+      notes: fields.notes || "",
+      archived: false, createdAt: at, updatedAt: at
+    };
+  }
+
+  // Same kind of thing (for substitutions): shares a core word and a comparable unit.
+  function substitutesFor(products, product) {
+    if (!product) return [];
+    var me = coreTokens(product.name);
+    var rejected = arr(product.rejectedSubstitutes), chosen = arr(product.substitutes);
+    var out = [];
+    arr(products).forEach(function (p) {
+      if (!p || p.archived || p.id === product.id || rejected.indexOf(p.id) >= 0) return;
+      var mine = chosen.indexOf(p.id) >= 0;
+      var other = coreTokens(p.name);
+      var shared = me.filter(function (t) { return other.indexOf(t) >= 0; });
+      var unitOk = !product.unit || !p.unit || C.sameDimension(product.unit, p.unit);
+      if (mine || (shared.length && unitOk)) out.push({ product: p, chosen: mine, shared: shared, score: mine ? 2 : jaccard(me, other) });
+    });
+    return out.sort(function (a, b) { return b.score - a.score; });
+  }
+
+  // How trustworthy a research source is, from its web address.
+  var SOURCE_QUALITY = {
+    official: { label: "Official store", rank: 1, icon: "🏬" },
+    marketplace: { label: "Marketplace — check the seller", rank: 2, icon: "🛒" },
+    review: { label: "Review site", rank: 3, icon: "📝" },
+    community: { label: "Community / forum", rank: 4, icon: "💬" },
+    other: { label: "Other website", rank: 5, icon: "🔗" },
+    none: { label: "No source link", rank: 6, icon: "❔" }
+  };
+  function sourceQuality(url) {
+    var host = "";
+    try { host = String(url || "").match(/^https?:\/\/([^\/?#]+)/i)[1].toLowerCase().replace(/^www\./, ""); } catch (e) { host = ""; }
+    if (!host) return { kind: "none", host: "", label: SOURCE_QUALITY.none.label, icon: SOURCE_QUALITY.none.icon, rank: 6 };
+    var test = function (list) { return list.some(function (d) { return host === d || host.slice(-(d.length + 1)) === "." + d; }); };
+    var kind = "other";
+    if (test(["lazada.com.ph", "lazada.com", "shopee.ph", "shopee.com", "tiktok.com", "carousell.ph", "carousell.com", "facebook.com", "zalora.com.ph", "amazon.com", "ebay.com", "aliexpress.com"])) kind = "marketplace";
+    else if (test(["rtings.com", "gsmarena.com", "yugatech.com", "techradar.com", "consumerreports.org", "wirecutter.com", "nytimes.com", "cnet.com", "tomsguide.com", "pcmag.com", "unbox.ph", "noypigeeks.com", "priceprice.com"])) kind = "review";
+    else if (test(["reddit.com", "youtube.com", "youtu.be", "quora.com", "pinoyexchange.com", "tipidpc.com"])) kind = "community";
+    else if (test(["sm-store.com", "smmarkets.ph", "puregold.com.ph", "robinsons.com.ph", "landers.ph", "smstore.com", "abenson.com", "anson.com.ph", "complink.com.ph", "pcexpress.com.ph", "samsung.com", "apple.com", "xiaomi.com", "mi.com", "philips.com.ph", "philips.com", "lg.com", "sony.com.ph", "mercurydrug.com", "watsons.com.ph", "southstardrug.com.ph", "metromart.com", "datablitz.com.ph", "octagon.com.ph", "power-mac.com", "beyondthebox.ph", "imarketsolutions.ph", "allhome.com.ph", "wilcon.com.ph", "ace.com.ph", "handyman.com.ph", "truevalue.com.ph"])) kind = "official";
+    var q = SOURCE_QUALITY[kind];
+    return { kind: kind, host: host, label: q.label, icon: q.icon, rank: q.rank };
+  }
+
+  /*
+    parseOffers(report) — reads the research report's machine lines
+      OFFER: product | price in PHP or "unknown" | store/seller | source URL or "none" | verified or estimate
+    → [{ product, price (number|null), seller, url, verified }]. Prices are never made up here.
+  */
+  function parseOffers(report) {
+    var out = [];
+    String(report || "").split(/\r?\n/).forEach(function (line) {
+      var m = /^\s*[-*]?\s*\**OFFER\**\s*:\s*(.+)$/i.exec(line);
+      if (!m) return;
+      var parts = m[1].split("|").map(function (x) { return x.trim(); });
+      if (parts.length < 2 || !parts[0]) return;
+      var priceTxt = String(parts[1] || "").replace(/,/g, "");
+      var pm = /(\d+(?:\.\d+)?)/.exec(priceTxt);
+      var price = /unknown|n\/a|none/i.test(priceTxt) || !pm ? null : C.round2(parseFloat(pm[1]));
+      var url = /^https?:\/\//i.test(parts[3] || "") ? parts[3].replace(/[).,]+$/, "") : null;
+      out.push({ product: parts[0].replace(/\*\*/g, ""), price: price > 0 ? price : null, seller: parts[2] && !/^(none|unknown)$/i.test(parts[2]) ? parts[2] : "", url: url, verified: /verified/i.test(parts[4] || "") && !/unverified/i.test(parts[4] || "") });
+    });
+    return out.slice(0, 8);
+  }
+  function stripOfferLines(text) {
+    return String(text || "").split(/\r?\n/).filter(function (l) { return !/^\s*[-*]?\s*\**OFFER\**\s*:/i.test(l); }).join("\n");
+  }
+
   /* ---------- counts & validation ---------- */
 
   function countsOf(d) {
@@ -468,7 +580,7 @@
       purchaseTotal: C.sum(arr(x.requests), function (r) { return r && r.purchased ? Number(r.purchased.amount) || 0 : 0; })
     };
     ["houses", "memberGroups", "stores", "products", "priceRecords", "budgetCategories", "commitments", "reserves", "auditLog", "backupLog",
-      "inventoryItems", "inventoryTransactions", "shoppingLists", "shoppingCycles", "trips"].forEach(function (k) {
+      "inventoryItems", "inventoryTransactions", "shoppingLists", "shoppingCycles", "trips", "recurring", "alerts"].forEach(function (k) {
       c[k] = arr(x[k]).length;
     });
     c.listItems = 0;
@@ -479,6 +591,7 @@
   var LEGACY_COUNT_KEYS = ["requests", "purchases", "receipts", "receiptItems", "manual", "fund", "stop", "spent", "receiptTotal", "manualTotal", "purchaseTotal"];
   // Stage 1 lists that later upgrades must never lose
   var STAGE1_COUNT_KEYS = ["houses", "memberGroups", "stores", "products", "priceRecords", "budgetCategories", "commitments", "reserves"];
+  var STAGE2_COUNT_KEYS = ["inventoryItems", "inventoryTransactions", "shoppingLists", "listItems", "shoppingCycles", "trips"];
 
   function compareCounts(before, after, keys) {
     var problems = [];
@@ -531,6 +644,21 @@
       var marked = 0;
       d.priceRecords.forEach(function (pr) { if (!pr.matchConfidence) { pr.matchConfidence = "high"; pr.matchReason = pr.source === "receipt" ? "exact_name" : "entered"; pr.needsReview = false; marked++; } });
       return { note: "Added inventory, shopping cycles, shopping list, trips and receipt matching", learned: { pricesMarkedHigh: marked } };
+    },
+    // v3 = Stage 2. → v4 = Stage 3 intelligence (route, alerts, recurring, learning). Additive only.
+    3: function (d, at) {
+      ensureShape(d);
+      // Price-drop alerts only for prices recorded from now on (old history is not re-announced).
+      d.learning.alertScanAt = d.learning.alertScanAt || at;
+      var stores = 0;
+      d.stores.forEach(function (st) { if (!st.travel || typeof st.travel !== "object") { st.travel = { minutes: null, km: null }; stores++; } });
+      var prods = 0;
+      d.products.forEach(function (p) {
+        if (!("targetPrice" in p)) { p.targetPrice = null; prods++; }
+        if (!Array.isArray(p.substitutes)) p.substitutes = [];
+        if (!Array.isArray(p.rejectedSubstitutes)) p.rejectedSubstitutes = [];
+      });
+      return { note: "Added where-to-buy, route planner, price alerts, recurring purchases, forecasts and learning", learned: { storesWithTravel: stores, productsWithTargets: prods } };
     }
   };
 
@@ -561,6 +689,7 @@
     var after = countsOf(d);
     var problems = steps.length ? compareCounts(before, after) : [];
     if (steps.length && from >= 2) problems = problems.concat(compareCounts(before, after, STAGE1_COUNT_KEYS));
+    if (steps.length && from >= 3) problems = problems.concat(compareCounts(before, after, STAGE2_COUNT_KEYS));
     if (steps.length) {
       if (after.stores < SEED_STORES.length) problems.push("stores missing");
       if (after.budgetCategories < DEFAULT_CATEGORIES.length) problems.push("categories missing");
@@ -647,6 +776,12 @@
     arr(d.trips).forEach(function (t) {
       if (["active", "finished", "cancelled"].indexOf(t.status) < 0) add("error", "bad_status", "Trip " + t.id + " has an unknown status.", "trips", t.id);
     });
+    arr(d.recurring).forEach(function (r) {
+      if (!money(Number(r.amount))) add("error", "bad_amount", "Recurring purchase " + (r.title || r.id) + " has an invalid amount.", "recurring", r.id);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(r.nextDue || ""))) add("error", "bad_date", "Recurring purchase " + (r.title || r.id) + " has no next date.", "recurring", r.id);
+      if (!RECURRING_UNITS[r.every && r.every.unit]) add("error", "bad_repeat", "Recurring purchase " + (r.title || r.id) + " has an unknown repeat.", "recurring", r.id);
+    });
+    arr(d.alerts).forEach(function (a) { if (!ALERT_KINDS[a.kind]) add("warning", "bad_kind", "Alert " + a.id + " has an unknown kind.", "alerts", a.id); });
     if (arr(d.trips).filter(function (t) { return t.status === "active"; }).length > 1) add("warning", "multiple_trips", "More than one shopping trip is open.", "trips");
     arr(d.budgetPlan && d.budgetPlan.items).forEach(function (it) {
       if (!cats[it.categoryId]) add("warning", "broken_link", "Budget plan line points to a missing category.", "budgetPlan", it.categoryId);
@@ -719,7 +854,9 @@
     normalizeLegacy: normalizeLegacy, ensureShape: ensureShape,
     findStoreByName: findStoreByName, findProductByName: findProductByName, productKey: productKey, makeProduct: makeProduct,
     priceRecordsFromReceipt: priceRecordsFromReceipt,
-    countsOf: countsOf, compareCounts: compareCounts, LEGACY_COUNT_KEYS: LEGACY_COUNT_KEYS, STAGE1_COUNT_KEYS: STAGE1_COUNT_KEYS,
+    countsOf: countsOf, compareCounts: compareCounts, LEGACY_COUNT_KEYS: LEGACY_COUNT_KEYS, STAGE1_COUNT_KEYS: STAGE1_COUNT_KEYS, STAGE2_COUNT_KEYS: STAGE2_COUNT_KEYS,
+    ALERT_KINDS: ALERT_KINDS, RECURRING_UNITS: RECURRING_UNITS, SOURCE_QUALITY: SOURCE_QUALITY,
+    makeRecurring: makeRecurring, substitutesFor: substitutesFor, sourceQuality: sourceQuality, parseOffers: parseOffers, stripOfferLines: stripOfferLines,
     INVENTORY_LOCATIONS: INVENTORY_LOCATIONS, LIST_PRIORITIES: LIST_PRIORITIES, MATCH_CONFIDENCE: MATCH_CONFIDENCE,
     matchProduct: matchProduct, coreTokens: coreTokens, findDuplicateReceipt: findDuplicateReceipt,
     makeInventoryItem: makeInventoryItem, makeList: makeList, makeListItem: makeListItem, firstOfMonth: firstOfMonth,

@@ -81,7 +81,7 @@ function finishBootSafety(){
    let L=(bootInfo.steps[0] && bootInfo.steps[0].learned) || {};
    audit("data.upgraded","Jason Shop data upgraded to version "+bootInfo.toVersion+" (all "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries and "+bootInfo.after.requests+" requests kept; "+(L.priceRecords||0)+" prices learned from receipts)",
     {entity:"data",before:{counts:bootInfo.before},after:{counts:bootInfo.after}});
-   showBootBanner("✅ Jason Shop was upgraded. All your data was checked and kept: "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries, "+bootInfo.after.requests+" shopping requests, Spent "+peso(bootInfo.after.spent)+". "+(L.priceRecords ? L.priceRecords+" prices were added to your new Price Book from your receipts. " : "")+(bootInfo.fromVersion>=2 ? "New: home inventory, a smart shopping list, shopping trips and 15-day cycles. " : "")+"A safety copy of the old data was saved first.");
+   showBootBanner("✅ Jason Shop was upgraded. All your data was checked and kept: "+bootInfo.after.receipts+" receipts, "+bootInfo.after.manual+" manual entries, "+bootInfo.after.requests+" shopping requests, Spent "+peso(bootInfo.after.spent)+". "+(L.priceRecords ? L.priceRecords+" prices were added to your new Price Book from your receipts. " : "")+(bootInfo.fromVersion>=3 ? "New: smart store picks, a trip planner, price alerts, recurring purchases, a 30-day forecast and Taglish commands. " : (bootInfo.fromVersion>=2 ? "New: home inventory, a smart shopping list, shopping trips and 15-day cycles. " : ""))+"A safety copy of the old data was saved first.");
   }else{
    logBackup("Migration","failed","",(bootInfo.problems||[]).join("; "));
    showBootBanner("⚠️ The upgrade was paused because a safety check didn't match. Your data is unchanged and safe. ("+(bootInfo.problems||[]).join("; ")+")",true);
@@ -140,7 +140,8 @@ const SECTION_MAP={
  reserve:["budget","overview","reserveCard"],
  thresholds:["budget","overview","thresholdCard"],
  backup:["more","data","backupCard"], data:["more","data"],
- household:["more","household"], audit:["more","audit"], settings:["more","settings"]
+ household:["more","household"], audit:["more","audit"], settings:["more","settings"],
+ forecast:["budget","forecast"], recurring:["more","recurring"]
 };
 
 function showView(view,sub){
@@ -213,6 +214,7 @@ function commandSubmit(event){
  if(!text) return false;
  let answer=localAnswer(text);
  let box=$id("cmdAnswer");
+ if(!answer && typeof handleCommand==="function"){ let r=handleCommand(text,"text"); if(r) answer=r.html; }
  if(answer){
   box.innerHTML=answer;
   box.classList.remove("hidden");
@@ -249,8 +251,8 @@ function localAnswer(text){
   if(!amount) return null;     // no amount → let research handle it (it knows the budget)
   if(b.state==="SETUP") return "⚙️ Set your Shopping Fund first (Budget tab), then I can answer that.";
   let after=C.budgetSummary({fund:data.fund,spent:data.spent,stop:data.stop,committed:b.committed+amount,reserve:b.reserve,thresholds:data.settings.thresholds});
-  if(after.overBy>0) return `⛔ <b>No.</b> ${money(amount)} would put you <b>over the limit by ${money(after.overBy)}</b>. Safe to spend right now: ${money(b.safeToSpend)}.`;
-  return `${after.stateInfo.icon} <b>Yes.</b> ${money(amount)} fits. You'd have <b>${money(after.safeToSpend)}</b> safe to spend left (${esc(after.stateInfo.label)}, ${Math.round(after.usedPct)}% used).`;
+  if(after.overBy>0) return `⛔ <b>No.</b> ${money(amount)} would put you <b>over the limit by ${money(after.overBy)}</b>. Safe to spend right now: ${money(b.safeToSpend)}.`+(typeof fundCheckLine==="function" ? fundCheckLine(amount) : "");
+  return `${after.stateInfo.icon} <b>Yes.</b> ${money(amount)} fits. You'd have <b>${money(after.safeToSpend)}</b> safe to spend left (${esc(after.stateInfo.label)}, ${Math.round(after.usedPct)}% used).`+(typeof fundCheckLine==="function" ? fundCheckLine(amount) : "");
  }
  if(/safe to spend|how much (can i|can we|do i have|is left|left)|budget left|magkano pa/.test(t)){
   if(b.state==="SETUP") return "⚙️ Set your Shopping Fund first (Budget tab).";
@@ -363,6 +365,7 @@ function renderActiveView(){
    if(ui.sub.more==="settings") renderSettings();
   }
   if(typeof renderStage2Active==="function") renderStage2Active();
+  if(typeof renderStage3Active==="function") renderStage3Active();
  }catch(error){
   console.warn("render",error);
  }
@@ -379,7 +382,7 @@ function renderHomeCards(){
  $id("monthDisplay").innerText=peso(monthSpent);
  $id("monthLabelSmall").innerText="THIS PERIOD ("+periodLabel(period).toUpperCase()+")";
 
- let out=typeof homeCards2==="function" ? homeCards2() : [];
+ let out=(typeof homeCards3==="function" ? homeCards3() : []).concat(typeof homeCards2==="function" ? homeCards2() : []);
 
  let plan=planRows();
  if(plan.rows.length){
@@ -534,11 +537,12 @@ function openCommitment(id){
  sheetState={ commitmentId:id, confirmedOverStop:false };
  openSheet(`<h2>${c ? "Edit" : "Add"} committed purchase</h2>
   <label for="cmTitle">What is it?</label><input id="cmTitle" autocomplete="off" placeholder="e.g. Rice cooker order, Landers monthly haul" value="${esc(c ? c.title : "")}">
-  <div class="two"><div><label for="cmAmount">Amount ₱</label><input id="cmAmount" inputmode="decimal" autocomplete="off" placeholder="0" value="${c ? amountForInput(c.amount) : ""}"></div>
+  <div class="two"><div><label for="cmAmount">Amount ₱</label><input id="cmAmount" inputmode="decimal" autocomplete="off" placeholder="0" value="${c ? amountForInput(c.amount) : ""}" oninput="if(typeof liveFundCheck==='function')liveFundCheck('cmAmount','cmFund')"></div>
   <div><label for="cmDue">Due date (optional)</label><input id="cmDue" type="date" value="${esc(c ? c.dueDate||"" : "")}"></div></div>
   <div class="two"><div><label for="cmCat">Category</label><select id="cmCat">${categoryOptions(c ? c.categoryName : "Groceries")}</select></div>
   <div><label for="cmStore">Store</label><select id="cmStore">${storeOptions(c ? c.storeId : "",true)}</select></div></div>
   <label for="cmNote">Note (optional)</label><input id="cmNote" autocomplete="off" value="${esc(c ? c.note||"" : "")}">
+  <div id="cmFund">${c && typeof fundCheckLine==="function" ? fundCheckLine(c.amount) : ""}</div>
   <div id="sheetMsg" class="form-msg" aria-live="polite"></div>
   <button class="primary" onclick="saveCommitment()">✅ SAVE</button>
   <button class="action wide" onclick="closeSheet()">Cancel</button>`);
@@ -926,6 +930,9 @@ function openStoreEdit(id,prefillName){
   <div class="check-grid">${Mdl.SHOPPING_TYPES.map((t,i)=>`<label class="check"><input type="checkbox" id="stT${i}" value="${esc(t)}" ${tend.includes(t) ? "checked" : ""}> ${esc(t)}</label>`).join("")}</div>
   <label class="check"><input type="checkbox" id="stMember" ${s && s.membership ? "checked" : ""}> 🎫 Membership store</label>
   <label for="stNotes">Notes</label><input id="stNotes" autocomplete="off" value="${esc(s ? s.notes : "")}">
+  <div class="two"><div><label for="stMinutes">Minutes from home</label><input id="stMinutes" inputmode="decimal" autocomplete="off" placeholder="blank = unknown" value="${s && s.travel && s.travel.minutes!==null && s.travel.minutes!==undefined ? esc(String(s.travel.minutes)) : ""}"></div>
+  <div><label for="stKm">Km from home</label><input id="stKm" inputmode="decimal" autocomplete="off" placeholder="blank = unknown" value="${s && s.travel && s.travel.km!==null && s.travel.km!==undefined ? esc(String(s.travel.km)) : ""}"></div></div>
+  <div class="field-note">Used by the trip planner. Type your own estimate — live map distance needs configuration and is not connected.</div>
   <div id="sheetMsg" class="form-msg"></div>
   <button class="primary" onclick="saveStore()">✅ SAVE</button>
   ${s ? `<button class="action wide" onclick="hideStore('${s.id}')">Hide this store</button>` : ""}
@@ -939,7 +946,10 @@ function saveStore(){
  let clash=(data.stores||[]).find(x=>x!==s && !x.archived && (Mdl.normalizeName(x.name)===Mdl.normalizeName(name) || Mdl.normalizeName(x.shortName)===Mdl.normalizeName(name)));
  if(clash){ sheetMsg("\""+clash.name+"\" is already in My Stores."); return; }
  let tendencies=Mdl.SHOPPING_TYPES.filter((t,i)=>$id("stT"+i) && $id("stT"+i).checked);
- let fields={ name, type:val("stType")||"other", location:val("stLoc"),
+ let travelNum=id=>{ let v=val(id); if(v==="") return null; let n=Number(v.replace(/,/g,"")); return isFinite(n) && n>=0 && n<10000 ? C.round2(n) : NaN; };
+ let travel={ minutes:travelNum("stMinutes"), km:travelNum("stKm") };
+ if(Number.isNaN(travel.minutes) || Number.isNaN(travel.km)){ sheetMsg("Minutes and km must be numbers (0 or more), or blank if you don't know."); return; }
+ let fields={ name, travel, type:val("stType")||"other", location:val("stLoc"),
   aliases:val("stAliases").split(",").map(a=>a.trim()).filter(Boolean),
   tendencies, membership:$id("stMember").checked ? true : null, notes:val("stNotes"), updatedAt:new Date().toISOString() };
  if(s){
@@ -1021,11 +1031,13 @@ function openProduct(id){
   <div class="row-line"><span>Trend</span>${trendHTML(st)}</div>
   <div class="row-line"><span>Cheapest store</span><b>${!st.cheapestStore ? "—" : (st.cheapestTies>1 ? "Same price at "+st.cheapestTies+" stores" : esc(st.cheapestStore.storeName)+(st.storeCount<2 ? " (only store so far)" : ""))}</b></div>
   <p class="field-note">${esc(basisNote)}${st.missingPrice ? " "+st.missingPrice+" record(s) have no price and are ignored." : ""}</p>` : '<p class="muted">No prices recorded yet.</p>'}
+  <div id="productIntel"></div>
   <h3>Price records</h3>
   ${recs.length ? `<table class="tbl"><tr><th>Date</th><th>Store</th><th class="num">Price</th><th>Source</th><th></th></tr>
-   ${recs.map(r=>{ let src=Mdl.PRICE_SOURCES[r.source]||{icon:"",label:r.source}; return `<tr><td>${esc(r.date)}</td><td>${esc(storeLabel(resolveStore(r.storeId,r.storeName))||r.storeName||"—")}</td><td class="num">${money(r.price)}${r.qty>1 ? "<br><small>for "+r.qty+"</small>" : ""}</td><td><small>${src.icon} ${esc(src.label)}${r.status && r.status!=="confirmed" ? " ("+esc(r.status)+")" : ""}</small></td><td><button class="mini" onclick="archivePrice('${r.id}','${p.id}')" aria-label="Remove price">✕</button></td></tr>`; }).join("")}</table>` : ""}
+   ${recs.map(r=>{ let src=Mdl.PRICE_SOURCES[r.source]||{icon:"",label:r.source}; return `<tr><td>${esc(r.date)}</td><td>${esc(storeLabel(resolveStore(r.storeId,r.storeName))||r.storeName||"—")}</td><td class="num">${money(r.price)}${r.qty>1 ? "<br><small>for "+r.qty+"</small>" : ""}</td><td><small>${src.icon} ${esc(src.label)}${r.status && r.status!=="confirmed" ? " ("+esc(r.status)+")" : ""}</small>${typeof priceStatusBadge==="function" ? "<br>"+priceStatusBadge(r) : ""}</td><td><button class="mini" onclick="archivePrice('${r.id}','${p.id}')" aria-label="Remove price">✕</button></td></tr>`; }).join("")}</table>` : ""}
   <div class="btn-row"><button class="action" onclick="openPrice('${p.id}')">➕ Add price</button><button class="action" onclick="openProductEdit('${p.id}')">✏️ Edit product</button></div>
   <button class="action wide" onclick="closeSheet()">Close</button>`);
+ if(typeof renderProductIntel==="function") renderProductIntel(p.id);
 }
 
 function scopeOptions(sel){ return Object.keys(Mdl.SCOPE_TYPES).map(k=>`<option value="${k}" ${k===sel ? "selected" : ""}>${esc(Mdl.SCOPE_TYPES[k])}</option>`).join(""); }
@@ -1289,11 +1301,14 @@ function renderMoreMenu(){
   ["prices","🏷️","Price Book","Every price you've paid or seen"],
   ["plan","📊","Budget plan & categories","Split your fund by category"],
   ["cycle","🔁","Shopping cycle","Every 15 days (or your choice) · planned vs actual"],
+  ["recurring","📅","Recurring purchases","Monthly rice, gas, water — set aside automatically"],
+  ["alerts","🔔","Alert center","Price drops, targets, low stock, expiry, budget"],
+  ["forecast","📈","30-day forecast","What's coming up and whether the fund lasts"],
   ["data","💾","Data & Backup","Backups, restore, safety copies, integrity check"],
   ["audit","🧾","Change history","Every money and data change"],
   ["settings","⚙️","Settings","Warning levels, budget period, app info"]
  ];
- $id("moreMenu").innerHTML=items.map(([k,icon,title,sub])=>`<button class="menu-item" id="more_${k}" onclick="goTo('${k}')"><span class="mi-icon">${icon}</span><span><b>${title}</b><small>${sub}</small></span><span class="chev">›</span></button>`).join("");
+ $id("moreMenu").innerHTML=items.map(([k,icon,title,sub])=>`<button class="menu-item" id="more_${k}" onclick="${k==="alerts" ? "openAlerts()" : "goTo('"+k+"')"}"><span class="mi-icon">${icon}</span><span><b>${title}</b><small>${sub}</small></span><span class="chev">›</span></button>`).join("");
 }
 
 /* ---------- DATA & BACKUP (§98–120, §113) ---------- */
@@ -1433,6 +1448,7 @@ function renderSettings(){
    <button class="action wide" onclick="goTo('thresholds')">Change warning levels</button></div>
   <div class="card"><h3 class="card-title">📆 Budget period</h3><div class="muted">Monthly, starting day ${data.settings.budgetPeriod.startDay} · now ${esc(periodLabel(currentPeriod()))}</div>
    <button class="action wide" onclick="goTo('plan')">Change in Budget plan</button></div>
+  <div id="settings3">${typeof settings3HTML==="function" ? settings3HTML() : ""}</div>
   <div class="card"><h3 class="card-title">🔒 Privacy</h3><p class="muted">Everything stays on this phone. Only the text or photo you send to the AI (research, receipt reading, voice) goes to the Jason Shop server for that request.</p></div>
   <div class="card"><h3 class="card-title">ℹ️ About</h3><div class="muted">Jason Shop ${esc(Mdl.APP_VERSION)} · data version ${esc(String(data.schemaVersion||1))}</div></div>`;
 }

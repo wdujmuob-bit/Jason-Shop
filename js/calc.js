@@ -880,6 +880,471 @@
     };
   }
 
+  /* =====================================================================
+     STAGE 3 — intelligence: price status & freshness, where to buy,
+     best-store split, route optimizer, bulk & pack-size value, buy/wait
+     advice, fund protection, 30-day forecast, recurring dates.
+     Nothing here invents a price or a saving: missing data → null /
+     NOT_ENOUGH_DATA, and every recommendation carries its WHY.
+     ===================================================================== */
+
+  var PRICE_STATUS = {
+    LIVE: { icon: "🟢", label: "LIVE", text: "Found by today's web search, with a source link" },
+    ONLINE_VERIFIED: { icon: "🌐", label: "ONLINE VERIFIED", text: "Online listing with a source" },
+    RECEIPT_VERIFIED: { icon: "🧾", label: "RECEIPT VERIFIED", text: "From a receipt" },
+    USER_ENTERED: { icon: "✍️", label: "USER ENTERED", text: "Typed in by you" },
+    HISTORICAL: { icon: "🕰️", label: "HISTORICAL", text: "Real price, but old" },
+    ESTIMATED: { icon: "🤖", label: "ESTIMATED", text: "AI estimate — not verified" },
+    UNKNOWN: { icon: "❔", label: "UNKNOWN", text: "No price" }
+  };
+  var DEFAULT_PRICE_AGE = { historicalDays: 60, liveHours: 24, freshDays: 14 };
+
+  // How old a price is, in days (null when undated).
+  function priceAge(date, today) {
+    var d = daysBetween(String(date || "").slice(0, 10), today);
+    return d === null ? null : Math.max(0, d);
+  }
+  function freshness(date, today, opts) {
+    var o = Object.assign({}, DEFAULT_PRICE_AGE, opts || {});
+    var a = priceAge(date, today);
+    if (a === null) return { level: "unknown", days: null, text: "date unknown" };
+    var text = a === 0 ? "today" : (a === 1 ? "yesterday" : a + " days ago");
+    return { level: a <= o.freshDays ? "fresh" : (a <= o.historicalDays ? "recent" : "stale"), days: a, text: text };
+  }
+
+  /*
+    priceStatus({ price, source, date, verified, hasSource, at }, today, { now })
+    source: receipt | purchase | manual | shelf | online | ai_estimate | research
+  */
+  function priceStatus(rec, today, opts) {
+    var r = rec || {}, o = Object.assign({}, DEFAULT_PRICE_AGE, opts || {});
+    if (num(r.price) === null) return "UNKNOWN";
+    if (r.source === "ai_estimate") return "ESTIMATED";
+    var age = priceAge(r.date || r.at, today);
+    var old = age !== null && age > o.historicalDays;
+    if (r.source === "research") {
+      if (!r.verified || !r.hasSource) return "ESTIMATED";
+      var hrs = r.at && o.now ? (Date.parse(o.now) - Date.parse(r.at)) / 3600000 : null;
+      if (hrs !== null && hrs >= 0 && hrs <= o.liveHours) return "LIVE";
+      return old ? "HISTORICAL" : "ONLINE_VERIFIED";
+    }
+    if (old) return "HISTORICAL";
+    if (r.source === "online") return "ONLINE_VERIFIED";
+    if (r.source === "receipt") return "RECEIPT_VERIFIED";
+    if (r.source === "purchase" || r.source === "manual" || r.source === "shelf") return "USER_ENTERED";
+    return "UNKNOWN";
+  }
+
+  function isEstimateSource(r) { return r && (r.source === "ai_estimate" || r.status === "unverified"); }
+
+  /*
+    storeRanking(records, today) — "Where should I buy this?"
+    records: priceStats-style inputs { price, qty, size, unit, packCount, date, createdAt, storeKey, storeName, source }
+    Latest real price per store (AI estimates never count), compared per kg/L/pc when every
+    record has a size, else per item. → { basis, per, rows:[…sorted cheapest first], best, spreadPct, why }
+  */
+  function storeRanking(records, today, opts) {
+    var valid = (records || []).filter(function (r) {
+      return r && !r.archived && !isEstimateSource(r) && num(r.price) !== null && num(r.price) > 0 && (r.storeKey || r.storeName);
+    });
+    if (!valid.length) return { basis: null, per: null, rows: [], best: null, spreadPct: null, why: ["No store prices recorded yet — not enough data."] };
+    var withUnit = valid.map(function (r) { return { r: r, u: unitPrice(r) }; });
+    var dims = {};
+    withUnit.forEach(function (x) { if (x.u.ok) dims[x.u.dim] = true; });
+    var basis = withUnit.every(function (x) { return x.u.ok; }) && Object.keys(dims).length === 1 ? "unit" : "item";
+    var val = function (x) { return basis === "unit" ? x.u.exact : x.u.itemPrice; };
+    var sorted = withUnit.slice().sort(function (a, b) {
+      return String(a.r.date || "").localeCompare(String(b.r.date || "")) || String(a.r.createdAt || "").localeCompare(String(b.r.createdAt || ""));
+    });
+    var byStore = {}, counts = {};
+    sorted.forEach(function (x) { var k = x.r.storeKey || ("name:" + String(x.r.storeName).toLowerCase()); byStore[k] = x; counts[k] = (counts[k] || 0) + 1; });
+    var rows = Object.keys(byStore).map(function (k) {
+      var x = byStore[k];
+      var f = freshness(x.r.date, today, opts);
+      return { storeKey: k, storeName: x.r.storeName || "", value: round2(val(x)), exact: val(x), itemPrice: x.u.itemPrice, per: basis === "unit" ? x.u.perLabel : null,
+        date: x.r.date || null, freshness: f, status: priceStatus(x.r, today, opts), source: x.r.source, records: counts[k], record: x.r };
+    }).sort(function (a, b) { return a.exact - b.exact || (a.freshness.days === null ? 999 : a.freshness.days) - (b.freshness.days === null ? 999 : b.freshness.days); });
+    var best = rows[0];
+    var worst = rows[rows.length - 1];
+    var spreadPct = rows.length > 1 && worst.exact > 0 ? round2((worst.exact - best.exact) / worst.exact * 100) : null;
+    var unitTxt = function (r) { return formatPeso(r.value) + (r.per ? "/" + r.per : " each"); };
+    var why = [];
+    if (rows.length === 1) why.push("Only " + (best.storeName || "one store") + " has a recorded price (" + unitTxt(best) + ", " + best.freshness.text + ") — nothing to compare yet.");
+    else {
+      why.push((best.storeName || "This store") + " has the lowest latest price: " + unitTxt(best) + " (" + best.freshness.text + ").");
+      why.push("That's " + spreadPct + "% less than " + (worst.storeName || "the priciest store") + " at " + unitTxt(worst) + ".");
+      var ties = rows.filter(function (r) { return Math.abs(r.exact - best.exact) < 1e-9; }).length;
+      if (ties > 1) why.push(ties + " stores share the lowest price — pick the nearest.");
+    }
+    if (best.freshness.level === "stale") why.push("⚠️ The best price is " + best.freshness.text + " — it may have changed.");
+    if (basis === "unit") why.push("Compared per " + best.per + " so different pack sizes are fair.");
+    else if (Object.keys(dims).length > 1) why.push("Sizes use different units, so prices are compared per item.");
+    return { basis: basis, per: basis === "unit" ? best.per : null, rows: rows, best: best, spreadPct: spreadPct, why: why };
+  }
+
+  /*
+    splitList(items) — best store per item for a whole list.
+    items: [{ id, name, prices:{ storeKey: lineAmount }, override: storeKey|null }]
+    → { assign:{id:{storeKey, amount, reason}}, perStore:{k:{total,items}}, total, unpriced:[ids], bestSingle, savingVsSingle, why }
+  */
+  function splitList(items, storeNames) {
+    var names = storeNames || {};
+    var assign = {}, perStore = {}, unpriced = [], total = 0;
+    var list = (items || []).filter(Boolean);
+    list.forEach(function (it) {
+      var prices = it.prices || {};
+      var keys = Object.keys(prices).filter(function (k) { return num(prices[k]) !== null; });
+      var k = null, reason = "cheapest";
+      if (it.override) { k = it.override; reason = "override"; }
+      else if (keys.length) {
+        k = keys.reduce(function (m, x) { return prices[x] < prices[m] ? x : m; });
+        if (keys.length === 1) reason = "only_store";
+      }
+      var amount = k && num(prices[k]) !== null ? round2(prices[k]) : null;
+      if (amount === null) unpriced.push(it.id);
+      assign[it.id] = { storeKey: k, amount: amount, reason: k ? reason : "no_price" };
+      if (k) {
+        perStore[k] = perStore[k] || { total: 0, items: [] };
+        perStore[k].items.push(it.id);
+        if (amount !== null) { perStore[k].total = round2(perStore[k].total + amount); total += amount; }
+      }
+    });
+    total = round2(total);
+    // compare with buying everything at one store — only when that store prices every item we priced
+    var priced = list.filter(function (it) { return assign[it.id].amount !== null; });
+    var allKeys = {};
+    list.forEach(function (it) { Object.keys(it.prices || {}).forEach(function (k) { allKeys[k] = true; }); });
+    var singles = Object.keys(allKeys).map(function (k) {
+      var cover = priced.filter(function (it) { return num((it.prices || {})[k]) !== null; });
+      return { storeKey: k, covers: cover.length, total: round2(cover.reduce(function (s, it) { return s + it.prices[k]; }, 0)) };
+    }).sort(function (a, b) { return b.covers - a.covers || a.total - b.total; });
+    var bestSingle = singles.length && singles[0].covers === priced.length && priced.length ? singles[0] : null;
+    var saving = bestSingle ? round2(bestSingle.total - total) : null;
+    var why = [];
+    var stores = Object.keys(perStore);
+    if (!priced.length) why.push("None of these items has a recorded price yet — not enough data to split.");
+    else {
+      why.push("Each item goes to the store with its lowest recorded price" + (list.some(function (it) { return it.override; }) ? " (except the ones you chose yourself)" : "") + ".");
+      if (bestSingle && saving > 0.004) why.push("Splitting across " + stores.length + " stores saves " + formatPeso(saving) + " vs buying everything at " + (names[bestSingle.storeKey] || bestSingle.storeKey) + " (" + formatPeso(bestSingle.total) + ").");
+      else if (bestSingle) why.push((names[bestSingle.storeKey] || bestSingle.storeKey) + " alone costs the same, so one stop is enough.");
+      else why.push("No single store has prices for every item, so I can't say how much splitting saves — not enough data.");
+    }
+    if (unpriced.length) why.push(unpriced.length + " item" + (unpriced.length === 1 ? " has" : "s have") + " no price yet and " + (unpriced.length === 1 ? "isn't" : "aren't") + " counted.");
+    return { assign: assign, perStore: perStore, total: total, unpriced: unpriced, bestSingle: bestSingle, savingVsSingle: saving, why: why };
+  }
+
+  /*
+    planRoute(items, stores, settings, mode) — route optimizer.
+      items:  [{ id, prices:{storeKey: lineAmount}, lock: storeKey|null }]
+      stores: { storeKey: { name, minutes, km } }   (from home, typed by Jason; null = not set)
+      settings: { betweenStoresMinutes, betweenStoresKm, shoppingMinutes, timeValuePerHour, fuelPerKm }
+      mode: "balance" (default) | "cheapest" | "fewest" | "fastest"
+    Travel model (no maps service): out to the farthest store and back, plus a fixed hop
+    between stores and shopping time per stop — all from Jason's settings.
+  */
+  var ROUTE_MODES = {
+    balance: { label: "BEST BALANCE", text: "Price, time and stops together" },
+    cheapest: { label: "CHEAPEST", text: "Lowest total, even with more stops" },
+    fewest: { label: "FEWEST STOPS", text: "As few stores as possible" },
+    fastest: { label: "FASTEST", text: "Least time out of the house" }
+  };
+  var DEFAULT_ROUTE = { mode: "balance", betweenStoresMinutes: 10, betweenStoresKm: 3, shoppingMinutes: 20, timeValuePerHour: 100, fuelPerKm: null };
+
+  function routeTravel(keys, stores, s) {
+    var mins = keys.map(function (k) { return num((stores[k] || {}).minutes); });
+    var kms = keys.map(function (k) { return num((stores[k] || {}).km); });
+    var n = keys.length;
+    var travel = mins.every(function (m) { return m !== null && m >= 0; }) ? 2 * Math.max.apply(null, mins) + (n - 1) * s.betweenStoresMinutes : null;
+    var km = kms.every(function (m) { return m !== null && m >= 0; }) ? round2(2 * Math.max.apply(null, kms) + (n - 1) * s.betweenStoresKm) : null;
+    var order = keys.slice().sort(function (a, b) { return (num((stores[a] || {}).minutes) === null ? 1e9 : stores[a].minutes) - (num((stores[b] || {}).minutes) === null ? 1e9 : stores[b].minutes); });
+    return { travelMinutes: travel, shopMinutes: n * s.shoppingMinutes, minutes: travel === null ? null : travel + n * s.shoppingMinutes, km: km, order: order };
+  }
+
+  function planRoute(items, stores, settings, mode) {
+    var s = Object.assign({}, DEFAULT_ROUTE, settings || {});
+    var m = ROUTE_MODES[mode] ? mode : s.mode || "balance";
+    var st = stores || {};
+    var list = (items || []).filter(Boolean);
+    var keySet = {};
+    list.forEach(function (it) { Object.keys(it.prices || {}).forEach(function (k) { if (num(it.prices[k]) !== null) keySet[k] = true; }); if (it.lock) keySet[it.lock] = true; });
+    var keys = Object.keys(keySet);
+    // keep the search small: the 8 stores that price the most items
+    if (keys.length > 8) keys = keys.sort(function (a, b) {
+      var ca = list.filter(function (it) { return num((it.prices || {})[a]) !== null; }).length, cb = list.filter(function (it) { return num((it.prices || {})[b]) !== null; }).length;
+      return cb - ca;
+    }).slice(0, 8);
+    var locks = {};
+    list.forEach(function (it) { if (it.lock) locks[it.lock] = true; });
+    var maxCover = list.filter(function (it) { return it.lock ? num((it.prices || {})[it.lock]) !== null : keys.some(function (k) { return num((it.prices || {})[k]) !== null; }); }).length;
+    // For BEST BALANCE only: a store with no travel time is assumed to be as far as the farthest
+    // store whose time you did set (never "free"). With no times at all, only stops are compared.
+    var knownAll = Object.keys(st).map(function (k) { return num((st[k] || {}).minutes); }).filter(function (x) { return x !== null && x >= 0; });
+    var assumeMinutes = knownAll.length ? Math.max.apply(null, knownAll) : null;
+    var plans = [];
+    for (var mask = 1; mask < (1 << keys.length); mask++) {
+      var sub = keys.filter(function (k, i) { return mask & (1 << i); });
+      if (Object.keys(locks).some(function (k) { return sub.indexOf(k) < 0; })) continue;
+      var assign = {}, used = {}, total = 0, cover = 0;
+      list.forEach(function (it) {
+        var p = it.prices || {}, k = null;
+        if (it.lock) k = it.lock;
+        else sub.forEach(function (x) { if (num(p[x]) !== null && (k === null || p[x] < p[k])) k = x; });
+        var amt = k !== null && num(p[k]) !== null ? p[k] : null;
+        assign[it.id] = { storeKey: k, amount: amt === null ? null : round2(amt), locked: !!it.lock };
+        if (k !== null) used[k] = true;
+        if (amt !== null) { total += amt; cover++; }
+      });
+      if (cover < maxCover) continue;                      // every plan must cover the same priced items
+      if (sub.some(function (k) { return !used[k]; })) continue;   // an unused stop is never better
+      var tr = routeTravel(sub, st, s);
+      var fuel = s.fuelPerKm > 0 && tr.km !== null ? round2(tr.km * s.fuelPerKm) : null;
+      var knownMinutes = tr.minutes;
+      if (knownMinutes === null) {
+        var est = sub.map(function (k) { var x = num((st[k] || {}).minutes); return x !== null && x >= 0 ? x : assumeMinutes; });
+        knownMinutes = est.every(function (x) { return x !== null; }) ? 2 * Math.max.apply(null, est) + (sub.length - 1) * s.betweenStoresMinutes + tr.shopMinutes
+          : (sub.length - 1) * s.betweenStoresMinutes + tr.shopMinutes;
+      }
+      plans.push({ stores: tr.order, stops: sub.length, assign: assign, itemsTotal: round2(total), fuel: fuel, minutes: tr.minutes, travelMinutes: tr.travelMinutes, km: tr.km,
+        travelKnown: tr.minutes !== null, balanceScore: round2(total + (fuel || 0) + knownMinutes * (num(s.timeValuePerHour) || 0) / 60) });
+    }
+    var cmp = {
+      cheapest: function (a, b) { return (a.itemsTotal + (a.fuel || 0)) - (b.itemsTotal + (b.fuel || 0)) || a.stops - b.stops; },
+      fewest: function (a, b) { return a.stops - b.stops || a.itemsTotal - b.itemsTotal; },
+      fastest: function (a, b) { return (b.travelKnown - a.travelKnown) || ((a.minutes === null ? a.stops * s.shoppingMinutes : a.minutes) - (b.minutes === null ? b.stops * s.shoppingMinutes : b.minutes)) || a.itemsTotal - b.itemsTotal; },
+      balance: function (a, b) { return a.balanceScore - b.balanceScore || a.stops - b.stops; }
+    };
+    var bestBy = {};
+    Object.keys(cmp).forEach(function (k) { bestBy[k] = plans.slice().sort(cmp[k])[0] || null; });
+    var ranked = plans.slice().sort(cmp[m]);
+    var best = ranked[0] || null;
+    var unpriced = list.filter(function (it) { return !best || best.assign[it.id].amount === null; }).map(function (it) { return it.id; });
+    var why = [];
+    var names = function (ks) { return ks.map(function (k) { return (st[k] && st[k].name) || k; }).join(" → "); };
+    if (!best) why.push("No recorded prices for these items yet — not enough data to plan a route.");
+    else {
+      why.push(ROUTE_MODES[m].label + ": " + names(best.stores) + " · " + best.stops + " stop" + (best.stops === 1 ? "" : "s") + " · items " + formatPeso(best.itemsTotal) + (best.minutes !== null ? " · about " + Math.round(best.minutes) + " min" : "") + ".");
+      var ch = bestBy.cheapest;
+      if (ch && ch !== best && ch.itemsTotal < best.itemsTotal - 0.004) why.push("The cheapest plan (" + names(ch.stores) + ") saves " + formatPeso(round2(best.itemsTotal - ch.itemsTotal)) + " more but needs " + ch.stops + " stop" + (ch.stops === 1 ? "" : "s") + (ch.minutes !== null && best.minutes !== null ? " and about " + Math.round(ch.minutes - best.minutes) + " more minutes" : "") + ".");
+      else if (m !== "cheapest") why.push("It's also the cheapest way to buy these items.");
+      var fw = bestBy.fewest;
+      if (fw && fw.stops < best.stops) why.push("One-stop option: " + names(fw.stores) + " for " + formatPeso(fw.itemsTotal) + " (" + formatPeso(round2(fw.itemsTotal - best.itemsTotal)) + " more).");
+      if (m === "balance") why.push("Balance counts your time at " + formatPeso(num(s.timeValuePerHour) || 0) + "/hour" + (s.fuelPerKm > 0 ? " and fuel at " + formatPeso(s.fuelPerKm) + "/km" : "") + " — change it in route settings.");
+      if (!best.travelKnown) why.push("Travel times aren't set for every store, so only shopping time (" + s.shoppingMinutes + " min per stop) is counted. Add minutes from home in My stores.");
+      if (m === "balance" && assumeMinutes !== null && plans.some(function (p) { return !p.travelKnown; })) why.push("Stores without a travel time are treated as " + Math.round(assumeMinutes) + " min from home (your farthest set store) when balancing, so an unknown trip never looks free.");
+      if (Object.keys(locks).length) why.push("Stores you picked yourself are kept.");
+    }
+    if (unpriced.length) why.push(unpriced.length + " item" + (unpriced.length === 1 ? " has" : "s have") + " no recorded price — buy " + (unpriced.length === 1 ? "it" : "them") + " wherever is convenient.");
+    return { mode: m, best: best, bestBy: bestBy, plans: ranked.slice(0, 5), planCount: plans.length, unpriced: unpriced, maxCover: maxCover, why: why };
+  }
+
+  /*
+    bulkBreakEven({ small:{price,size}, bulk:{price,size}, perDay, shelfLifeDays })
+    sizes in the same unit. → verdict BUY_BULK | BUY_SMALL | BULK_IF_USED + numbers + why
+  */
+  function bulkBreakEven(input) {
+    var o = input || {};
+    var sp = num(o.small && o.small.price), ss = num(o.small && o.small.size), bp = num(o.bulk && o.bulk.price), bs = num(o.bulk && o.bulk.size);
+    if (!(sp > 0 && ss > 0 && bp > 0 && bs > 0)) return { verdict: "NOT_ENOUGH_DATA", why: ["Need a real price and size for both packs — not enough data."] };
+    var su = sp / ss, bu = bp / bs;
+    var perDay = num(o.perDay), life = num(o.shelfLifeDays);
+    var r = { smallUnit: round2(su), bulkUnit: round2(bu), savingPerUnit: round2(su - bu), savingPct: round2((su - bu) / su * 100),
+      fullSaving: round2(su * bs - bp), breakEvenUnits: round2(bp / su), breakEvenPct: round2(bp / su / bs * 100),
+      daysToUse: perDay > 0 ? round2(bs / perDay) : null, usable: null, waste: null, effectiveSaving: null, expiryRisk: "NONE", storageRisk: null, why: [] };
+    if (perDay > 0 && life > 0) {
+      r.usable = round2(Math.min(bs, perDay * life));
+      r.waste = round2(bs - r.usable);
+      r.effectiveSaving = round2(su * r.usable - bp);
+      r.expiryRisk = r.daysToUse > life ? "HIGH" : (r.daysToUse > life * 0.75 ? "MEDIUM" : "LOW");
+    } else if (life > 0) r.expiryRisk = "UNKNOWN";
+    if (r.daysToUse !== null) r.storageRisk = r.daysToUse > 90 ? "HIGH" : (r.daysToUse > 45 ? "MEDIUM" : "LOW");
+    if (bu >= su - 1e-9) {
+      r.verdict = "BUY_SMALL";
+      r.why.push("The big pack isn't cheaper per unit (" + formatPeso(r.bulkUnit) + " vs " + formatPeso(r.smallUnit) + ").");
+    } else if (r.expiryRisk === "HIGH" && r.effectiveSaving <= 0) {
+      r.verdict = "BUY_SMALL";
+      r.why.push("Cheaper per unit, but at your pace about " + r.waste + " would expire before it's used, wiping out the saving.");
+    } else if (r.daysToUse === null) {
+      r.verdict = "BULK_IF_USED";
+      r.why.push("The big pack is " + r.savingPct + "% cheaper per unit. You must use at least " + r.breakEvenPct + "% of it (" + r.breakEvenUnits + ") to come out ahead — I don't know how fast you use it yet (not enough data).");
+    } else {
+      r.verdict = "BUY_BULK";
+      r.why.push("The big pack is " + r.savingPct + "% cheaper per unit — " + formatPeso(r.effectiveSaving !== null ? r.effectiveSaving : r.fullSaving) + " saved over " + Math.round(r.daysToUse) + " days of use.");
+      r.why.push("Break-even: use at least " + r.breakEvenPct + "% of it (" + r.breakEvenUnits + ").");
+    }
+    if (r.expiryRisk === "MEDIUM") r.why.push("⚠️ It takes about " + Math.round(r.daysToUse) + " days to use, close to its " + life + "-day shelf life.");
+    if (r.expiryRisk === "HIGH" && r.verdict !== "BUY_SMALL") r.why.push("⚠️ About " + r.waste + " may expire before you finish it; still cheaper overall by " + formatPeso(r.effectiveSaving) + ".");
+    if (r.storageRisk === "HIGH") r.why.push("📦 Ties up storage (and " + formatPeso(bp) + ") for about " + Math.round(r.daysToUse) + " days.");
+    return r;
+  }
+
+  // Compare pack sizes of the same thing by unit price. options: [{ id, label, price, qty, size, unit, packCount }]
+  function packSizeValue(options) {
+    var rows = (options || []).map(function (o) { return { o: o, u: unitPrice(o) }; }).filter(function (x) { return x.u.ok; });
+    if (rows.length < 2) return { rows: [], comparable: false, why: ["Need at least two sizes with a price — not enough data."] };
+    var dims = {};
+    rows.forEach(function (x) { dims[x.u.dim] = true; });
+    if (Object.keys(dims).length > 1) return { rows: [], comparable: false, why: ["These sizes use different kinds of units (weight vs volume), so they can't be compared."] };
+    rows.sort(function (a, b) { return a.u.exact - b.u.exact; });
+    var best = rows[0].u.exact;
+    var out = rows.map(function (x) { return { id: x.o.id, label: x.o.label, unitValue: x.u.value, per: x.u.perLabel, itemPrice: x.u.itemPrice, morePct: best > 0 ? round2((x.u.exact - best) / best * 100) : 0 }; });
+    return { rows: out, comparable: true, best: out[0], why: [out[0].label + " is the best value at " + formatPeso(out[0].unitValue) + "/" + out[0].per + (out.length > 1 ? "; " + out[out.length - 1].label + " costs " + out[out.length - 1].morePct + "% more per " + out[0].per : "") + "."] };
+  }
+
+  /*
+    buyAdvice({ history:[{value,date}], current:{value,date}?, target, minRecords:3 })
+    Based only on recorded prices. → { verdict: BUY_NOW|WAIT|FAIR|NOT_ENOUGH_DATA, low, high, avg, suggestedTarget, why }
+  */
+  var BUY_ADVICE = {
+    BUY_NOW: { icon: "✅", label: "BUY NOW" }, WAIT: { icon: "⏳", label: "WAIT" },
+    FAIR: { icon: "👌", label: "FAIR PRICE" }, NOT_ENOUGH_DATA: { icon: "❔", label: "NOT ENOUGH DATA" }
+  };
+  function buyAdvice(input) {
+    var o = input || {};
+    var hist = (o.history || []).filter(function (h) { return h && num(h.value) !== null && num(h.value) > 0; })
+      .sort(function (a, b) { return String(a.date || "").localeCompare(String(b.date || "")); });
+    var target = num(o.target);
+    var cur = o.current && num(o.current.value) !== null ? o.current : hist[hist.length - 1];
+    var min = o.minRecords || 3;
+    if (!cur) return { verdict: "NOT_ENOUGH_DATA", why: ["No price recorded yet."] };
+    var c = num(cur.value);
+    if (target !== null && target > 0 && c <= target + 1e-9) {
+      return { verdict: "BUY_NOW", current: c, target: target, why: ["At or below your target of " + formatPeso(target) + " (now " + formatPeso(c) + ")."] };
+    }
+    if (hist.length < min) return { verdict: "NOT_ENOUGH_DATA", current: c, target: target, count: hist.length, why: ["Only " + hist.length + " price" + (hist.length === 1 ? "" : "s") + " recorded — I need at least " + min + " to judge (not enough data)."] };
+    var vals = hist.map(function (h) { return num(h.value); });
+    var low = Math.min.apply(null, vals), high = Math.max.apply(null, vals);
+    var avg = vals.reduce(function (s, v) { return s + v; }, 0) / vals.length;
+    var srt = vals.slice().sort(function (a, b) { return a - b; });
+    var q = srt[Math.floor((srt.length - 1) * 0.25)];
+    var lowRec = hist.filter(function (h) { return num(h.value) === low; }).pop();
+    var res = { current: c, low: round2(low), high: round2(high), avg: round2(avg), count: vals.length, target: target, suggestedTarget: round2(q), vsAvgPct: round2((c - avg) / avg * 100), why: [] };
+    if (c <= low * 1.02) { res.verdict = "BUY_NOW"; res.why.push(formatPeso(c) + " is the lowest (or within 2% of the lowest) of your " + vals.length + " recorded prices."); }
+    else if (c <= avg * 0.95) { res.verdict = "BUY_NOW"; res.why.push(formatPeso(c) + " is " + Math.abs(res.vsAvgPct) + "% below your average of " + formatPeso(res.avg) + "."); }
+    else if (c >= avg * 1.05) { res.verdict = "WAIT"; res.why.push(formatPeso(c) + " is " + res.vsAvgPct + "% above your average of " + formatPeso(res.avg) + "; you've paid " + formatPeso(res.low) + (lowRec && lowRec.date ? " (" + lowRec.date + ")" : "") + "."); res.why.push("If you need it now, buy only what you need until the price drops."); }
+    else { res.verdict = "FAIR"; res.why.push(formatPeso(c) + " is within 5% of your average (" + formatPeso(res.avg) + ")."); }
+    if (target === null) res.why.push("Suggested target from your history: " + formatPeso(res.suggestedTarget) + ".");
+    return res;
+  }
+
+  /*
+    fundCheck(amount, budget, { upcoming }) — fund protection for bigger purchases.
+    AFFORDABLE · CAUTION (pushes into WATCH/WARNING or uses half of Safe to Spend)
+    · WAIT (fits now but leaves too little for upcoming needs/recurring) · EXCEEDS (over Safe to Spend / hard stop)
+  */
+  var FUND_VERDICTS = {
+    AFFORDABLE: { icon: "✅", label: "AFFORDABLE" }, CAUTION: { icon: "🟠", label: "CAUTION" },
+    WAIT: { icon: "⏳", label: "WAIT" }, EXCEEDS: { icon: "⛔", label: "EXCEEDS" }, SETUP: { icon: "⚙️", label: "SET UP BUDGET" }
+  };
+  function fundCheck(amount, budget, opts) {
+    var a = num(amount);
+    var b = budgetSummary(budget);
+    var up = Math.max(0, num(opts && opts.upcoming) || 0);
+    if (!(a > 0)) return { verdict: "SETUP", why: ["Enter an amount."] };
+    if (b.state === "SETUP") return { verdict: "SETUP", why: ["Set your Shopping Fund first."] };
+    var after = budgetSummary(Object.assign({}, budget, { committed: money(budget && budget.committed) + a }));
+    var safe = b.safeToSpend;
+    var r = { amount: a, safeBefore: safe, safeAfter: after.safeToSpend, rawAfter: after.rawSafe, upcoming: round2(up), leftAfterUpcoming: round2(safe - a - up), usedPctAfter: after.usedPct, stateAfter: after.state, why: [] };
+    var stop = crossesHardStop(budget, a, { includeCommitted: true });
+    if (a > safe + 1e-9 || stop) {
+      r.verdict = "EXCEEDS";
+      r.why.push(formatPeso(a) + " is more than you can safely spend (" + formatPeso(safe) + ")" + (after.overBy > 0 ? " — over by " + formatPeso(after.overBy) : "") + ".");
+      if (stop) r.why.push("It would go past your hard stop.");
+    } else if (up > 0 && a > safe - up + 1e-9) {
+      r.verdict = "WAIT";
+      r.why.push("It fits today, but leaves " + formatPeso(round2(safe - a)) + " for " + formatPeso(r.upcoming) + " of needs and recurring purchases coming up.");
+      r.why.push("Short by " + formatPeso(round2(a + up - safe)) + " — wait for the next fund top-up or trim the list first.");
+    } else if (after.state === "WATCH" || after.state === "WARNING" || a >= safe * 0.5) {
+      r.verdict = "CAUTION";
+      r.why.push("Affordable, but it " + (after.state === "WATCH" || after.state === "WARNING" ? "puts you at " + Math.round(after.usedPct) + "% used (" + after.state + ")" : "uses " + Math.round(a / safe * 100) + "% of what's safe to spend") + ".");
+      r.why.push(formatPeso(after.safeToSpend) + " would be left" + (up > 0 ? ", " + formatPeso(r.leftAfterUpcoming) + " after upcoming needs" : "") + ".");
+    } else {
+      r.verdict = "AFFORDABLE";
+      r.why.push("Fits comfortably: " + formatPeso(after.safeToSpend) + " left to spend" + (up > 0 ? " (" + formatPeso(r.leftAfterUpcoming) + " after upcoming needs)" : "") + ".");
+    }
+    return r;
+  }
+
+  /* ---------- recurring purchase dates ---------- */
+
+  // every: { unit: "days"|"weeks"|"months", n }
+  function advanceDate(day, every) {
+    var e = every || { unit: "months", n: 1 };
+    var n = Math.max(1, Math.floor(num(e.n) || 1));
+    if (e.unit === "days") return addDays(day, n);
+    if (e.unit === "weeks") return addDays(day, 7 * n);
+    var p = String(day).split("-").map(Number);
+    if (p.length !== 3 || p.some(isNaN)) return null;
+    var y = p[0], m = p[1] - 1 + n, d = p[2];
+    y += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
+    var last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    return y + "-" + String(m + 1).padStart(2, "0") + "-" + String(Math.min(d, last)).padStart(2, "0");
+  }
+  function occurrencesBetween(startDay, every, from, to, limit) {
+    var out = [], d = startDay, guard = 0;
+    while (d && d <= to && guard++ < (limit || 500)) {
+      if (d >= from) out.push(d);
+      d = advanceDate(d, every);
+    }
+    return out;
+  }
+
+  /*
+    forecast30({ today, entries, scheduled, restock, safeNow, fund, days, minHistoryDays })
+      entries: counted spending { date, amount } (history)
+      scheduled: [{ date, amount, label, kind }] recurring not yet committed, etc.
+      restock:   [{ date, amount|null, label }] items running out (priced from the Price Book)
+    projected = the larger of (history-based baseline) and (known items) — never just a guess.
+  */
+  function forecast30(input) {
+    var o = input || {};
+    var days = o.days || 30, today = o.today;
+    var start = addDays(today, 1), end = addDays(today, days);
+    var histFrom = addDays(today, -60);
+    var entries = (o.entries || []).filter(function (e) { return e && e.date && num(e.amount) > 0 && e.date <= today; });
+    var recent = entries.filter(function (e) { return e.date >= histFrom; });
+    var first = entries.map(function (e) { return e.date; }).sort()[0] || null;
+    var span = first ? Math.min(60, daysBetween(first, today) + 1) : 0;
+    var minDays = o.minHistoryDays || 14;
+    var baselineDaily = span >= minDays ? round2(sum(recent, function (e) { return e.amount; }) / span) : null;
+    var baseline = baselineDaily === null ? null : Math.round(baselineDaily * days);   // an estimate: whole pesos
+    var known = [];
+    (o.scheduled || []).forEach(function (x) { if (x && x.date >= start && x.date <= end && num(x.amount) > 0) known.push({ date: x.date, amount: round2(x.amount), label: x.label || "", kind: x.kind || "scheduled" }); });
+    var unpricedRestock = [];
+    (o.restock || []).forEach(function (x) {
+      if (!x || !x.date || x.date > end) return;
+      var d = x.date < start ? start : x.date;
+      if (num(x.amount) > 0) known.push({ date: d, amount: round2(x.amount), label: x.label || "", kind: "restock" });
+      else unpricedRestock.push({ date: d, label: x.label || "" });
+    });
+    known.sort(function (a, b) { return a.date.localeCompare(b.date); });
+    var knownTotal = round2(sum(known, function (k) { return k.amount; }));
+    var basis = baseline === null ? "known_only" : (baseline >= knownTotal ? "history" : "known");
+    var projected = baseline === null ? knownTotal : Math.max(baseline, knownTotal);
+    var weeks = [];
+    for (var w = 0; w < Math.ceil(days / 7); w++) {
+      var ws = addDays(start, w * 7), we = addDays(start, Math.min(days, (w + 1) * 7) - 1);
+      var len = daysBetween(ws, we) + 1;
+      var k = round2(sum(known.filter(function (x) { return x.date >= ws && x.date <= we; }), function (x) { return x.amount; }));
+      var base = baselineDaily === null ? null : Math.round(baselineDaily * len);
+      weeks.push({ start: ws, end: we, known: k, baseline: base, total: base === null ? k : Math.max(base, k) });
+    }
+    var safe = num(o.safeNow);
+    var endSafe = safe === null ? null : round2(safe - projected);
+    var fund = num(o.fund) || 0;
+    var status = endSafe === null ? "SETUP" : (endSafe < 0 ? "SHORT" : (fund > 0 && endSafe < fund * 0.1 ? "TIGHT" : "OK"));
+    var why = [];
+    if (baseline !== null) why.push("Your recorded spending averages " + formatPeso(baselineDaily) + "/day over the last " + span + " days → about " + formatPeso(baseline) + " in " + days + " days.");
+    else why.push("Less than " + minDays + " days of spending history, so only known items are counted (not enough data for a full forecast).");
+    if (known.length) why.push("Known coming up: " + formatPeso(knownTotal) + " (" + known.length + " item" + (known.length === 1 ? "" : "s") + ": recurring purchases and things running out, priced from your Price Book).");
+    if (baseline !== null && knownTotal > baseline) why.push("Known items are more than your usual pace, so the forecast uses them.");
+    if (unpricedRestock.length) why.push(unpricedRestock.length + " item" + (unpricedRestock.length === 1 ? "" : "s") + " running out " + (unpricedRestock.length === 1 ? "has" : "have") + " no price yet and " + (unpricedRestock.length === 1 ? "isn't" : "aren't") + " counted.");
+    if (status === "SHORT") why.push("⚠️ That's " + formatPeso(-endSafe) + " more than you can safely spend now.");
+    else if (status === "TIGHT") why.push("Only " + formatPeso(endSafe) + " would be left — tight.");
+    else if (status === "OK") why.push(formatPeso(endSafe) + " would still be safe to spend.");
+    return { start: start, end: end, days: days, historyDays: span, baselineDaily: baselineDaily, baseline: baseline, known: known, knownTotal: knownTotal,
+      unpricedRestock: unpricedRestock, projected: round2(projected), basis: basis, weeks: weeks, safeNow: safe, endSafe: endSafe, status: status, why: why };
+  }
+
   return {
     round2: round2, num: num, money: money, sum: sum, pct: pct,
     formatPeso: formatPeso, limitText: limitText,
@@ -900,6 +1365,11 @@
     DEFAULT_INVENTORY: DEFAULT_INVENTORY, INVENTORY_STATES: INVENTORY_STATES, inventoryStatus: inventoryStatus,
     reorderQty: reorderQty, forecast: forecast, expiryStatus: expiryStatus, expiryAfterRestock: expiryAfterRestock,
     lineEstimate: lineEstimate, listTotals: listTotals, fitToBudget: fitToBudget, duplicateWarnings: duplicateWarnings,
-    tripSummary: tripSummary, plannedVsActual: plannedVsActual
+    tripSummary: tripSummary, plannedVsActual: plannedVsActual,
+    // Stage 3
+    PRICE_STATUS: PRICE_STATUS, DEFAULT_PRICE_AGE: DEFAULT_PRICE_AGE, priceAge: priceAge, freshness: freshness, priceStatus: priceStatus,
+    storeRanking: storeRanking, splitList: splitList, ROUTE_MODES: ROUTE_MODES, DEFAULT_ROUTE: DEFAULT_ROUTE, planRoute: planRoute,
+    bulkBreakEven: bulkBreakEven, packSizeValue: packSizeValue, BUY_ADVICE: BUY_ADVICE, buyAdvice: buyAdvice,
+    FUND_VERDICTS: FUND_VERDICTS, fundCheck: fundCheck, advanceDate: advanceDate, occurrencesBetween: occurrencesBetween, forecast30: forecast30
   };
 }));

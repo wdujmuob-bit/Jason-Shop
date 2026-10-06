@@ -352,6 +352,7 @@ function researchPartHTML(r){
   return `
    <details ${r.id===lastFinishedId ? "open" : ""}>
     <summary>✅ AI Research ready — tap to view</summary>
+    ${typeof researchIntelHTML==="function" ? researchIntelHTML(r) : ""}
     <div class="report">${formatReport(r.report)}</div>
     <button class="mini" onclick="readAloud('${r.id}')">🔊 Read summary</button>
    </details>`;
@@ -380,7 +381,9 @@ function escapeHTML(text){
 // bold text, headings and clickable links.
 function formatReport(text){
 
- let html=escapeHTML(String(text || "").replace(/^[ \t]*\**CATEGORY:.*$\n?/gim,""));
+ let raw=String(text || "").replace(/^[ \t]*\**CATEGORY:.*$\n?/gim,"");
+ if(window.JasonModel && JasonModel.stripOfferLines) raw=JasonModel.stripOfferLines(raw);
+ let html=escapeHTML(raw);
 
  html=html
   .replace(/\*\*(.+?)\*\*/g,"<b>$1</b>")
@@ -478,6 +481,12 @@ async function runResearch(id,source){
   request.report=result.report;
   request.summary=result.summary || "";
   if(result.category) request.category=result.category;
+  // Stage 3: keep where the answer came from, so prices get honest labels.
+  request.sources=Array.isArray(result.sources) ? result.sources : [];
+  // when the search ran; if the server clock is ahead of this phone, use the time it arrived here
+  let foundAt=Date.parse(result.researchedAt||"");
+  request.researchedAt=isFinite(foundAt) && foundAt<=Date.now() ? new Date(foundAt).toISOString() : new Date().toISOString();
+  if(window.JasonModel && JasonModel.parseOffers) request.offers=JasonModel.parseOffers(result.report);
   delete request.error;
   lastFinishedId=id;
  }else{
@@ -2568,6 +2577,18 @@ function sendVoiceNow(){
 
  if(!text){
   setVoiceUI("idle","Tap to talk");
+  return;
+ }
+
+ // Stage 3: budget questions and household commands ("ubos na yung bigas",
+ // "add 2 kilo rice") are handled on the phone — free and instant.
+ let local=null;
+ try{ local=typeof voiceLocal==="function" ? voiceLocal(text) : null; }catch(e){ local=null; }
+ if(local){
+  setVoiceUI("idle","Done ✓",local.say || "See the answer below the command bar");
+  setTimeout(()=>{ hideTranscript(); if(voice.state==="idle") setVoiceUI("idle","Tap to talk"); },6000);
+  let box=document.getElementById("cmdAnswer");
+  if(box){ goTo("home"); setTimeout(()=>box.scrollIntoView({block:"center"}),30); }
   return;
  }
 

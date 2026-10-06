@@ -84,18 +84,18 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   const inv = async (p, name) => p.evaluate(n => JSON.parse(JSON.stringify(data.inventoryItems.find(i => i.name === n && !i.archived) || null)), name);
   const li = async (p, name) => p.evaluate(n => { const l = data.shoppingLists.find(x => x.status === "active"); return JSON.parse(JSON.stringify(l.items.filter(i => i.name === n).pop() || null)); }, name);
 
-  /* ================= M. UPGRADE v2 → v3 from a real Stage 1 snapshot ================= */
+  /* ================= M. UPGRADE v2 → v4 from a real Stage 1 snapshot ================= */
   const v2 = SNAP.data;
   let p = await mk(JSON.stringify(v2));
   await waitFor(async () => (await text(p, "#bootBanner")).includes("upgraded"));
   const banner = await text(p, "#bootBanner");
   check("M1 upgrade banner: data kept + Stage 2 features named", banner.includes("2 receipts") && banner.includes("3 manual entries") && banner.includes("₱12,197") && banner.includes("home inventory"), banner);
-  await waitFor(async () => ((await stored(p)) || {}).schemaVersion === 3);
+  await waitFor(async () => ((await stored(p)) || {}).schemaVersion === 4);
   let s = await stored(p);
-  check("M2 saved data is schema v3, every Stage 1 record kept", s.schemaVersion === 3 && s.products.length === 3 && s.priceRecords.length === 7 && s.receipts.length === 2 && s.manual.length === 3 && s.commitments.length === 1 && s.reserves.length === 1 && s.spent === 12197 && s.fund === 60000 && s.stores.length === 8 && s.budgetPlan.items.length === 2);
+  check("M2 saved data is schema v4, every Stage 1 record kept", s.schemaVersion === 4 && s.products.length === 3 && s.priceRecords.length === 7 && s.receipts.length === 2 && s.manual.length === 3 && s.commitments.length === 1 && s.reserves.length === 1 && s.spent === 12197 && s.fund === 60000 && s.stores.length === 8 && s.budgetPlan.items.length === 2);
   check("M3 15-day cycle anchored on the 1st, one active list, Stage 1 prices = High confidence", s.settings.cycle.mode === "days" && s.settings.cycle.lengthDays === 15 && s.settings.cycle.anchorDate === "2026-10-01" && s.shoppingLists.length === 1 && s.priceRecords.every(r => r.matchConfidence === "high" && r.needsReview === false));
   const snaps = await p.evaluate(() => JasonStore.listSnapshots());
-  check("M4 safety copy of the v2 data saved first (IndexedDB)", snaps.length === 1 && snaps[0].reason === "before upgrade v2 → v3" && snaps[0].counts.priceRecords === 7 && snaps[0].counts.products === 3);
+  check("M4 safety copy of the v2 data saved first (IndexedDB)", snaps.length === 1 && snaps[0].reason === "before upgrade v2 → v4" && snaps[0].counts.priceRecords === 7 && snaps[0].counts.products === 3);
   check("M5 upgrade audited + backup log", s.auditLog.some(a => a.action === "data.upgraded") && s.backupLog.some(l => l.action === "Migration backup created" && l.status === "success"));
   check("M6 integrity check clean after upgrade", await p.evaluate(() => JasonModel.integrityCheck(data).errors === 0));
   await tap(p, "#bootBanner button");
@@ -355,7 +355,7 @@ async function waitFor(fn, ms = 10000) { const t0 = Date.now(); while (Date.now(
   const bkText = await p.evaluate(() => backupPayload());
   const bk = JSON.parse(bkText);
   fs.writeFileSync(path.join(OUT, "stage2-backup.json"), bkText);
-  check("B1 backup counts include inventory, list items, trips", bk.schemaVersion === 3 && bk.counts.inventoryItems === before.inventoryItems.length && bk.counts.listItems === before.shoppingLists[0].items.length && bk.counts.trips === 2 && bk.counts.inventoryTransactions === before.inventoryTransactions.length);
+  check("B1 backup counts include inventory, list items, trips", bk.schemaVersion === 4 && bk.counts.inventoryItems === before.inventoryItems.length && bk.counts.listItems === before.shoppingLists[0].items.length && bk.counts.trips === 2 && bk.counts.inventoryTransactions === before.inventoryTransactions.length);
   await p.evaluate(() => { data.inventoryItems = []; data.shoppingLists = []; data.trips = []; save(); });
   await p.evaluate(() => goTo("data")); await sleep(300);
   const [bf] = await Promise.all([p.waitForFileChooser(), tap(p, "button[onclick=\"document.getElementById('restoreFile').click()\"]")]);
